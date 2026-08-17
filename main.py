@@ -22,10 +22,10 @@ def inicializar_hotel(pisos, habitaciones):
 def renderizar_hotel(matriz):
     """
     Muestra la matriz en consola. Imprime desde el piso más alto
-    hasta el Piso 0 (Planta Baja) para simular la altura real del edificio.
+    hasta el piso 0 (Planta Baja) para simular la altura real del edificio.
     """
     print("\nESTADO ACTUAL DEL HOTEL\n")
-    for f in range(len(matriz)-1, -1, -1): # Recorremos de arriba hacia abajo (ej: Piso 2, Piso 1, Piso 0)
+    for f in range(len(matriz)-1, -1, -1): # Recorre al revés
         print(f"Piso {f}:", end="\t")
         for c in range(len(matriz[0])):
             print(f"[{matriz[f][c]}]", end="\t")
@@ -33,7 +33,8 @@ def renderizar_hotel(matriz):
 
 def reiniciar_matriz():
     """
-    Pide las nuevas dimensiones al usuario y retorna la matriz inicializada.
+    Solicita las dimensiones generales (pisos y habitaciones por piso) para instanciar
+    una nueva matriz limpia ('L'). Luego de su uso se reinicia la lista de huespedes.
     """
     print("\nDIMENSIONAR / REINICIAR HOTEL")
     pisos = int(input("Ingrese la cantidad de pisos: "))
@@ -48,11 +49,19 @@ def validar_regex(patron, texto):
     return bool(re.match(patron, texto))
 
 def pedir_habitacion(matriz):
+    '''
+    Pide al usuario el número de piso y habitación dentro del rango
+    de la matriz ya existente para realizar una operación puntual.
+    '''
     piso = int(input(f"Ingrese el piso (0 a {len(matriz) - 1}): "))
     habitacion = int(input(f"Ingrese la habitación (0 a {len(matriz[0]) - 1}): "))
     return piso, habitacion
 
 def validar_habitacion(piso, habitacion, matriz):
+    '''
+    Valida el numero de piso y habitacion ingresados, verificando que exista
+    el rango en las dimensiones del hotel y la habitacion no este ocupada.
+    '''
     es_valida = False
     
     while not es_valida:
@@ -70,7 +79,14 @@ def validar_habitacion(piso, habitacion, matriz):
     return piso, habitacion
 
 def realizar_checkin(matriz, lista_huespedes):
-    # TODO (Tiara): Validar datos con Regex
+    '''
+    Gestiona el registro completo de un nuevo huésped en el sistema.
+    Solicita y valida una habitación disponible, recopila los datos personales del
+    huésped, almacena el registro en 'lista_huespedes' y actualiza el estado de la 
+    habitación a "ocupada" en la matriz.
+    '''
+    # TODO (Tiara): Validar datos de los huespedes con Regex. Evaluar si pedir 
+    # mas datos al huesped para reportes
 
     piso, habitacion = pedir_habitacion(matriz)
     piso, habitacion = validar_habitacion(piso, habitacion, matriz)
