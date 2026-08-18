@@ -5,15 +5,15 @@ import re
 # MÓDULO 1: MATRIZ, CHECK-IN Y VALIDACIONES REGEX (Tiara)
 # =============================================================================
 
-def inicializar_hotel(pisos, habitaciones_por_piso):
+def inicializar_hotel(pisos, habitaciones):
     """
     Crea y retorna la matriz del hotel.
     Estados: 'L' (Libre), 'O' (Ocupada), 'S' (Sucia/Limpieza), 'M' (Mantenimiento).
     """
     matriz = []
-    for _ in range(pisos):
+    for f in range(pisos):
         fila = []
-        for _ in range(habitaciones_por_piso):
+        for c in range(habitaciones):
             fila.append("L")
         matriz.append(fila)
     return matriz
@@ -21,16 +21,26 @@ def inicializar_hotel(pisos, habitaciones_por_piso):
 
 def renderizar_hotel(matriz):
     """
-    Muestra en consola el estado visual de cada piso y habitación.
+    Muestra la matriz en consola. Imprime desde el piso más alto
+    hasta el piso 0 (Planta Baja) para simular la altura real del edificio.
     """
-    print("\n--- ESTADO ACTUAL DEL HOTEL ---")
-    for i in range(len(matriz)):
-        print(f"Piso {i + 1}:", end="  ")
-        for j in range(len(matriz[i])):
-            print(f"[{matriz[i][j]}]", end=" ")
+    print("\nESTADO ACTUAL DEL HOTEL\n")
+    for f in range(len(matriz)-1, -1, -1): # Recorre al revés
+        print(f"Piso {f}:", end="\t")
+        for c in range(len(matriz[0])):
+            print(f"[{matriz[f][c]}]", end="\t")
         print()
-    print("-------------------------------")
 
+def reiniciar_matriz():
+    """
+    Solicita las dimensiones generales (pisos y habitaciones por piso) para instanciar
+    una nueva matriz limpia ('L'). Luego de su uso se reinicia la lista de huespedes.
+    """
+    print("\nDIMENSIONAR / REINICIAR HOTEL")
+    pisos = int(input("Ingrese la cantidad de pisos: "))
+    habitaciones = int(input("Ingrese la cantidad de habitaciones por piso: "))
+    
+    return inicializar_hotel(pisos, habitaciones)
 
 def validar_regex(patron, texto):
     """
@@ -38,24 +48,112 @@ def validar_regex(patron, texto):
     """
     return bool(re.match(patron, texto))
 
+def pedir_habitacion(matriz):
+    '''
+    Pide al usuario el número de piso y habitación dentro del rango
+    de la matriz ya existente para realizar una operación puntual.
+    '''
+    piso = int(input(f"Ingrese el piso (0 a {len(matriz) - 1}): "))
+    habitacion = int(input(f"Ingrese la habitación (0 a {len(matriz[0]) - 1}): "))
+    return piso, habitacion
 
-def realizar_checkin(matriz_hotel, lista_huespedes):
-    # TODO (Tiara): Validar datos con Regex y cambiar estado a 'O'
-    print("[En desarrollo: Check-in y validación de huéspedes]")
+def validar_habitacion(piso, habitacion, matriz):
+    '''
+    Valida el numero de piso y habitacion ingresados, verificando que exista
+    el rango en las dimensiones del hotel y la habitacion no este ocupada.
+    '''
+    es_valida = False
+    
+    while not es_valida:
+        if piso < 0 or piso >= len(matriz) or habitacion < 0 or habitacion >= len(matriz[0]):
+            print("Error: El piso o la habitación ingresada no existen en el hotel.")
+            piso, habitacion = pedir_habitacion(matriz)
+            
+        elif matriz[piso][habitacion] != "L":
+            print("Error: La habitación no está libre.")
+            piso, habitacion = pedir_habitacion(matriz)
+            
+        else:
+            es_valida = True
 
+    return piso, habitacion
+
+def realizar_checkin(matriz, lista_huespedes):
+    '''
+    Gestiona el registro completo de un nuevo huésped en el sistema.
+    Solicita y valida una habitación disponible, recopila los datos personales del
+    huésped, almacena el registro en 'lista_huespedes' y actualiza el estado de la 
+    habitación a "ocupada" en la matriz.
+    '''
+    # TODO (Tiara): Validar datos de los huespedes con Regex. Evaluar si pedir 
+    # mas datos al huesped para reportes
+
+    piso, habitacion = pedir_habitacion(matriz)
+    piso, habitacion = validar_habitacion(piso, habitacion, matriz)
+    
+    nombre = input("Ingrese el nombre del huésped: ")
+    dni = input("Ingrese el DNI del huésped: ")
+    dias = input("Cantidad de días de estadía: ")
+    
+    datos_huesped = [nombre, dni, dias, piso, habitacion]
+    lista_huespedes.append(datos_huesped)
+
+    matriz[piso][habitacion] = "O"
+
+    return matriz
 
 # =============================================================================
-# MÓDULO 2: BÚSQUEDAS Y TARIFAS (Lucas)
+# MÓDULO 2: BÚSQUEDAS, FILTROS Y TARIFAS (Lucas)
 # =============================================================================
 
-def buscar_huesped_por_dni(lista_huespedes, dni):
-    # TODO (Lucas): Búsqueda secuencial / extracción de datos
-    print(f"[En desarrollo: Búsqueda del DNI {dni}]")
+def buscar_huesped_por_dni(lista_huespedes, dni_busqueda):
+    """
+    Realiza una búsqueda secuencial en la lista de cadenas formateadas.
+    Estructura del string: "DNI;Nombre;Email;Tel;Piso;Hab;Dias"
+    """
+    encontrado = False
+    
+    for i in range(len(lista_huespedes)):
+        # Desarmamos el registro usando split
+        datos = lista_huespedes[i].split(";")
+        dni_actual = datos[0]
+        
+        if dni_actual == dni_busqueda:
+            encontrado = True
+            print("\n=== DATOS DEL HUÉSPED ENCONTRADO ===")
+            print("DNI:            ", datos[0])
+            print("Nombre:         ", datos[1])
+            print("Email:          ", datos[2])
+            print("Teléfono:       ", datos[3])
+            print("Piso asignado:  ", datos[4])
+            print("Habitación:     ", datos[5])
+            print("Días de estadía:", datos[6])
+            print("====================================")
+            
+    if not encontrado:
+        print("\n[Aviso] No se encontró ningún huésped alojado con el DNI:", dni_busqueda)
 
 
 def obtener_tarifa_habitacion(piso, matriz_tarifas):
-    # TODO (Lucas): Retornar precio según el piso o categoría
-    pass
+    """
+    Retorna el precio base por noche según el piso del hotel.
+    matriz_tarifas tiene pares: [piso, precio_base]
+    """
+    precio = 0.0
+    for i in range(len(matriz_tarifas)):
+        if matriz_tarifas[i][0] == piso:
+            precio = matriz_tarifas[i][1]
+    return precio
+
+
+def filtrar_huespedes_por_piso(lista_huespedes, piso_objetivo):
+    """
+    Uso de 'filter' y 'lambda' para aislar los huéspedes de un piso específico.
+    Cumple con el requisito de funciones de orden superior y listas avanzadas.
+    """
+    # El índice 4 del string separado corresponde al número de piso
+    filtrados = list(filter(lambda registro: int(registro.split(";")[4]) == piso_objetivo, lista_huespedes))
+    return filtrados
 
 
 # =============================================================================
@@ -91,19 +189,25 @@ def calcular_recaudacion_total(lista_huespedes):
 # =============================================================================
 
 def menu_principal():
-    # Inicialización predeterminada (3 pisos x 4 habitaciones)
-    pisos = 3
-    habitaciones_por_piso = 4
-    hotel = inicializar_hotel(pisos, habitaciones_por_piso)
+
+    # Inicializa matriz (reiniciar_matriz() se reutiliza para redimensionar el hotel)
+    hotel = reiniciar_matriz()
+    
+    # Matriz de tarifas: [ [Piso, Precio por noche], ... ]
+    tarifas = [
+        [1, 50000.0],  # Piso 1 (Estándar)
+        [2, 75000.0],  # Piso 2 (Superior)
+        [3, 110000.0]  # Piso 3 (Suite)
+    ]
     
     # Registro de huéspedes (Formato: "DNI;Nombre;Email;Tel;Piso;Hab;Dias")
     huespedes = []
     
-    opcion = ""
-    while opcion != "0":
-        print("\n==============================")
-        print("     ROOM MASTER - PANEL      ")
-        print("==============================")
+    ejecutando = True
+    
+    while ejecutando:
+        print("\nROOM MASTER - MENÚ PRINCIPAL\n")
+
         print("1. Visualizar estado del hotel")
         print("2. Check-in (Nuevo huésped)")
         print("3. Check-out (Liberar habitación)")
@@ -119,7 +223,9 @@ def menu_principal():
         if opcion == "1":
             renderizar_hotel(hotel)
         elif opcion == "2":
-            realizar_checkin(hotel, huespedes)
+            hotel = realizar_checkin(hotel, huespedes)
+            # hacerlo con datos de lista huespedes para evitar print dentro de realizar_checkin
+            # print(f"Check-in exitoso. {nombre} registrado en piso {piso}, habitación {habitacion}.")
         elif opcion == "3":
             realizar_checkout(hotel, huespedes)
         elif opcion == "4":
@@ -131,15 +237,17 @@ def menu_principal():
             generar_reporte_ocupacion(hotel)
             calcular_recaudacion_total(huespedes)
         elif opcion == "7":
-            nuevos_pisos = int(input("Ingrese cantidad de pisos: "))
-            nuevas_hab = int(input("Ingrese habitaciones por piso: "))
-            hotel = inicializar_hotel(nuevos_pisos, nuevas_hab)
-            huespedes = []
-            print("Hotel redimensionado y reiniciado exitosamente.")
+            hotel = reiniciar_matriz()
+            huespedes.clear()
+            print("Hotel redimensionado y reiniciado con éxito")
         elif opcion == "0":
             print("Saliendo del sistema Room Master...")
+            ejecutando = False  # Sale del bucle
         else:
             print("Opción inválida. Intente nuevamente.")
+        
+        if opcion != "0":
+            input("\nPresione [Enter] para continuar...")
 
 # Ejecución
 menu_principal()
