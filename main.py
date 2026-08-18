@@ -4,7 +4,6 @@ import re
 # =============================================================================
 # MÓDULO 1: MATRIZ, CHECK-IN Y VALIDACIONES REGEX (Tiara)
 # =============================================================================
-
 def inicializar_hotel(pisos, habitaciones):
     """
     Crea y retorna la matriz del hotel.
@@ -19,28 +18,72 @@ def inicializar_hotel(pisos, habitaciones):
     return matriz
 
 
+def obtener_numero_comercial(piso, habitacion):
+    """
+    Convierte índices de matriz (0, 0) a número comercial visible (101).
+    """
+    n_habitacion = (piso + 1) * 100 + (habitacion + 1)
+    return n_habitacion
+
+
+def obtener_indices_matriz(numero_comercial):
+    """
+    Convierte el número comercial visible (101) a índices de matriz (0, 0).
+    """
+    piso = (numero_comercial // 100) - 1
+    habitacion = (numero_comercial % 100) - 1
+    return piso, habitacion
+
+
+def solicitar_dimension_valida(mensaje, min_val, max_val):
+    """
+    Solicita una entrada al usuario y valida únicamente que se encuentre
+    dentro del rango [min_val, max_val].
+    """
+    es_valido = False
+    valor_num = 0
+
+    while not es_valido:
+        valor_num = int(input(mensaje))
+        if min_val <= valor_num <= max_val:
+            es_valido = True
+        else:
+            print(f"Error: El valor debe estar entre {min_val} y {max_val}.")
+
+    return valor_num
+
+
+def pedir_dimensiones_hotel():
+    """
+    Función modular encargada exclusivamente de solicitar y validar las dimensiones del hotel.
+    """
+    print("\nDIMENSIONAR / REINICIAR HOTEL")
+    pisos = solicitar_dimension_valida("Ingrese la cantidad de pisos (1 a 99): ", 1, 99)
+    habitaciones = solicitar_dimension_valida("Ingrese la cantidad de habitaciones por piso (1 a 99): ", 1, 99)
+    return pisos, habitaciones
+
+
 def renderizar_hotel(matriz):
     """
-    Muestra la matriz en consola. Imprime desde el piso más alto
-    hasta el piso 0 (Planta Baja) para simular la altura real del edificio.
+    Muestra la matriz en consola desde el piso más alto hasta la Planta Baja.
+    Muestra cada habitación con su número comercial (ej: [101: L]).
     """
     print("\nESTADO ACTUAL DEL HOTEL\n")
-    for f in range(len(matriz)-1, -1, -1): # Recorre al revés
-        print(f"Piso {f}:", end="\t")
+    for f in range(len(matriz) - 1, -1, -1):  # Recorre al revés (piso superior a inferior)
+        print(f"Piso {f + 1}:", end="\t")
         for c in range(len(matriz[0])):
-            print(f"[{matriz[f][c]}]", end="\t")
+            num_hab = obtener_numero_comercial(f, c)
+            print(f"[{num_hab}: {matriz[f][c]}]", end="\t")
         print()
+
 
 def reiniciar_matriz():
     """
-    Solicita las dimensiones generales (pisos y habitaciones por piso) para instanciar
-    una nueva matriz limpia ('L'). Luego de su uso se reinicia la lista de huespedes.
+    Solicita las dimensiones validadas e instancia una nueva matriz limpia ('L').
     """
-    print("\nDIMENSIONAR / REINICIAR HOTEL")
-    pisos = int(input("Ingrese la cantidad de pisos: "))
-    habitaciones = int(input("Ingrese la cantidad de habitaciones por piso: "))
-    
+    pisos, habitaciones = pedir_dimensiones_hotel()
     return inicializar_hotel(pisos, habitaciones)
+
 
 def validar_regex(patron, texto):
     """
@@ -48,62 +91,61 @@ def validar_regex(patron, texto):
     """
     return bool(re.match(patron, texto))
 
+
 def pedir_habitacion(matriz):
-    '''
-    Pide al usuario el número de piso y habitación dentro del rango
-    de la matriz ya existente para realizar una operación puntual.
-    '''
-    piso = int(input(f"Ingrese el piso (0 a {len(matriz) - 1}): "))
-    habitacion = int(input(f"Ingrese la habitación (0 a {len(matriz[0]) - 1}): "))
+    """
+    Pide al usuario el número comercial de la habitación (ej: 101, 202)
+    y retorna los índices equivalentes en la matriz (piso, habitacion).
+    """
+    num_comercial = int(input("Ingrese el número de habitación (ej: 101): "))
+    piso, habitacion = obtener_indices_matriz(num_comercial)
     return piso, habitacion
 
+
 def validar_habitacion(piso, habitacion, matriz):
-    '''
-    Valida el numero de piso y habitacion ingresados, verificando que exista
-    el rango en las dimensiones del hotel y la habitacion no este ocupada.
-    '''
+    """
+    Valida que el piso y habitación existan dentro de la matriz
+    y verifica que la habitación esté disponible ('L').
+    """
     es_valida = False
-    
+
     while not es_valida:
         if piso < 0 or piso >= len(matriz) or habitacion < 0 or habitacion >= len(matriz[0]):
             print("Error: El piso o la habitación ingresada no existen en el hotel.")
             piso, habitacion = pedir_habitacion(matriz)
-            
+
         elif matriz[piso][habitacion] != "L":
             print("Error: La habitación no está libre.")
             piso, habitacion = pedir_habitacion(matriz)
-            
+
         else:
             es_valida = True
 
     return piso, habitacion
 
+
 def realizar_checkin(matriz, lista_huespedes):
-    '''
+    """
     Gestiona el registro completo de un nuevo huésped en el sistema.
-    Solicita y valida una habitación disponible, recopila los datos personales del
-    huésped, almacena el registro en 'lista_huespedes' y actualiza el estado de la 
-    habitación a "ocupada" en la matriz.
-    '''
-    # TODO (Tiara): Validar datos de los huespedes con Regex. Evaluar si pedir 
-    # mas datos al huesped para reportes
+    """
+    # TODO (Tiara): Validar datos de los huéspedes con Regex.
 
     piso, habitacion = pedir_habitacion(matriz)
     piso, habitacion = validar_habitacion(piso, habitacion, matriz)
-    
+
     nombre = input("Ingrese el nombre del huésped: ")
     dni = input("Ingrese el DNI del huésped: ")
     dias = input("Cantidad de días de estadía: ")
-    
+
     # Registro del huésped como lista: [nombre, dni, dias, piso, habitacion]
     datos_huesped = [nombre, dni, dias, piso, habitacion]
     lista_huespedes.append(datos_huesped)
 
     matriz[piso][habitacion] = "O"
-    print(f"\n[Check-in exitoso] {nombre} registrado en Piso {piso}, Habitación {habitacion}.")
+    num_comercial = obtener_numero_comercial(piso, habitacion)
+    print(f"\n[Check-in exitoso] {nombre} registrado en habitación {num_comercial} (piso {piso + 1}).")
 
     return matriz
-
 # =============================================================================
 # MÓDULO 2: BÚSQUEDAS, FILTROS Y TARIFAS (Lucas)
 # =============================================================================
