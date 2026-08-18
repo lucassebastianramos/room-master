@@ -93,12 +93,10 @@ def realizar_checkin(matriz, lista_huespedes):
     
     nombre = input("Ingrese el nombre del huésped: ")
     dni = input("Ingrese el DNI del huésped: ")
-    email = input("Ingrese el Email del huésped: ")
-    tel = input("Ingrese el Teléfono del huésped: ")
     dias = input("Cantidad de días de estadía: ")
     
-    # Formato requerido: "DNI;Nombre;Email;Tel;Piso;Hab;Dias"
-    datos_huesped = f"{dni};{nombre};{email};{tel};{piso};{habitacion};{dias}"
+    # Registro del huésped como lista: [nombre, dni, dias, piso, habitacion]
+    datos_huesped = [nombre, dni, dias, piso, habitacion]
     lista_huespedes.append(datos_huesped)
 
     matriz[piso][habitacion] = "O"
@@ -112,38 +110,27 @@ def realizar_checkin(matriz, lista_huespedes):
 
 def buscar_huesped_por_dni(lista_huespedes, dni_busqueda):
     """
-    Realiza una búsqueda secuencial en la lista de cadenas formateadas.
-    Estructura del string: "DNI;Nombre;Email;Tel;Piso;Hab;Dias"
+    Realiza una búsqueda secuencial en la lista de huéspedes (sublistas).
+    Estructura de cada registro: [nombre, dni, dias, piso, habitacion]
     """
     encontrado = False
     
     for i in range(len(lista_huespedes)):
-        if isinstance(lista_huespedes[i], str):
-            # Desarmamos el registro usando split
-            datos = lista_huespedes[i].split(";")
-            dni_actual = datos[0]
-            nombre = datos[1]
-            email = datos[2]
-            tel = datos[3]
-            piso = datos[4]
-            hab = datos[5]
-            dias = datos[6]
-        else:
-            # Compatibilidad si los datos vienen como lista
-            reg = lista_huespedes[i]
-            nombre, dni_actual, dias, piso, hab = reg[0], reg[1], reg[2], reg[3], reg[4]
-            email, tel = "N/A", "N/A"
+        huesped = lista_huespedes[i]
+        nombre = huesped[0]
+        dni_actual = huesped[1]
+        dias = huesped[2]
+        piso = huesped[3]
+        hab = huesped[4]
         
         if str(dni_actual) == str(dni_busqueda):
             encontrado = True
             print("\n=== DATOS DEL HUÉSPED ENCONTRADO ===")
-            print("DNI:            ", dni_actual)
             print("Nombre:         ", nombre)
-            print("Email:          ", email)
-            print("Teléfono:       ", tel)
+            print("DNI:            ", dni_actual)
+            print("Días de estadía:", dias)
             print("Piso asignado:  ", piso)
             print("Habitación:     ", hab)
-            print("Días de estadía:", dias)
             print("====================================")
             
     if not encontrado:
@@ -167,11 +154,8 @@ def filtrar_huespedes_por_piso(lista_huespedes, piso_objetivo):
     Uso de 'filter' y 'lambda' para aislar los huéspedes de un piso específico.
     Cumple con el requisito de funciones de orden superior y listas avanzadas.
     """
-    # El índice 4 del string separado corresponde al número de piso
-    filtrados = list(filter(
-        lambda registro: int(registro.split(";")[4]) == piso_objetivo if isinstance(registro, str) else int(registro[3]) == piso_objetivo,
-        lista_huespedes
-    ))
+    # El índice 3 de cada sublista corresponde al piso
+    filtrados = list(filter(lambda huesped: int(huesped[3]) == int(piso_objetivo), lista_huespedes))
     return filtrados
 
 
@@ -219,7 +203,7 @@ def menu_principal():
         [3, 110000.0]  # Piso 3 (Suite)
     ]
     
-    # Registro de huéspedes (Formato: "DNI;Nombre;Email;Tel;Piso;Hab;Dias")
+    # Registro de huéspedes (Formato: [nombre, dni, dias, piso, habitacion])
     huespedes = []
     
     ejecutando = True
