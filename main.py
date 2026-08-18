@@ -45,17 +45,57 @@ def realizar_checkin(matriz_hotel, lista_huespedes):
 
 
 # =============================================================================
-# MÓDULO 2: BÚSQUEDAS Y TARIFAS (Lucas)
+# MÓDULO 2: BÚSQUEDAS, FILTROS Y TARIFAS (Lucas)
 # =============================================================================
 
-def buscar_huesped_por_dni(lista_huespedes, dni):
-    # TODO (Lucas): Búsqueda secuencial / extracción de datos
-    print(f"[En desarrollo: Búsqueda del DNI {dni}]")
+def buscar_huesped_por_dni(lista_huespedes, dni_busqueda):
+    """
+    Realiza una búsqueda secuencial en la lista de cadenas formateadas.
+    Estructura del string: "DNI;Nombre;Email;Tel;Piso;Hab;Dias"
+    """
+    encontrado = False
+    
+    for i in range(len(lista_huespedes)):
+        # Desarmamos el registro usando split
+        datos = lista_huespedes[i].split(";")
+        dni_actual = datos[0]
+        
+        if dni_actual == dni_busqueda:
+            encontrado = True
+            print("\n=== DATOS DEL HUÉSPED ENCONTRADO ===")
+            print("DNI:            ", datos[0])
+            print("Nombre:         ", datos[1])
+            print("Email:          ", datos[2])
+            print("Teléfono:       ", datos[3])
+            print("Piso asignado:  ", datos[4])
+            print("Habitación:     ", datos[5])
+            print("Días de estadía:", datos[6])
+            print("====================================")
+            
+    if not encontrado:
+        print("\n[Aviso] No se encontró ningún huésped alojado con el DNI:", dni_busqueda)
 
 
 def obtener_tarifa_habitacion(piso, matriz_tarifas):
-    # TODO (Lucas): Retornar precio según el piso o categoría
-    pass
+    """
+    Retorna el precio base por noche según el piso del hotel.
+    matriz_tarifas tiene pares: [piso, precio_base]
+    """
+    precio = 0.0
+    for i in range(len(matriz_tarifas)):
+        if matriz_tarifas[i][0] == piso:
+            precio = matriz_tarifas[i][1]
+    return precio
+
+
+def filtrar_huespedes_por_piso(lista_huespedes, piso_objetivo):
+    """
+    Uso de 'filter' y 'lambda' para aislar los huéspedes de un piso específico.
+    Cumple con el requisito de funciones de orden superior y listas avanzadas.
+    """
+    # El índice 4 del string separado corresponde al número de piso
+    filtrados = list(filter(lambda registro: int(registro.split(";")[4]) == piso_objetivo, lista_huespedes))
+    return filtrados
 
 
 # =============================================================================
@@ -95,6 +135,13 @@ def menu_principal():
     pisos = 3
     habitaciones_por_piso = 4
     hotel = inicializar_hotel(pisos, habitaciones_por_piso)
+    
+    # Matriz de tarifas: [ [Piso, Precio por noche], ... ]
+    tarifas = [
+        [1, 50000.0],  # Piso 1 (Estándar)
+        [2, 75000.0],  # Piso 2 (Superior)
+        [3, 110000.0]  # Piso 3 (Suite)
+    ]
     
     # Registro de huéspedes (Formato: "DNI;Nombre;Email;Tel;Piso;Hab;Dias")
     huespedes = []
@@ -140,6 +187,9 @@ def menu_principal():
             print("Saliendo del sistema Room Master...")
         else:
             print("Opción inválida. Intente nuevamente.")
+        
+        if opcion != "0":
+            input("\nPresione [Enter] para continuar...")
 
 # Ejecución
 menu_principal()
