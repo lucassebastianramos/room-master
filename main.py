@@ -136,13 +136,14 @@ def realizar_checkin(matriz, lista_huespedes):
     nombre = input("Ingrese el nombre del huésped: ")
     dni = input("Ingrese el DNI del huésped: ")
     dias = input("Cantidad de días de estadía: ")
+    num_comercial = obtener_numero_comercial(piso, habitacion)
 
     # Registro del huésped como lista: [nombre, dni, dias, piso, habitacion]
-    datos_huesped = [nombre, dni, dias, piso, habitacion]
+    datos_huesped = [nombre, dni, dias, piso, habitacion, num_comercial]
     lista_huespedes.append(datos_huesped)
 
     matriz[piso][habitacion] = "O"
-    num_comercial = obtener_numero_comercial(piso, habitacion)
+    
     print(f"\n[Check-in exitoso] {nombre} registrado en habitación {num_comercial} (piso {piso + 1}).")
 
     return matriz
