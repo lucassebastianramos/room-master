@@ -221,8 +221,23 @@ def reubicar_huesped_swap(matriz_hotel, lista_huespedes):
 
 def generar_reporte_ocupacion(matriz_hotel):
     # TODO (Leandro): Porcentaje de ocupación
-    print("[En desarrollo: Cálculo de porcentaje de ocupación]")
 
+    habitaciones_ocupadas = 0
+    total_habitaciones = 0
+
+    for i in range(len(matriz_hotel)):
+        for j in range(len(matriz_hotel[i])):
+            total_habitaciones += 1
+
+            if matriz_hotel[i][j] == "O":
+                habitaciones_ocupadas += 1
+
+    porcentaje_ocupacion = habitaciones_ocupadas * 100 / total_habitaciones 
+    print("\n=== REPORTE DE OCUPACIÓN ===")
+    print("Total de habitaciones: ", total_habitaciones)
+    print("Habitaciones ocupadas: ", habitaciones_ocupadas)
+    print("Porcentaje de ocupación: ", porcentaje_ocupacion, "%")
+    
 
 def calcular_recaudacion_total(lista_huespedes):
     # TODO (Leandro): Uso obligatorio de functools.reduce y lambdas
