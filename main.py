@@ -136,13 +136,14 @@ def realizar_checkin(matriz, lista_huespedes):
     nombre = input("Ingrese el nombre del huésped: ")
     dni = input("Ingrese el DNI del huésped: ")
     dias = input("Cantidad de días de estadía: ")
+    num_comercial = obtener_numero_comercial(piso, habitacion)
 
     # Registro del huésped como lista: [nombre, dni, dias, piso, habitacion]
-    datos_huesped = [nombre, dni, dias, piso, habitacion]
+    datos_huesped = [nombre, dni, dias, piso, habitacion, num_comercial]
     lista_huespedes.append(datos_huesped)
 
     matriz[piso][habitacion] = "O"
-    num_comercial = obtener_numero_comercial(piso, habitacion)
+    
     print(f"\n[Check-in exitoso] {nombre} registrado en habitación {num_comercial} (piso {piso + 1}).")
 
     return matriz
@@ -205,15 +206,72 @@ def filtrar_huespedes_por_piso(lista_huespedes, piso_objetivo):
 # MÓDULO 3: CHECK-OUT, SWAP Y TRANSFORMACIONES MAP (Luca)
 # =============================================================================
 
-def realizar_checkout(matriz_hotel, lista_huespedes):
+def realizar_checkout(matriz_hotel, lista_huespedes, matriz_tarifas):
     # TODO (Luca): Liberar habitación, pasar a 'S' (Limpieza) y calcular cobro
-    print("[En desarrollo: Check-out y facturación]")
+    # print("[En desarrollo: Check-out y facturación]")
+    print("---CHECK-OUT---")
+    DNI_Checkout=int(input("Ingrese el DNI del huesped"))
+    buscar_huesped_por_dni(lista_huespedes, DNI_Checkout)
+    for huesped in lista_huespedes:
+        if str(huesped[1]) == str(DNI_Checkout):
+            nombre = huesped[0]
+            dias = huesped[2]
+            piso = huesped[3]
+            habitacion = huesped[4]
 
+
+            matriz_hotel[piso][habitacion] = "S"
+            piso_comercial = piso + 1
+            tarifa = float(obtener_tarifa_habitacion(piso_comercial, matriz_tarifas))
+            dias_num=int(dias)
+            monto_total = tarifa * dias_num
+            num_comercial = obtener_numero_comercial(piso, habitacion)
+
+        #Borrar huesped de la lista|
+            lista_huespedes.remove(huesped)
+
+        #Recivo
+            print("\n================ CHECK-OUT EXITOSO ================")
+            print(f"Huésped:             {nombre}")
+            print(f"Habitación liberada: {num_comercial}")
+            print(f"TOTAL A COBRAR:      ${monto_total:,.2f}")
+            print("===================================================")
+            return
+        
+    print(f"No se encontró al huésped con DNI: {DNI_Checkout}")
+    
 
 def reubicar_huesped_swap(matriz_hotel, lista_huespedes):
     # TODO (Luca): Trasladar huésped, habitación vieja pasa a 'M' (Mantenimiento)
-    print("[En desarrollo: Reubicación / Swap de habitación]")
+    # print("[En desarrollo: Reubicación / Swap de habitación]")
+    habitacion_swap = int(input("Ingrese el número de habitación a reubicar: "))
 
+    for huesped in lista_huespedes:
+        piso = int(huesped[3])
+        habitacion = int(huesped[4])
+        num_comercial = obtener_numero_comercial(piso, habitacion)
+
+        if num_comercial == habitacion_swap:
+            print(f"Huésped encontrado: {huesped[0]} en habitación {num_comercial}")
+            nuevo_numero = int(input("Ingrese el nuevo número de habitación: "))
+            nuevo_piso, nueva_habitacion = obtener_indices_matriz(nuevo_numero)
+        
+
+            # Validar que la nueva habitación esté libre
+            if matriz_hotel[nuevo_piso][nueva_habitacion] == "L":
+                # Actualizar la matriz y los datos del huésped
+                matriz_hotel[piso][habitacion] = "M"  # Habitación vieja pasa a Mantenimiento
+                matriz_hotel[nuevo_piso][nueva_habitacion] = "O"  # Nueva habitación ocupada
+                huesped[3] = nuevo_piso
+                huesped[4] = nueva_habitacion
+
+                print(f"Huésped {huesped[0]} reubicado a habitación {nuevo_numero}.")
+                return
+            else:
+                print("Error: La nueva habitación", nuevo_numero,"esta ocupada.")
+        else:
+            print("No se encontro ningun huesped en la habitacion",habitacion_swap)
+            return
 
 # =============================================================================
 # MÓDULO 4: REPORTES Y PROGRAMACIÓN FUNCIONAL (Leandro)
@@ -287,7 +345,7 @@ def menu_principal():
             # hacerlo con datos de lista huespedes para evitar print dentro de realizar_checkin
             # print(f"Check-in exitoso. {nombre} registrado en piso {piso}, habitación {habitacion}.")
         elif opcion == "3":
-            realizar_checkout(hotel, huespedes)
+            realizar_checkout(hotel, huespedes,tarifas)
         elif opcion == "4":
             reubicar_huesped_swap(hotel, huespedes)
         elif opcion == "5":
