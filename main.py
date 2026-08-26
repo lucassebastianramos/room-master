@@ -1,9 +1,8 @@
 import functools
 import re
 
-# =============================================================================
 # MÓDULO 1: MATRIZ, CHECK-IN Y VALIDACIONES REGEX (Tiara)
-# =============================================================================
+
 def inicializar_hotel(pisos, habitaciones):
     """
     Crea y retorna la matriz del hotel.
@@ -38,7 +37,7 @@ def obtener_indices_matriz(numero_comercial):
 def solicitar_dimension_valida(mensaje, min_val, max_val):
     """
     Solicita una entrada al usuario y valida únicamente que se encuentre
-    dentro del rango [min_val, max_val].
+    dentro del rango (min_val, max_val).
     """
     es_valido = False
     valor_num = 0
@@ -62,14 +61,15 @@ def pedir_dimensiones_hotel():
     habitaciones = solicitar_dimension_valida("Ingrese la cantidad de habitaciones por piso (1 a 99): ", 1, 99)
     return pisos, habitaciones
 
-
 def renderizar_hotel(matriz):
+    #TODO VER SI SE PUEDE HACER MAS LINDO
+
     """
     Muestra la matriz en consola desde el piso más alto hasta la Planta Baja.
     Muestra cada habitación con su número comercial (ej: [101: L]).
     """
     print("\nESTADO ACTUAL DEL HOTEL\n")
-    for f in range(len(matriz) - 1, -1, -1):  # Recorre al revés (piso superior a inferior)
+    for f in range(len(matriz) -1, -1, -1):  # Recorre al revés (piso superior a inferior)
         print(f"Piso {f + 1}:", end="\t")
         for c in range(len(matriz[0])):
             num_hab = obtener_numero_comercial(f, c)
@@ -84,20 +84,12 @@ def reiniciar_matriz():
     pisos, habitaciones = pedir_dimensiones_hotel()
     return inicializar_hotel(pisos, habitaciones)
 
-
-def validar_regex(patron, texto):
-    """
-    Valida cadenas mediante expresiones regulares.
-    """
-    return bool(re.match(patron, texto))
-
-
 def pedir_habitacion(matriz):
     """
     Pide al usuario el número comercial de la habitación (ej: 101, 202)
     y retorna los índices equivalentes en la matriz (piso, habitacion).
     """
-    num_comercial = int(input("Ingrese el número de habitación (ej: 101): "))
+    num_comercial = int(input("\nIngrese el número de habitación a ocupar (ej: 101): "))
     piso, habitacion = obtener_indices_matriz(num_comercial)
     return piso, habitacion
 
@@ -106,6 +98,7 @@ def validar_habitacion(piso, habitacion, matriz):
     """
     Valida que el piso y habitación existan dentro de la matriz
     y verifica que la habitación esté disponible ('L').
+    Requiere las posiciones de la matriz (piso y habitacion)
     """
     es_valida = False
 
@@ -123,19 +116,55 @@ def validar_habitacion(piso, habitacion, matriz):
 
     return piso, habitacion
 
+def validar_num(num):
+    #TODO (PARA TODOS) Llamar en todas las funciones que la necesiten
+
+    """
+    Valida que el valor ingresado sea un número entero positivo.
+    """
+    num = num.strip()
+    # Verifica que contenga únicamente dígitos (1 o más)
+    while not re.match(r"^\d+$", num):
+        print("Error: Debe ingresar un número entero válido.")
+        num = input("Ingrese un numero valido: ").strip()
+    return num
+
+def validar_string(palabra):
+    #TODO (PARA TODOS) Llamar en todas las funciones que la necesiten
+    """
+    Valida que la entrada contenga solo letras y espacios.
+    """
+    palabra = palabra.strip()
+    # Admite letras (incluyendo ñ, Ñ y acentos) y espacios
+    while not re.match(r"^[a-zA-Za-eíóúÁÉÍÓÚñÑ\s]+$", palabra) or len(palabra) == 0:
+        print("Error. El texto solo debe contener letras y no puede estar vacío.")
+        palabra = input("Ingrese una entrada válida: ")
+    return palabra
+
+def validar_dni(dni_huesped):
+    """
+    Valida que un DNI tenga 7 u 8 cifras.
+    """
+    while not re.match(r"^\d{7,8}$", dni_huesped.strip()):
+        print("DNI INVÁLIDO.")
+        dni_huesped = input("Ingrese un DNI válido: ")
+    return dni_huesped
+
 
 def realizar_checkin(matriz, lista_huespedes):
     """
     Gestiona el registro completo de un nuevo huésped en el sistema.
+    Valida datos de los huéspedes con Regex.
     """
-    # TODO (Tiara): Validar datos de los huéspedes con Regex.
-
     piso, habitacion = pedir_habitacion(matriz)
     piso, habitacion = validar_habitacion(piso, habitacion, matriz)
 
     nombre = input("Ingrese el nombre del huésped: ")
+    nombre = validar_string(nombre)
     dni = input("Ingrese el DNI del huésped: ")
+    dni = validar_dni(dni)
     dias = input("Cantidad de días de estadía: ")
+    dias = validar_num(dias)
     num_comercial = obtener_numero_comercial(piso, habitacion)
 
     # Registro del huésped como lista: [nombre, dni, dias, piso, habitacion]
@@ -147,9 +176,8 @@ def realizar_checkin(matriz, lista_huespedes):
     print(f"\n[Check-in exitoso] {nombre} registrado en habitación {num_comercial} (piso {piso + 1}).")
 
     return matriz
-# =============================================================================
+
 # MÓDULO 2: BÚSQUEDAS, FILTROS Y TARIFAS (Lucas)
-# =============================================================================
 
 def buscar_huesped_por_dni(lista_huespedes, dni_busqueda):
     """
@@ -201,10 +229,7 @@ def filtrar_huespedes_por_piso(lista_huespedes, piso_objetivo):
     filtrados = list(filter(lambda huesped: int(huesped[3]) == int(piso_objetivo), lista_huespedes))
     return filtrados
 
-
-# =============================================================================
 # MÓDULO 3: CHECK-OUT, SWAP Y TRANSFORMACIONES MAP (Luca)
-# =============================================================================
 
 def realizar_checkout(matriz_hotel, lista_huespedes, matriz_tarifas):
     # TODO (Luca): Liberar habitación, pasar a 'S' (Limpieza) y calcular cobro
@@ -273,9 +298,7 @@ def reubicar_huesped_swap(matriz_hotel, lista_huespedes):
             print("No se encontro ningun huesped en la habitacion",habitacion_swap)
             return
 
-# =============================================================================
 # MÓDULO 4: REPORTES Y PROGRAMACIÓN FUNCIONAL (Leandro)
-# =============================================================================
 
 def generar_reporte_ocupacion(matriz_hotel):
     # TODO (Leandro): Porcentaje de ocupación
@@ -302,9 +325,7 @@ def calcular_recaudacion_total(lista_huespedes):
     print("[En desarrollo: Recaudación total con map/filter/reduce]")
 
 
-# =============================================================================
 # PROGRAMA PRINCIPAL
-# =============================================================================
 
 def menu_principal():
 
@@ -341,9 +362,8 @@ def menu_principal():
         if opcion == "1":
             renderizar_hotel(hotel)
         elif opcion == "2":
+            renderizar_hotel(hotel)
             hotel = realizar_checkin(hotel, huespedes)
-            # hacerlo con datos de lista huespedes para evitar print dentro de realizar_checkin
-            # print(f"Check-in exitoso. {nombre} registrado en piso {piso}, habitación {habitacion}.")
         elif opcion == "3":
             realizar_checkout(hotel, huespedes,tarifas)
         elif opcion == "4":
@@ -363,7 +383,8 @@ def menu_principal():
             ejecutando = False  # Sale del bucle
         else:
             print("Opción inválida. Intente nuevamente.")
-        
+
+        # Muestra el resultado del menu de opciones hasta accion del usuario
         if opcion != "0":
             input("\nPresione [Enter] para continuar...")
 
