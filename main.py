@@ -43,7 +43,7 @@ def solicitar_dimension_valida(mensaje, min_val, max_val):
     valor_num = 0
 
     while not es_valido:
-        valor_num = int(input(mensaje))
+        valor_num = validar_num(mensaje)
         if min_val <= valor_num <= max_val:
             es_valido = True
         else:
@@ -51,15 +51,6 @@ def solicitar_dimension_valida(mensaje, min_val, max_val):
 
     return valor_num
 
-
-def pedir_dimensiones_hotel():
-    """
-    Función modular encargada exclusivamente de solicitar y validar las dimensiones del hotel.
-    """
-    print("\nDIMENSIONAR / REINICIAR HOTEL")
-    pisos = solicitar_dimension_valida("Ingrese la cantidad de pisos (1 a 99): ", 1, 99)
-    habitaciones = solicitar_dimension_valida("Ingrese la cantidad de habitaciones por piso (1 a 99): ", 1, 99)
-    return pisos, habitaciones
 
 def renderizar_hotel(matriz):
     #TODO VER SI SE PUEDE HACER MAS LINDO
@@ -81,90 +72,67 @@ def reiniciar_matriz():
     """
     Solicita las dimensiones validadas e instancia una nueva matriz limpia ('L').
     """
-    pisos, habitaciones = pedir_dimensiones_hotel()
+
+    pisos = solicitar_dimension_valida("Ingrese la cantidad de pisos (1 a 99): ", 1, 99)
+    habitaciones = solicitar_dimension_valida("Ingrese la cantidad de habitaciones por piso (1 a 99): ", 1, 99)
     return inicializar_hotel(pisos, habitaciones)
 
-def pedir_habitacion(matriz):
-    """
-    Pide al usuario el número comercial de la habitación (ej: 101, 202)
-    y retorna los índices equivalentes en la matriz (piso, habitacion).
-    """
-    num_comercial = int(input("\nIngrese el número de habitación a ocupar (ej: 101): "))
-    piso, habitacion = obtener_indices_matriz(num_comercial)
-    return piso, habitacion
-
-
-def validar_habitacion(piso, habitacion, matriz):
-    """
-    Valida que el piso y habitación existan dentro de la matriz
-    y verifica que la habitación esté disponible ('L').
-    Requiere las posiciones de la matriz (piso y habitacion)
-    """
+def solicitar_habitacion_libre(matriz):
+    """Pide y valida una habitación libre."""
     es_valida = False
-
+    piso_final = 0
+    hab_final = 0
+    
     while not es_valida:
-        if piso < 0 or piso >= len(matriz) or habitacion < 0 or habitacion >= len(matriz[0]):
+        num_comercial = validar_num("\nIngrese el número de habitación (ej: 101): ")
+        piso, hab = obtener_indices_matriz(num_comercial)
+        
+        if piso < 0 or piso >= len(matriz) or hab < 0 or hab >= len(matriz[0]):
             print("Error: El piso o la habitación ingresada no existen en el hotel.")
-            piso, habitacion = pedir_habitacion(matriz)
-
-        elif matriz[piso][habitacion] != "L":
+        elif matriz[piso][hab] != "L":
             print("Error: La habitación no está libre.")
-            piso, habitacion = pedir_habitacion(matriz)
-
         else:
             es_valida = True
+            piso_final = piso
+            hab_final = hab
+            
+    return piso_final, hab_final
 
-    return piso, habitacion
-
-def validar_num(num):
-    #TODO (PARA TODOS) Llamar en todas las funciones que la necesiten
-
-    """
-    Valida que el valor ingresado sea un número entero positivo.
-    """
-    num = num.strip()
-    # Verifica que contenga únicamente dígitos (1 o más)
+def validar_num(mensaje):
+    """Pide un valor, valida que sean números y lo devuelve como entero (int)."""
+    num = input(mensaje).strip()
     while not re.match(r"^\d+$", num):
         print("Error: Debe ingresar un número entero válido.")
-        num = input("Ingrese un numero valido: ").strip()
-    return num
+        num = input(mensaje).strip()
+    return int(num)
 
-def validar_string(palabra):
-    #TODO (PARA TODOS) Llamar en todas las funciones que la necesiten
-    """
-    Valida que la entrada contenga solo letras y espacios.
-    """
-    palabra = palabra.strip()
-    # Admite letras (incluyendo ñ, Ñ y acentos) y espacios
+def validar_string(mensaje):
+    """Pide un texto y valida que solo contenga letras."""
+    palabra = input(mensaje).strip()
     while not re.match(r"^[a-zA-Za-eíóúÁÉÍÓÚñÑ\s]+$", palabra) or len(palabra) == 0:
         print("Error. El texto solo debe contener letras y no puede estar vacío.")
-        palabra = input("Ingrese una entrada válida: ")
+        palabra = input(mensaje).strip()
     return palabra
 
-def validar_dni(dni_huesped):
-    """
-    Valida que un DNI tenga 7 u 8 cifras.
-    """
-    while not re.match(r"^\d{7,8}$", dni_huesped.strip()):
+def validar_dni(mensaje):
+    """Pide el DNI y valida su longitud."""
+    dni_huesped = input(mensaje).strip()
+    while not re.match(r"^\d{7,8}$", dni_huesped):
         print("DNI INVÁLIDO.")
-        dni_huesped = input("Ingrese un DNI válido: ")
+        dni_huesped = input(mensaje).strip()
     return dni_huesped
-
 
 def realizar_checkin(matriz, lista_huespedes):
     """
     Gestiona el registro completo de un nuevo huésped en el sistema.
     Valida datos de los huéspedes con Regex.
     """
-    piso, habitacion = pedir_habitacion(matriz)
-    piso, habitacion = validar_habitacion(piso, habitacion, matriz)
+    piso, habitacion = solicitar_habitacion_libre(matriz)
 
-    nombre = input("Ingrese el nombre del huésped: ")
-    nombre = validar_string(nombre)
-    dni = input("Ingrese el DNI del huésped: ")
-    dni = validar_dni(dni)
-    dias = input("Cantidad de días de estadía: ")
-    dias = validar_num(dias)
+    nombre = validar_string("Ingrese el nombre del huésped: ")
+    dni = validar_dni("Ingrese el DNI del huésped: ")
+    dias = validar_num("Cantidad de días de estadía: ")
+    
     num_comercial = obtener_numero_comercial(piso, habitacion)
 
     # Registro del huésped como lista: [nombre, dni, dias, piso, habitacion]
@@ -360,6 +328,7 @@ def menu_principal():
         opcion = input("Seleccione una opción: ")
         
         if opcion == "1":
+            print("Configuración de la vista del hotel")
             renderizar_hotel(hotel)
         elif opcion == "2":
             renderizar_hotel(hotel)
