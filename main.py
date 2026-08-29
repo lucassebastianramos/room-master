@@ -323,7 +323,7 @@ def generar_reporte_ocupacion(matriz_hotel):
     print("Porcentaje de ocupación: ", porcentaje_ocupacion, "%")
 
 def calcular_subtotal(huesped, matriz_tarifas):
-
+    # TODO (Leandro): Cálculo del subtotal a cobrar por huésped, con descuento si correspone
     """
     Calcula el subtotal a cobrar por un huésped específico y aplica un descuento del 10% si su estadía es mayor a 7 noches.
     Devuelve el subtotal para calcular la recaudación total del hotel.
