@@ -302,6 +302,9 @@ def reubicar_huesped_swap(matriz_hotel, lista_huespedes):
 
 def generar_reporte_ocupacion(matriz_hotel):
     # TODO (Leandro): Porcentaje de ocupación
+    """ Genera un reporte que muestra el total de habitaciones,
+    las que se encuentran ocupadas y el porcentaje de ocupación del hotel.
+    """
 
     habitaciones_ocupadas = 0
     total_habitaciones = 0
@@ -318,11 +321,42 @@ def generar_reporte_ocupacion(matriz_hotel):
     print("Total de habitaciones: ", total_habitaciones)
     print("Habitaciones ocupadas: ", habitaciones_ocupadas)
     print("Porcentaje de ocupación: ", porcentaje_ocupacion, "%")
-    
 
-def calcular_recaudacion_total(lista_huespedes):
+def calcular_subtotal(huesped, matriz_tarifas):
+
+    """
+    Calcula el subtotal a cobrar por un huésped específico y aplica un descuento del 10% si su estadía es mayor a 7 noches.
+    Devuelve el subtotal para calcular la recaudación total del hotel.
+    """
+
+    dias = int(huesped[2])
+    piso = int(huesped[3])
+
+    precio_noche = obtener_tarifa_habitacion(piso,matriz_tarifas)
+    subtotal = precio_noche * dias
+
+    aplicar_descuento = lambda dias, subtotal: subtotal * 0.9 if dias > 7 else subtotal
+    subtotal = aplicar_descuento(dias, subtotal)
+
+
+    return subtotal
+
+
+def calcular_recaudacion_total(lista_huespedes,matriz_tarifas):
+
+    """
+    Calcula la recaudación total del hotel sumando los subtotales de todos los huéspedes. 
+    """
     # TODO (Leandro): Uso obligatorio de functools.reduce y lambdas
-    print("[En desarrollo: Recaudación total con map/filter/reduce]")
+
+    recaudacion_total = functools.reduce(
+        lambda total, huesped: total + calcular_subtotal(huesped, matriz_tarifas),
+        lista_huespedes,
+        0
+    )
+
+    print("\n=== RECAUDACIÓN TOTAL ===")
+    print("Recaudación total: $", recaudacion_total)
 
 
 # PROGRAMA PRINCIPAL
@@ -373,7 +407,7 @@ def menu_principal():
             buscar_huesped_por_dni(huespedes, dni_busqueda)
         elif opcion == "6":
             generar_reporte_ocupacion(hotel)
-            calcular_recaudacion_total(huespedes)
+            calcular_recaudacion_total(huespedes, tarifas)
         elif opcion == "7":
             hotel = reiniciar_matriz()
             huespedes.clear()
