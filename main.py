@@ -326,6 +326,27 @@ def calcular_recaudacion_total(lista_huespedes,matriz_tarifas):
     print("\n=== RECAUDACIÓN TOTAL ===")
     print("Recaudación total: $", recaudacion_total)
 
+# =============================================================================
+# MÓDULO 5: RESTABABLECER ETADO DE HABITACION A "L" (Luca)
+# =============================================================================
+def restablecer_mantenimiento(matriz_hotel):
+    piso, habitacion = obtener_indices_matriz(int(input("Ingrese el número de habitación en mantenimiento: ")))
+    if matriz_hotel[piso][habitacion] == "M":
+        matriz_hotel[piso][habitacion] = "L"
+        print("Habitacion restablecidad con exito!")
+    else:
+        print("Error: La habitación no está en mantenimiento.")
+
+def restablecer_limpieza(matriz_hotel):
+    piso, habitacion = obtener_indices_matriz(int(input("Ingrese el número de habitación en limpieza: ")))
+    if matriz_hotel[piso][habitacion] == "S":
+        matriz_hotel[piso][habitacion] = "L"
+        print("Habitacion restablecidad con exito!")
+    else:
+        print("Error: La habitación no está en limpieza.")
+
+    
+
 
 # PROGRAMA PRINCIPAL
 
@@ -356,6 +377,7 @@ def menu_principal():
         print("5. Buscar huésped por DNI")
         print("6. Reportes y Facturación")
         print("7. Redimensionar hotel")
+        print("8. Restablecer habitacion")
         print("0. Salir")
         print("==============================")
         
@@ -381,6 +403,19 @@ def menu_principal():
             hotel = reiniciar_matriz()
             huespedes.clear()
             print("Hotel redimensionado y reiniciado con éxito")
+        elif opcion == "8":
+            # Se ingresa el estado actual de la habitacion
+            print("2. Limpieza")
+            print("1. Mantenimiento")
+
+            opcion_restablecer = int(input("Seleccione el estado de la habitación a restablecer: "))
+
+            if opcion_restablecer == 1:
+                restablecer_limpieza(hotel)
+            elif opcion_restablecer == 2:
+                restablecer_mantenimiento(hotel)
+
+                
         elif opcion == "0":
             print("Saliendo del sistema Room Master...")
             ejecutando = False  # Sale del bucle
