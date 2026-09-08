@@ -243,13 +243,20 @@ def configurar_tarifas_hotel(total_pisos):
 
             while True:
                 try:
-                    recargo_input = input("Ingrese el porcentaje de recargo para pisos de lujo (ej: 40 para 40%): ").strip()
-                    recargo_porcentaje = float(recargo_input)
+                    recargo_input = input("¿Qué porcentaje más caras serán las habitaciones de lujo? (ej: ingrese 30 o 50 para un 30% o 50% de recargo): ").strip()
+                    # Si el usuario ingresa con símbolo '%' al final, se limpia automáticamente
+                    recargo_limpio = recargo_input.replace("%", "").strip()
+                    recargo_porcentaje = float(recargo_limpio)
+                    
+                    # Si ingresan en formato decimal (ej: 0.4 en lugar de 40), lo adaptamos
+                    if 0 < recargo_porcentaje < 1:
+                        recargo_porcentaje = recargo_porcentaje * 100
+
                     if recargo_porcentaje >= 0:
                         break
                     print("El porcentaje de recargo no puede ser negativo.")
                 except ValueError:
-                    print("Debe ingresar un número válido para el porcentaje.")
+                    print("Debe ingresar un número válido para el porcentaje (ej: 40 o 50).")
 
     # 3. Construir la lista de tarifas para cada piso (de 1 a total_pisos)
     for p in range(1, total_pisos + 1):
