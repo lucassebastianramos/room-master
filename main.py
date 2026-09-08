@@ -205,13 +205,17 @@ def configurar_tarifas_hotel(total_pisos):
     print("      CONFIGURACIÓN DE TARIFAS DEL HOTEL     ")
     print("=" * 45)
 
-    # 1. Precio base general (validado con regex y condiciones lógicas, sin try)
-    while True:
+    # 1. Precio base general (validado con variable de control, sin break ni try)
+    precio_base_valido = False
+    precio_base = 0.0
+
+    while not precio_base_valido:
         entrada_base = input("Ingrese el precio base por noche del hotel ($): ").strip()
         if re.match(r"^\d+(\.\d+)?$", entrada_base) and float(entrada_base) > 0:
             precio_base = float(entrada_base)
-            break
-        print("Error: Debe ingresar un valor numérico positivo mayor a 0.")
+            precio_base_valido = True
+        else:
+            print("Error: Debe ingresar un valor numérico positivo mayor a 0.")
 
     matriz_tarifas = []
 
@@ -220,33 +224,43 @@ def configurar_tarifas_hotel(total_pisos):
     recargo_porcentaje = 0.0
 
     if total_pisos > 1:
-        while True:
+        tiene_lujo_valido = False
+        tiene_lujo = ""
+
+        while not tiene_lujo_valido:
             tiene_lujo = input("¿Desea segmentar pisos como lujosos/suites con tarifa diferenciada? (s/n): ").strip().lower()
             if tiene_lujo in ["s", "si", "sí", "n", "no"]:
-                break
-            print("Opción inválida. Ingrese 's' o 'n'.")
+                tiene_lujo_valido = True
+            else:
+                print("Opción inválida. Ingrese 's' o 'n'.")
 
         if tiene_lujo in ["s", "si", "sí"]:
-            while True:
+            piso_valido = False
+            while not piso_valido:
                 entrada_piso = input(f"¿A partir de qué piso se consideran de lujo? (2 a {total_pisos}): ").strip()
                 if re.match(r"^\d+$", entrada_piso):
-                    piso_lujo_desde = int(entrada_piso)
-                    if 2 <= piso_lujo_desde <= total_pisos:
-                        break
-                    print(f"Error: El piso debe estar entre 2 y {total_pisos}.")
+                    piso_candidato = int(entrada_piso)
+                    if 2 <= piso_candidato <= total_pisos:
+                        piso_lujo_desde = piso_candidato
+                        piso_valido = True
+                    else:
+                        print(f"Error: El piso debe estar entre 2 y {total_pisos}.")
                 else:
                     print("Error: Debe ingresar un número entero válido.")
 
-            while True:
+            recargo_valido = False
+            while not recargo_valido:
                 recargo_input = input("¿Qué porcentaje más caras serán las habitaciones de lujo? (ej: ingrese 30 o 50 para un 30% o 50% de recargo): ").strip()
                 recargo_limpio = recargo_input.replace("%", "").strip()
                 if re.match(r"^\d+(\.\d+)?$", recargo_limpio):
-                    recargo_porcentaje = float(recargo_limpio)
-                    if 0 < recargo_porcentaje < 1:
-                        recargo_porcentaje = recargo_porcentaje * 100
-                    if recargo_porcentaje >= 0:
-                        break
-                    print("Error: El porcentaje de recargo no puede ser negativo.")
+                    porcentaje_num = float(recargo_limpio)
+                    if 0 < porcentaje_num < 1:
+                        porcentaje_num = porcentaje_num * 100
+                    if porcentaje_num >= 0:
+                        recargo_porcentaje = porcentaje_num
+                        recargo_valido = True
+                    else:
+                        print("Error: El porcentaje de recargo no puede ser negativo.")
                 else:
                     print("Error: Debe ingresar un número válido para el porcentaje (ej: 40 o 50).")
 
