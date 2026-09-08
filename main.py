@@ -195,20 +195,97 @@ def buscar_huesped_por_dni(lista_huespedes, dni_busqueda):
         print("\n[Aviso] No se encontró ningún huésped alojado con el DNI:", dni_busqueda)
 
 
+def configurar_tarifas_hotel(total_pisos):
+    """
+    Permite configurar dinámicamente las tarifas del hotel por piso.
+    Permite definir un precio base general y segmentar pisos superiores como lujosos/suites con recargo.
+    Retorna una matriz de tarifas: [[piso, precio_base], ...] donde piso va de 1 a total_pisos.
+    """
+    print("\n" + "=" * 45)
+    print("      CONFIGURACIÓN DE TARIFAS DEL HOTEL     ")
+    print("=" * 45)
+
+    # 1. Precio base general (validado con regex y condiciones lógicas, sin try)
+    while True:
+        entrada_base = input("Ingrese el precio base por noche del hotel ($): ").strip()
+        if re.match(r"^\d+(\.\d+)?$", entrada_base) and float(entrada_base) > 0:
+            precio_base = float(entrada_base)
+            break
+        print("Error: Debe ingresar un valor numérico positivo mayor a 0.")
+
+    matriz_tarifas = []
+
+    # 2. Si el hotel tiene más de un piso, permitir segmentación de pisos lujosos
+    piso_lujo_desde = total_pisos + 1  # Por defecto, sin pisos de lujo
+    recargo_porcentaje = 0.0
+
+    if total_pisos > 1:
+        while True:
+            tiene_lujo = input("¿Desea segmentar pisos como lujosos/suites con tarifa diferenciada? (s/n): ").strip().lower()
+            if tiene_lujo in ["s", "si", "sí", "n", "no"]:
+                break
+            print("Opción inválida. Ingrese 's' o 'n'.")
+
+        if tiene_lujo in ["s", "si", "sí"]:
+            while True:
+                entrada_piso = input(f"¿A partir de qué piso se consideran de lujo? (2 a {total_pisos}): ").strip()
+                if re.match(r"^\d+$", entrada_piso):
+                    piso_lujo_desde = int(entrada_piso)
+                    if 2 <= piso_lujo_desde <= total_pisos:
+                        break
+                    print(f"Error: El piso debe estar entre 2 y {total_pisos}.")
+                else:
+                    print("Error: Debe ingresar un número entero válido.")
+
+            while True:
+                recargo_input = input("¿Qué porcentaje más caras serán las habitaciones de lujo? (ej: ingrese 30 o 50 para un 30% o 50% de recargo): ").strip()
+                recargo_limpio = recargo_input.replace("%", "").strip()
+                if re.match(r"^\d+(\.\d+)?$", recargo_limpio):
+                    recargo_porcentaje = float(recargo_limpio)
+                    if 0 < recargo_porcentaje < 1:
+                        recargo_porcentaje = recargo_porcentaje * 100
+                    if recargo_porcentaje >= 0:
+                        break
+                    print("Error: El porcentaje de recargo no puede ser negativo.")
+                else:
+                    print("Error: Debe ingresar un número válido para el porcentaje (ej: 40 o 50).")
+
+    # 3. Construir la lista de tarifas para cada piso (de 1 a total_pisos)
+    for p in range(1, total_pisos + 1):
+        if p >= piso_lujo_desde:
+            precio_piso = round(precio_base * (1 + recargo_porcentaje / 100.0), 2)
+        else:
+            precio_piso = round(precio_base, 2)
+        matriz_tarifas.append([p, precio_piso])
+
+    # 4. Mostrar resumen de tarifas
+    print("\n--- ESQUEMA DE TARIFAS CONFIGURADO ---")
+    for p, precio in matriz_tarifas:
+        tipo = "Suite / Lujo" if p >= piso_lujo_desde else "Estándar"
+        print(f"Piso {p} ({tipo}): ${precio:,.2f} por noche")
+    print("=" * 45)
+
+    return matriz_tarifas
+
+
 def obtener_tarifa_habitacion(piso, matriz_tarifas):
     """
     Retorna el precio base por noche según el piso del hotel.
-    matriz_tarifas tiene pares: [piso, precio_base]
+    matriz_tarifas tiene pares: [piso, precio_base] (piso 1-indexed: 1, 2, 3...)
     """
-    precio = 0.0
-    # Soporta tanto piso comercial (1, 2, 3...) como índice de matriz (0, 1, 2...)
-    piso_buscado = piso + 1 if piso == 0 else piso
     for i in range(len(matriz_tarifas)):
-        if matriz_tarifas[i][0] == piso_buscado or matriz_tarifas[i][0] == piso:
-            precio = matriz_tarifas[i][1]
-    if precio == 0.0 and len(matriz_tarifas) > 0:
-        precio = matriz_tarifas[-1][1]
-    return precio
+        if matriz_tarifas[i][0] == piso:
+            return matriz_tarifas[i][1]
+
+    # Soporte por si se pasa piso en formato índice de matriz (0 para Piso 1)
+    if piso == 0 and len(matriz_tarifas) > 0:
+        return matriz_tarifas[0][1]
+
+    # Fallback al último piso si excede el rango
+    if len(matriz_tarifas) > 0:
+        return matriz_tarifas[-1][1]
+
+    return 0.0
 
 
 def filtrar_huespedes_por_piso(lista_huespedes, piso_objetivo):
@@ -325,8 +402,9 @@ def calcular_subtotal(huesped, matriz_tarifas):
 
     dias = int(huesped[2])
     piso = int(huesped[3])
+    piso_comercial = piso + 1
 
-    precio_noche = obtener_tarifa_habitacion(piso,matriz_tarifas)
+    precio_noche = obtener_tarifa_habitacion(piso_comercial, matriz_tarifas)
     subtotal = precio_noche * dias
 
     aplicar_descuento = lambda dias, subtotal: subtotal * 0.9 if dias > 7 else subtotal
@@ -381,12 +459,8 @@ def menu_principal():
     # Inicializa matriz (reiniciar_matriz() se reutiliza para redimensionar el hotel)
     hotel = reiniciar_matriz()
     
-    # Matriz de tarifas: [ [Piso, Precio por noche], ... ]
-    tarifas = [
-        [1, 50000.0],  # Piso 1 (Estándar)
-        [2, 75000.0],  # Piso 2 (Superior)
-        [3, 110000.0]  # Piso 3 (Suite)
-    ]
+    # Matriz de tarifas dinámica: [ [Piso, Precio por noche], ... ]
+    tarifas = configurar_tarifas_hotel(len(hotel))
     
     # Registro de huéspedes (Formato: [nombre, dni, dias, piso, habitacion])
     huespedes = []
@@ -427,6 +501,7 @@ def menu_principal():
             calcular_recaudacion_total(huespedes, tarifas)
         elif opcion == "7":
             hotel = reiniciar_matriz()
+            tarifas = configurar_tarifas_hotel(len(hotel))
             huespedes.clear()
             print("Hotel redimensionado y reiniciado con éxito")
         elif opcion == "8":
@@ -453,4 +528,5 @@ def menu_principal():
             input("\nPresione [Enter] para continuar...")
 
 # Ejecución
-menu_principal()
+if __name__ == "__main__":
+    menu_principal()
