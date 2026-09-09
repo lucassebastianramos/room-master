@@ -54,33 +54,24 @@ def solicitar_dimension_valida(mensaje, min_val, max_val):
 
 def renderizar_hotel(matriz):
     """
-    Muestra la matriz en consola desde el piso más alto hasta la Planta Baja.
-    Muestra cada habitación con su número comercial (ej: [101: L]).
-    Se adapta automáticamente si el hotel tiene muchas habitaciones por piso para evitar desbordes visuales.
+    Muestra la matriz en consola desde el piso más alto hasta el más bajo.
+    Hace un salto de línea cada 10 habitaciones para evitar que la pantalla se desborde.
     """
     print("\n--- ESTADO ACTUAL DEL HOTEL ---")
     print("Estados: [L] Libre | [O] Ocupada | [S] Sucia | [M] Mantenimiento\n")
     
-    total_pisos = len(matriz)
-    habs_por_piso = len(matriz[0])
-    
-    # Si son más de 5 habitaciones por piso, se organiza en bloques prolijos de 5
-    if habs_por_piso > 5:
-        habitaciones_por_linea = 5
-        for f in range(total_pisos - 1, -1, -1):
-            piso_num = f + 1
-            print(f"Piso {piso_num:>2}:")
-            for inicio in range(0, habs_por_piso, habitaciones_por_linea):
-                fin = min(inicio + habitaciones_por_linea, habs_por_piso)
-                linea = "  " + "  ".join(f"[{obtener_numero_comercial(f, c):>4}: {matriz[f][c]}]" for c in range(inicio, fin))
-                print(linea)
-            print()
-    else:
-        for f in range(total_pisos - 1, -1, -1):
-            piso_num = f + 1
-            habs_str = "  ".join(f"[{obtener_numero_comercial(f, c)}: {matriz[f][c]}]" for c in range(habs_por_piso))
-            print(f"Piso {piso_num:>2}:  {habs_str}")
-        print()
+    for f in range(len(matriz) - 1, -1, -1):
+        print(f"Piso {f + 1}:")
+        
+        for c in range(len(matriz[0])):
+            num_hab = obtener_numero_comercial(f, c)
+            print(f"[{num_hab}: {matriz[f][c]}]", end="  ")
+            
+            # Al llegar a 10 habitaciones hace un salto de línea
+            if (c + 1) % 10 == 0:
+                print()
+                
+        print("\n")  # Separación entre pisos
 
 
 def reiniciar_matriz():
@@ -234,7 +225,7 @@ def configurar_tarifas_hotel(total_pisos):
             else:
                 print("Opción inválida. Ingrese 's' o 'n'.")
 
-        if tiene_lujo in ["s", "si", "sí"]:
+        if tiene_lujo in ["s", "si", "sí", "y"]:
             piso_valido = False
             while not piso_valido:
                 entrada_piso = input(f"¿A partir de qué piso se consideran de lujo? (2 a {total_pisos}): ").strip()
@@ -278,9 +269,8 @@ def configurar_tarifas_hotel(total_pisos):
         tipo = "Suite / Lujo" if p >= piso_lujo_desde else "Estándar"
         print(f"Piso {p} ({tipo}): ${precio:,.2f} por noche")
     print("=" * 45)
-
+    input("\nPresione [Enter] para continuar...")
     return matriz_tarifas
-
 
 def obtener_tarifa_habitacion(piso, matriz_tarifas):
     """
@@ -317,8 +307,6 @@ def filtrar_huespedes_por_piso(lista_huespedes, piso_objetivo):
 # MÓDULO 3: CHECK-OUT, SWAP Y TRANSFORMACIONES MAP (Luca)
 
 def realizar_checkout(matriz_hotel, lista_huespedes, matriz_tarifas):
-    # TODO (Luca): Liberar habitación, pasar a 'S' (Limpieza) y calcular cobro
-    # print("[En desarrollo: Check-out y facturación]")
     print("---CHECK-OUT---")
     DNI_Checkout=int(input("Ingrese el DNI del huesped"))
     buscar_huesped_por_dni(lista_huespedes, DNI_Checkout)
@@ -337,7 +325,7 @@ def realizar_checkout(matriz_hotel, lista_huespedes, matriz_tarifas):
             monto_total = tarifa * dias_num
             num_comercial = obtener_numero_comercial(piso, habitacion)
 
-        #Borrar huesped de la lista|
+        #Borrar huesped de la lista
             lista_huespedes.remove(huesped)
 
         #Recivo
@@ -352,8 +340,6 @@ def realizar_checkout(matriz_hotel, lista_huespedes, matriz_tarifas):
     
 
 def reubicar_huesped_swap(matriz_hotel, lista_huespedes):
-    # TODO (Luca): Trasladar huésped, habitación vieja pasa a 'M' (Mantenimiento)
-    # print("[En desarrollo: Reubicación / Swap de habitación]")
     habitacion_swap = int(input("Ingrese el número de habitación a reubicar: "))
 
     for huesped in lista_huespedes:
@@ -386,7 +372,6 @@ def reubicar_huesped_swap(matriz_hotel, lista_huespedes):
 # MÓDULO 4: REPORTES Y PROGRAMACIÓN FUNCIONAL (Leandro)
 
 def generar_reporte_ocupacion(matriz_hotel):
-    # TODO (Leandro): Porcentaje de ocupación
     """ Genera un reporte que muestra el total de habitaciones,
     las que se encuentran ocupadas y el porcentaje de ocupación del hotel.
     """
@@ -402,13 +387,14 @@ def generar_reporte_ocupacion(matriz_hotel):
                 habitaciones_ocupadas += 1
 
     porcentaje_ocupacion = habitaciones_ocupadas * 100 / total_habitaciones 
+    round(porcentaje_ocupacion, 2)
+
     print("\n=== REPORTE DE OCUPACIÓN ===")
     print("Total de habitaciones: ", total_habitaciones)
     print("Habitaciones ocupadas: ", habitaciones_ocupadas)
     print("Porcentaje de ocupación: ", porcentaje_ocupacion, "%")
 
 def calcular_subtotal(huesped, matriz_tarifas):
-    # TODO (Leandro): Cálculo del subtotal a cobrar por huésped, con descuento si correspone
     """
     Calcula el subtotal a cobrar por un huésped específico y aplica un descuento del 10% si su estadía es mayor a 7 noches.
     Devuelve el subtotal para calcular la recaudación total del hotel.
@@ -429,11 +415,9 @@ def calcular_subtotal(huesped, matriz_tarifas):
 
 
 def calcular_recaudacion_total(lista_huespedes,matriz_tarifas):
-
     """
     Calcula la recaudación total del hotel sumando los subtotales de todos los huéspedes. 
     """
-    # TODO (Leandro): Uso obligatorio de functools.reduce y lambdas
 
     recaudacion_total = functools.reduce(
         lambda total, huesped: total + calcular_subtotal(huesped, matriz_tarifas),
@@ -462,9 +446,6 @@ def restablecer_limpieza(matriz_hotel):
         print("Habitacion restablecidad con exito!")
     else:
         print("Error: La habitación no está en limpieza.")
-
-    
-
 
 # PROGRAMA PRINCIPAL
 
