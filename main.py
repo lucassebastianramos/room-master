@@ -331,8 +331,13 @@ def reubicar_huesped_swap(matriz_hotel, lista_huespedes):
 
     for huesped in lista_huespedes:
         piso = int(huesped[3])
+<<<<<<< Updated upstream
         habitacion = int(huesped[4])
         num_comercial = obtener_numero_comercial(piso, habitacion)
+=======
+        habitacion = map(int, huesped[3], huesped[4])
+        num_comercial = huesped[5] if len(huesped) > 5 else obtener_numero_comercial(piso, habitacion)
+>>>>>>> Stashed changes
 
         if num_comercial == habitacion_swap:
             encontrado = True
@@ -362,8 +367,14 @@ def reubicar_huesped_swap(matriz_hotel, lista_huespedes):
             if len(huesped) > 5:
                 huesped[5] = nuevo_numero
 
+<<<<<<< Updated upstream
             print(f"Huésped {huesped[0]} reubicado a habitación {nuevo_numero} con éxito.")
             return
+=======
+    if matriz_hotel[nuevo_piso][nueva_habitacion] == "L":
+        piso_viejo = map(int, huesped_encontrado[3], huesped_encontrado[4])
+        hab_vieja = int(huesped_encontrado[4])
+>>>>>>> Stashed changes
 
     if not encontrado:
         print(f"No se encontró ningún huésped alojado en la habitación {habitacion_swap}.")
