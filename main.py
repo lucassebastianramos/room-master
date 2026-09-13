@@ -331,13 +331,8 @@ def reubicar_huesped_swap(matriz_hotel, lista_huespedes):
 
     for huesped in lista_huespedes:
         piso = int(huesped[3])
-<<<<<<< Updated upstream
         habitacion = int(huesped[4])
         num_comercial = obtener_numero_comercial(piso, habitacion)
-=======
-        habitacion = map(int, huesped[3], huesped[4])
-        num_comercial = huesped[5] if len(huesped) > 5 else obtener_numero_comercial(piso, habitacion)
->>>>>>> Stashed changes
 
         if num_comercial == habitacion_swap:
             encontrado = True
@@ -367,14 +362,8 @@ def reubicar_huesped_swap(matriz_hotel, lista_huespedes):
             if len(huesped) > 5:
                 huesped[5] = nuevo_numero
 
-<<<<<<< Updated upstream
             print(f"Huésped {huesped[0]} reubicado a habitación {nuevo_numero} con éxito.")
             return
-=======
-    if matriz_hotel[nuevo_piso][nueva_habitacion] == "L":
-        piso_viejo = map(int, huesped_encontrado[3], huesped_encontrado[4])
-        hab_vieja = int(huesped_encontrado[4])
->>>>>>> Stashed changes
 
     if not encontrado:
         print(f"No se encontró ningún huésped alojado en la habitación {habitacion_swap}.")
@@ -386,18 +375,36 @@ def generar_reporte_ocupacion(matriz_hotel):
     las que se encuentran ocupadas y el porcentaje de ocupación del hotel.
     """
 
-    habitaciones_ocupadas = 0
-    total_habitaciones = 0
+    # Total de habitaciones acumulando el largo de cada fila mediante reduce
+    total_habitaciones = functools.reduce (
+        lambda acumulado, fila: acumulado + len(fila),
+        matriz_hotel,
+        0
+    )
 
-    for i in range(len(matriz_hotel)):
-        for j in range(len(matriz_hotel[i])):
-            total_habitaciones += 1
+    # Cuenta las habitaciones ocupadas en cada fila usando reduce
+    ocupadas_por_fila = map(
+        lambda fila: functools.reduce(
+            lambda acum, hab: acum + (1 if hab == "O" else 0),
+            fila,
+            0
+        ),
+        matriz_hotel
+    )
 
-            if matriz_hotel[i][j] == "O":
-                habitaciones_ocupadas += 1
+    # Acumula los subtotales de cada fila para obtener el total ocupado
+    habitaciones_ocupadas = functools.reduce(
+        lambda acumulado, cant: acumulado + cant,
+        ocupadas_por_fila,
+        0
+    )
 
-    porcentaje_ocupacion = habitaciones_ocupadas * 100 / total_habitaciones 
-    round(porcentaje_ocupacion, 2)
+    porcentaje_ocupacion = (habitaciones_ocupadas * 100 / total_habitaciones) if total_habitaciones > 0 else 0.0
+
+    print("\n=== REPORTE DE OCUPACIÓN ===")
+    print("Total de habitaciones:  ", total_habitaciones)
+    print("Habitaciones ocupadas:  ", habitaciones_ocupadas)
+    print(f"Porcentaje de ocupación: {porcentaje_ocupacion:.2f}%")
 
     print("\n=== REPORTE DE OCUPACIÓN ===")
     print("Total de habitaciones: ", total_habitaciones)
@@ -429,11 +436,11 @@ def calcular_recaudacion_total(lista_huespedes,matriz_tarifas):
     Calcula la recaudación total del hotel sumando los subtotales de todos los huéspedes. 
     """
 
-    recaudacion_total = functools.reduce(
-        lambda total, huesped: total + calcular_subtotal(huesped, matriz_tarifas),
-        lista_huespedes,
-        0
-    )
+    #Transformación con map para convertir cada huésped en su monto subtotal
+    subtotales = list(map(lambda huesped: calcular_subtotal(huesped, matriz_tarifas), lista_huespedes))
+
+    #Acumulación con reduce de los subtotales generados
+    recaudacion_total = functools.reduce(lambda acumulado, subtotal: acumulado + subtotal, subtotales, 0.0)
 
     print("\n=== RECAUDACIÓN TOTAL ===")
     print("Recaudación total: $", recaudacion_total)
