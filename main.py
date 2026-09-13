@@ -6,7 +6,7 @@ import re
 def inicializar_hotel(pisos, habitaciones):
     """
     Crea y retorna la matriz del hotel.
-    Estados: 'L' (Libre), 'O' (Ocupada), 'S' (Sucia/Limpieza), 'M' (Mantenimiento).
+    Estados: 'L' (Libre), 'O' (Ocupada), 'S' (Sucia/Limpieza).
     """
     matriz = []
     for f in range(pisos):
@@ -43,7 +43,7 @@ def solicitar_dimension_valida(mensaje, min_val, max_val):
     valor_num = 0
 
     while not es_valido:
-        valor_num = validar_num(mensaje)
+        valor_num = int(validar_generico(mensaje, PATRON_NUMERO_VALIDO, ERROR_NUMERO))
         if min_val <= valor_num <= max_val:
             es_valido = True
         else:
@@ -58,7 +58,7 @@ def renderizar_hotel(matriz):
     Hace un salto de línea cada 10 habitaciones para evitar que la pantalla se desborde.
     """
     print("\n--- ESTADO ACTUAL DEL HOTEL ---")
-    print("Estados: [L] Libre | [O] Ocupada | [S] Sucia | [M] Mantenimiento\n")
+    print("Estados: [L] Libre | [O] Ocupada | [S] Sucia\n")
     
     for f in range(len(matriz) - 1, -1, -1):
         print(f"Piso {f + 1}:")
@@ -79,7 +79,9 @@ def reiniciar_matriz():
     Solicita las dimensiones validadas e instancia una nueva matriz limpia ('L').
     """
 
-    pisos = solicitar_dimension_valida("Ingrese la cantidad de pisos (1 a 99): ", 1, 99)
+    print("--- Inicializar matriz ---\n")
+
+    pisos = solicitar_dimension_valida("Ingrese la cantidad de pisos del hotel (1 a 99): ", 1, 99)
     habitaciones = solicitar_dimension_valida("Ingrese la cantidad de habitaciones por piso (1 a 99): ", 1, 99)
     return inicializar_hotel(pisos, habitaciones)
 
@@ -90,7 +92,7 @@ def solicitar_habitacion_libre(matriz):
     hab_final = 0
     
     while not es_valida:
-        num_comercial = validar_num("\nIngrese el número de habitación (ej: 101): ")
+        num_comercial = int(validar_generico("\nIngrese el número de habitación (ej: 101): ", PATRON_NUMERO_VALIDO, ERROR_NUMERO))
         piso, hab = obtener_indices_matriz(num_comercial)
         
         if piso < 0 or piso >= len(matriz) or hab < 0 or hab >= len(matriz[0]):
@@ -104,29 +106,24 @@ def solicitar_habitacion_libre(matriz):
             
     return piso_final, hab_final
 
-def validar_num(mensaje):
-    """Pide un valor, valida que sean números y lo devuelve como entero (int)."""
-    num = input(mensaje).strip()
-    while not re.match(r"^\d+$", num):
-        print("Error: Debe ingresar un número entero válido.")
-        num = input(mensaje).strip()
-    return int(num)
+PATRON_NUMERO_VALIDO = r"^\d+$"
+PATRON_DNI_VALIDO = r"^\d{7,8}$"
+PATRON_TEXTO_VALIDO = r"^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$"
+PATRON_DIAS_VALIDO = r"^[1-9]\d*$"
 
-def validar_string(mensaje):
-    """Pide un texto y valida que solo contenga letras."""
-    palabra = input(mensaje).strip()
-    while not re.match(r"^[a-zA-Za-eíóúÁÉÍÓÚñÑ\s]+$", palabra) or len(palabra) == 0:
-        print("Error. El texto solo debe contener letras y no puede estar vacío.")
-        palabra = input(mensaje).strip()
-    return palabra
+ERROR_NUMERO = "Error: Debe ingresar un número entero válido."
+ERROR_DNI = "DNI INVÁLIDO."
+ERROR_TEXTO = "Error. El texto solo debe contener letras y no debe estar vacío."
+ERROR_DIAS = "Error: La cantidad de días debe ser mayor a 0."
 
-def validar_dni(mensaje):
-    """Pide el DNI y valida su longitud."""
-    dni_huesped = input(mensaje).strip()
-    while not re.match(r"^\d{7,8}$", dni_huesped):
-        print("DNI INVÁLIDO.")
-        dni_huesped = input(mensaje).strip()
-    return dni_huesped
+
+def validar_generico(mensaje, patron, mensaje_error):
+    """Pide un dato, lo valida contra 'patron' hasta que sea correcto y lo devuelve como texto."""
+    dato_ingresado = input(mensaje).strip()
+    while not re.match(patron, dato_ingresado):
+        print(mensaje_error)
+        dato_ingresado = input(mensaje).strip()
+    return dato_ingresado
 
 def realizar_checkin(matriz, lista_huespedes):
     """
@@ -135,13 +132,13 @@ def realizar_checkin(matriz, lista_huespedes):
     """
     piso, habitacion = solicitar_habitacion_libre(matriz)
 
-    nombre = validar_string("Ingrese el nombre del huésped: ")
-    dni = validar_dni("Ingrese el DNI del huésped: ")
-    dias = validar_num("Cantidad de días de estadía: ")
-    
+    nombre = validar_generico("Ingrese el nombre del huésped: ", PATRON_TEXTO_VALIDO, ERROR_TEXTO)
+    dni = validar_generico("Ingrese el DNI del huésped: ", PATRON_DNI_VALIDO, ERROR_DNI)
+    dias = int(validar_generico("Cantidad de días de estadía: ", PATRON_DIAS_VALIDO, ERROR_DIAS))
+
     num_comercial = obtener_numero_comercial(piso, habitacion)
 
-    # Registro del huésped como lista: [nombre, dni, dias, piso, habitacion]
+    # Registro del huésped como lista: [nombre, dni, dias, piso, habitacion, num_comercial]
     datos_huesped = [nombre, dni, dias, piso, habitacion, num_comercial]
     lista_huespedes.append(datos_huesped)
 
@@ -196,12 +193,12 @@ def configurar_tarifas_hotel(total_pisos):
     print("      CONFIGURACIÓN DE TARIFAS DEL HOTEL     ")
     print("=" * 45)
 
-    # 1. Precio base general (reutiliza validar_num del Módulo 1)
+    # 1. Precio base general (reutiliza validar_generico del Módulo 1)
     precio_base_valido = False
     precio_base = 0.0
 
     while not precio_base_valido:
-        precio_base = float(validar_num("Ingrese el precio base por noche del hotel ($): "))
+        precio_base = float(validar_generico("Ingrese el precio base por noche del hotel ($): ", PATRON_NUMERO_VALIDO, ERROR_NUMERO))
         if precio_base > 0:
             precio_base_valido = True
         else:
@@ -232,8 +229,8 @@ def configurar_tarifas_hotel(total_pisos):
                 total_pisos
             )
 
-            # Reutiliza validar_num de Tiara (Módulo 1)
-            recargo_porcentaje = float(validar_num("¿Qué porcentaje más caras serán las habitaciones de lujo? (ej: 30 o 50): "))
+            # Reutiliza validar_generico de Tiara (Módulo 1)
+            recargo_porcentaje = float(validar_generico("¿Qué porcentaje más caras serán las habitaciones de lujo? (ej: 30 o 50): ", PATRON_NUMERO_VALIDO, ERROR_NUMERO))
 
     # 3. Construir la lista de tarifas para cada piso (de 1 a total_pisos)
     for p in range(1, total_pisos + 1):
@@ -289,7 +286,7 @@ def filtrar_huespedes_por_piso(lista_huespedes, piso_objetivo):
 def realizar_checkout(matriz_hotel, lista_huespedes, matriz_tarifas):
     # Liberar habitación, pasar a 'S' (Limpieza) y calcular cobro
     print("\n--- CHECK-OUT ---")
-    dni_checkout = validar_dni("Ingrese el DNI del huésped para check-out: ")
+    dni_checkout = validar_generico("Ingrese el DNI del huésped para check-out: ", PATRON_DNI_VALIDO, ERROR_DNI)
     buscar_huesped_por_dni(lista_huespedes, dni_checkout)
     for huesped in lista_huespedes:
         if str(huesped[1]) == str(dni_checkout):
@@ -320,24 +317,19 @@ def realizar_checkout(matriz_hotel, lista_huespedes, matriz_tarifas):
     
 
 def reubicar_huesped_swap(matriz_hotel, lista_huespedes):
-    # Trasladar huésped, habitación vieja pasa a 'M' (Mantenimiento)
+    # Trasladar huésped, habitación vieja queda libre ('L')
     print("\n--- REUBICACIÓN DE HUÉSPED (SWAP) ---")
     if len(lista_huespedes) == 0:
         print("No hay huéspedes alojados actualmente en el hotel.")
         return
 
-    habitacion_swap = validar_num("Ingrese el número de habitación a reubicar: ")
+    habitacion_swap = int(validar_generico("Ingrese el número de habitación a reubicar: ", PATRON_NUMERO_VALIDO, ERROR_NUMERO))
     encontrado = False
 
     for huesped in lista_huespedes:
         piso = int(huesped[3])
-<<<<<<< Updated upstream
         habitacion = int(huesped[4])
         num_comercial = obtener_numero_comercial(piso, habitacion)
-=======
-        habitacion = map(int, huesped[3], huesped[4])
-        num_comercial = huesped[5] if len(huesped) > 5 else obtener_numero_comercial(piso, habitacion)
->>>>>>> Stashed changes
 
         if num_comercial == habitacion_swap:
             encontrado = True
@@ -348,7 +340,7 @@ def reubicar_huesped_swap(matriz_hotel, lista_huespedes):
             nuevo_numero = 0
 
             while not habitacion_valida:
-                nuevo_numero = validar_num("Ingrese el nuevo número de habitación: ")
+                nuevo_numero = int(validar_generico("Ingrese el nuevo número de habitación: ", PATRON_NUMERO_VALIDO, ERROR_NUMERO))
                 nuevo_piso, nueva_habitacion = obtener_indices_matriz(nuevo_numero)
 
                 # Validar que los índices existan dentro de la matriz
@@ -360,21 +352,15 @@ def reubicar_huesped_swap(matriz_hotel, lista_huespedes):
                     habitacion_valida = True
 
             # Actualizar la matriz y los datos del huésped
-            matriz_hotel[piso][habitacion] = "M"  # Habitación vieja pasa a Mantenimiento
+            matriz_hotel[piso][habitacion] = "L"  # Habitación vieja queda libre
             matriz_hotel[nuevo_piso][nueva_habitacion] = "O"  # Nueva habitación ocupada
             huesped[3] = nuevo_piso
             huesped[4] = nueva_habitacion
             if len(huesped) > 5:
                 huesped[5] = nuevo_numero
 
-<<<<<<< Updated upstream
             print(f"Huésped {huesped[0]} reubicado a habitación {nuevo_numero} con éxito.")
             return
-=======
-    if matriz_hotel[nuevo_piso][nueva_habitacion] == "L":
-        piso_viejo = map(int, huesped_encontrado[3], huesped_encontrado[4])
-        hab_vieja = int(huesped_encontrado[4])
->>>>>>> Stashed changes
 
     if not encontrado:
         print(f"No se encontró ningún huésped alojado en la habitación {habitacion_swap}.")
@@ -386,18 +372,36 @@ def generar_reporte_ocupacion(matriz_hotel):
     las que se encuentran ocupadas y el porcentaje de ocupación del hotel.
     """
 
-    habitaciones_ocupadas = 0
-    total_habitaciones = 0
+    # Total de habitaciones acumulando el largo de cada fila mediante reduce
+    total_habitaciones = functools.reduce (
+        lambda acumulado, fila: acumulado + len(fila),
+        matriz_hotel,
+        0
+    )
 
-    for i in range(len(matriz_hotel)):
-        for j in range(len(matriz_hotel[i])):
-            total_habitaciones += 1
+    # Cuenta las habitaciones ocupadas en cada fila usando reduce
+    ocupadas_por_fila = map(
+        lambda fila: functools.reduce(
+            lambda acum, hab: acum + (1 if hab == "O" else 0),
+            fila,
+            0
+        ),
+        matriz_hotel
+    )
 
-            if matriz_hotel[i][j] == "O":
-                habitaciones_ocupadas += 1
+    # Acumula los subtotales de cada fila para obtener el total ocupado
+    habitaciones_ocupadas = functools.reduce(
+        lambda acumulado, cant: acumulado + cant,
+        ocupadas_por_fila,
+        0
+    )
 
-    porcentaje_ocupacion = habitaciones_ocupadas * 100 / total_habitaciones 
-    round(porcentaje_ocupacion, 2)
+    if total_habitaciones > 0:
+        porcentaje_ocupacion = habitaciones_ocupadas * 100 / total_habitaciones
+    else:
+        porcentaje_ocupacion = 0.0
+
+    porcentaje_ocupacion = int(porcentaje_ocupacion * 100 + 0.5) / 100
 
     print("\n=== REPORTE DE OCUPACIÓN ===")
     print("Total de habitaciones: ", total_habitaciones)
@@ -429,32 +433,19 @@ def calcular_recaudacion_total(lista_huespedes,matriz_tarifas):
     Calcula la recaudación total del hotel sumando los subtotales de todos los huéspedes. 
     """
 
-    recaudacion_total = functools.reduce(
-        lambda total, huesped: total + calcular_subtotal(huesped, matriz_tarifas),
-        lista_huespedes,
-        0
-    )
+    #Transformación con map para convertir cada huésped en su monto subtotal
+    subtotales = list(map(lambda huesped: calcular_subtotal(huesped, matriz_tarifas), lista_huespedes))
+
+    #Acumulación con reduce de los subtotales generados
+    recaudacion_total = functools.reduce(lambda acumulado, subtotal: acumulado + subtotal, subtotales, 0.0)
 
     print("\n=== RECAUDACIÓN TOTAL ===")
     print("Recaudación total: $", recaudacion_total)
 
-# =============================================================================
-# MÓDULO 5: RESTABABLECER ETADO DE HABITACION A "L" (Luca)
-# =============================================================================
-def restablecer_mantenimiento(matriz_hotel):
-    num_hab = validar_num("Ingrese el número de habitación en mantenimiento: ")
-    piso, habitacion = obtener_indices_matriz(num_hab)
-    if 0 <= piso < len(matriz_hotel) and 0 <= habitacion < len(matriz_hotel[0]):
-        if matriz_hotel[piso][habitacion] == "M":
-            matriz_hotel[piso][habitacion] = "L"
-            print("Habitación restablecida con éxito!")
-        else:
-            print("Error: La habitación no está en mantenimiento.")
-    else:
-        print("Error: La habitación ingresada no existe en el hotel.")
+# MÓDULO 5: RESTABLECER ESTADO DE HABITACION A "L" (Luca)
 
 def restablecer_limpieza(matriz_hotel):
-    num_hab = validar_num("Ingrese el número de habitación en limpieza: ")
+    num_hab = int(validar_generico("Ingrese el número de habitación en limpieza: ", PATRON_NUMERO_VALIDO, ERROR_NUMERO))
     piso, habitacion = obtener_indices_matriz(num_hab)
     if 0 <= piso < len(matriz_hotel) and 0 <= habitacion < len(matriz_hotel[0]):
         if matriz_hotel[piso][habitacion] == "S":
@@ -464,9 +455,6 @@ def restablecer_limpieza(matriz_hotel):
             print("Error: La habitación no está en limpieza.")
     else:
         print("Error: La habitación ingresada no existe en el hotel.")
-
-
-
 
 # PROGRAMA PRINCIPAL
 
@@ -510,7 +498,7 @@ def menu_principal():
         elif opcion == "4":
             reubicar_huesped_swap(hotel, huespedes)
         elif opcion == "5":
-            dni_busqueda = validar_dni("Ingrese el DNI a buscar: ")
+            dni_busqueda = validar_generico("Ingrese el DNI a buscar: ", PATRON_DNI_VALIDO, ERROR_DNI)
             buscar_huesped_por_dni(huespedes, dni_busqueda)
         elif opcion == "6":
             generar_reporte_ocupacion(hotel)
@@ -522,19 +510,8 @@ def menu_principal():
             print("Hotel redimensionado y reiniciado con éxito")
         elif opcion == "8":
             print("\n--- RESTABLECER HABITACIÓN A LIBRE [L] ---")
-            print("1. Limpieza")
-            print("2. Mantenimiento")
+            restablecer_limpieza(hotel)
 
-            opcion_restablecer = input("Seleccione el estado de la habitación a restablecer (1/2): ").strip()
-
-            if opcion_restablecer == "1":
-                restablecer_limpieza(hotel)
-            elif opcion_restablecer == "2":
-                restablecer_mantenimiento(hotel)
-            else:
-                print("Opción inválida.")
-
-                
         elif opcion == "0":
             print("Saliendo del sistema Room Master...")
             ejecutando = False  # Sale del bucle
