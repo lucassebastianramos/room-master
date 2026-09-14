@@ -1,6 +1,16 @@
 import functools
 import re
 
+PATRON_NUMERO_VALIDO = r"^\d+$"
+PATRON_DNI_VALIDO = r"^\d{7,8}$"
+PATRON_TEXTO_VALIDO = r"^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$"
+PATRON_DIAS_VALIDO = r"^[1-9]\d*$"
+
+ERROR_NUMERO = "Error: Debe ingresar un número entero válido."
+ERROR_DNI = "DNI INVÁLIDO."
+ERROR_TEXTO = "Error. El texto solo debe contener letras y no debe estar vacío."
+ERROR_DIAS = "Error: La cantidad de días debe ser mayor a 0."
+
 # MÓDULO 1: MATRIZ, CHECK-IN Y VALIDACIONES REGEX (Tiara)
 
 def inicializar_hotel(pisos, habitaciones):
@@ -105,17 +115,6 @@ def solicitar_habitacion_libre(matriz):
             hab_final = hab
             
     return piso_final, hab_final
-
-PATRON_NUMERO_VALIDO = r"^\d+$"
-PATRON_DNI_VALIDO = r"^\d{7,8}$"
-PATRON_TEXTO_VALIDO = r"^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$"
-PATRON_DIAS_VALIDO = r"^[1-9]\d*$"
-
-ERROR_NUMERO = "Error: Debe ingresar un número entero válido."
-ERROR_DNI = "DNI INVÁLIDO."
-ERROR_TEXTO = "Error. El texto solo debe contener letras y no debe estar vacío."
-ERROR_DIAS = "Error: La cantidad de días debe ser mayor a 0."
-
 
 def validar_generico(mensaje, patron, mensaje_error):
     """Pide un dato, lo valida contra 'patron' hasta que sea correcto y lo devuelve como texto."""
@@ -281,7 +280,7 @@ def filtrar_huespedes_por_piso(lista_huespedes, piso_objetivo):
     ))
     return filtrados
 
-# MÓDULO 3: CHECK-OUT, SWAP Y TRANSFORMACIONES MAP (Luca)
+# MÓDULO 3: CHECK-OUT, SWAP Y RESTABLECER LIMPIEZA (Luca)
 
 def realizar_checkout(matriz_hotel, lista_huespedes, matriz_tarifas):
     # Liberar habitación, pasar a 'S' (Limpieza) y calcular cobro
@@ -363,6 +362,18 @@ def reubicar_huesped_swap(matriz_hotel, lista_huespedes):
     if not encontrado:
         print(f"No se encontró ningún huésped alojado en la habitación {habitacion_swap}.")
 
+def restablecer_limpieza(matriz_hotel):
+    num_hab = int(validar_generico("Ingrese el número de habitación en limpieza: ", PATRON_NUMERO_VALIDO, ERROR_NUMERO))
+    piso, habitacion = obtener_indices_matriz(num_hab)
+    if 0 <= piso < len(matriz_hotel) and 0 <= habitacion < len(matriz_hotel[0]):
+        if matriz_hotel[piso][habitacion] == "S":
+            matriz_hotel[piso][habitacion] = "L"
+            print("Habitación restablecida con éxito!")
+        else:
+            print("Error: La habitación no está en limpieza.")
+    else:
+        print("Error: La habitación ingresada no existe en el hotel.")
+
 # MÓDULO 4: REPORTES Y PROGRAMACIÓN FUNCIONAL (Leandro)
 
 def generar_reporte_ocupacion(matriz_hotel):
@@ -440,19 +451,6 @@ def calcular_recaudacion_total(lista_huespedes,matriz_tarifas):
     print("\n=== RECAUDACIÓN TOTAL ===")
     print("Recaudación total: $", recaudacion_total)
 
-# MÓDULO 5: RESTABLECER ESTADO DE HABITACION A "L" (Luca)
-
-def restablecer_limpieza(matriz_hotel):
-    num_hab = int(validar_generico("Ingrese el número de habitación en limpieza: ", PATRON_NUMERO_VALIDO, ERROR_NUMERO))
-    piso, habitacion = obtener_indices_matriz(num_hab)
-    if 0 <= piso < len(matriz_hotel) and 0 <= habitacion < len(matriz_hotel[0]):
-        if matriz_hotel[piso][habitacion] == "S":
-            matriz_hotel[piso][habitacion] = "L"
-            print("Habitación restablecida con éxito!")
-        else:
-            print("Error: La habitación no está en limpieza.")
-    else:
-        print("Error: La habitación ingresada no existe en el hotel.")
 
 # PROGRAMA PRINCIPAL
 
