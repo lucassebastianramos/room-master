@@ -322,13 +322,11 @@ def reubicar_huesped_swap(matriz_hotel, lista_huespedes):
     if len(lista_huespedes) == 0:
         print("No hay huéspedes alojados actualmente en el hotel.")
         return
-
     habitacion_swap = int(validar_generico("Ingrese el número de habitación a reubicar: ", PATRON_NUMERO_VALIDO, ERROR_NUMERO))
     encontrado = False
 
     for huesped in lista_huespedes:
-        piso = int(huesped[3])
-        habitacion = int(huesped[4])
+        piso, habitacion = map(int, [huesped[3], huesped[4]])
         num_comercial = obtener_numero_comercial(piso, habitacion)
 
         if num_comercial == habitacion_swap:
