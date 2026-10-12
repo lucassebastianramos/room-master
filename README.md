@@ -11,7 +11,7 @@ Sistema de gestión hotelera por consola desarrollado en Python para la materia 
 ---
 
 ## 📌 Requisitos Técnicos del Proyecto
-- **Estructuras Bidimensionales:** Matrices para el estado de pisos y habitaciones ("L", "O", "S", "M").
+- **Estructuras Bidimensionales:** Matrices para el estado de pisos y habitaciones ("L", "O", "S").
 - **Listas Avanzadas:** Registros de huéspedes delimitados por strings.
 - **Expresiones Regulares (`re`):** Validación estricta de DNI, email, teléfono y datos de entrada.
 - **Programación Funcional:** Uso de funciones de orden superior (`map`, `filter`, `reduce`) junto con expresiones `lambda`.
