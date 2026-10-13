@@ -14,6 +14,20 @@ Sistema de control y gestión hotelera desarrollado por consola en Python para l
 
 ---
 
+## 🔑 Usuarios y Credenciales por Defecto
+
+Para probar el sistema y evaluar los roles de acceso (RBAC), se dispone de los siguientes usuarios preconfigurados:
+
+| Usuario | Contraseña | Rol | Nombre y Apellido | DNI | Alcance y Permisos |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **`admin`** | `admin` | `admin` | Administrador del Hotel | `11111111` | Acceso irrestricto: gestión de usuarios y roles, reglas de negocio (oferta/demanda), redimensionamiento y reportes. |
+| **`recepcion`** | `1234` | `admin` | Recepcionista de Turno | `22222222` | Operaciones hoteleras: Check-in, Check-out, Swap, restablecer limpieza y facturación. |
+| **`cliente`** | `1234` | `huesped` | Huésped Frecuente | `33333333` | Portal del huésped: ver disponibilidad, reservar habitación (titular o terceros) y consultar estadía. |
+
+> **Nota:** También es posible crear nuevos usuarios con roles diferenciados desde el Panel de Administración o registrarse libremente como huésped desde la pantalla de inicio de sesión.
+
+---
+
 ## 🚀 Fase 2: Ampliación, Modularización y Persistencia
 
 Habiendo completado satisfactoriamente la Fase 1, el proyecto evoluciona hacia una arquitectura modular robusta que incorpora los nuevos conceptos de la materia:
