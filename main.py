@@ -15,7 +15,6 @@
 # =============================================================================
 
 import auth
-import persistencia
 from hotel import (
     reiniciar_matriz,
     renderizar_hotel,
@@ -76,8 +75,6 @@ def menu_admin(hotel, huespedes, tarifas, sesion, usuarios, reglas_negocio):
         print("12. Redimensionar hotel (Reiniciar matriz)")
         print("13. Gestión de Usuarios y Roles (Crear, Editar, Listar)")
         print("14. Políticas de Negocio y Precios Dinámicos (Oferta/Demanda)")
-        print("15. Guardar estado del hotel en JSON (hotel_data.json)")
-        print("16. Cargar estado guardado desde JSON (hotel_data.json)")
         print("0.  Cerrar sesión")
         print("=" * 58)
 
@@ -132,24 +129,6 @@ def menu_admin(hotel, huespedes, tarifas, sesion, usuarios, reglas_negocio):
             auth.menu_gestion_usuarios(usuarios, sesion)
         elif opcion == "14":
             menu_configuracion_reglas_negocio(tarifas, reglas_negocio, len(hotel))
-        elif opcion == "15":
-            exito = persistencia.guardar_estado_json(hotel, huespedes, tarifas, usuarios, reglas_negocio)
-            if exito:
-                persistencia.registrar_evento_auditoria(username, "GUARDAR_DATOS", "Estado serializado en JSON")
-                print("\n[Éxito] Estado completo del hotel guardado exitosamente en 'datos/hotel_data.json'.")
-        elif opcion == "16":
-            datos_cargados = persistencia.cargar_estado_json()
-            if datos_cargados is not None:
-                if confirmar_accion("¿Confirma sobreescribir la memoria con los datos guardados en JSON? (s/n): "):
-                    hotel = datos_cargados.get("hotel", hotel)
-                    huespedes = datos_cargados.get("huespedes", huespedes)
-                    tarifas = datos_cargados.get("tarifas", tarifas)
-                    usuarios = datos_cargados.get("usuarios", usuarios)
-                    reglas_negocio = datos_cargados.get("reglas_negocio", reglas_negocio)
-                    persistencia.registrar_evento_auditoria(username, "CARGAR_DATOS", "Estado restaurado desde JSON")
-                    print("\n[Éxito] Estado del hotel cargado exitosamente desde JSON.")
-            else:
-                print("\n[Aviso] No se encontró o no se pudo leer el archivo 'datos/hotel_data.json'.")
         elif opcion == "0":
             print(f"\nCerrando sesión de {nombre}...")
             ejecutando = False
@@ -188,7 +167,6 @@ def menu_recepcion(hotel, huespedes, tarifas, sesion, reglas_negocio):
         print("9.  Poner habitación en Mantenimiento / Fuera de servicio [M]")
         print("10. Habilitar habitación reparada desde Mantenimiento [L]")
         print("11. Restablecer habitación a Disponible tras Limpieza [L]")
-        print("12. Guardar estado actual del hotel en JSON (hotel_data.json)")
         print("0.  Cerrar sesión")
         print("=" * 58)
 
@@ -234,11 +212,6 @@ def menu_recepcion(hotel, huespedes, tarifas, sesion, reglas_negocio):
         elif opcion == "11":
             print("\n--- RESTABLECER HABITACIÓN TRAS LIMPIEZA ---")
             restablecer_limpieza(hotel)
-        elif opcion == "12":
-            exito = persistencia.guardar_estado_json(hotel, huespedes, tarifas, {}, reglas_negocio)
-            if exito:
-                persistencia.registrar_evento_auditoria(username, "GUARDAR_DATOS", "Operador de recepción guardó estado")
-                print("\n[Éxito] Estado del hotel guardado en 'datos/hotel_data.json'.")
         elif opcion == "0":
             print(f"\nCerrando sesión de {nombre}...")
             ejecutando = False
@@ -313,30 +286,18 @@ def menu_principal():
     print("      BIENVENIDO AL SISTEMA HOTELERO ROOM MASTER     ")
     print("=" * 58)
 
-    # 1. Verificación de persistencia previa en JSON
-    datos_previos = persistencia.cargar_estado_json()
-    if datos_previos is not None:
-        recuperar = input("\nSe detectó una sesión previa guardada en 'datos/hotel_data.json'. ¿Desea recuperarla? (s/n): ").strip().lower()
-        if recuperar in ["s", "si", "sí"]:
-            hotel = datos_previos.get("hotel", [])
-            tarifas = datos_previos.get("tarifas", [])
-            huespedes = datos_previos.get("huespedes", [])
-            usuarios = datos_previos.get("usuarios", auth.USUARIOS_DEFAULT.copy())
-            reglas_negocio = datos_previos.get("reglas_negocio", REGLAS_NEGOCIO_DEFAULT.copy())
-            print("\n[Éxito] Estado del hotel restaurado desde 'datos/hotel_data.json'.")
-        else:
-            hotel = reiniciar_matriz()
-            tarifas = configurar_tarifas_hotel(len(hotel))
-            huespedes = []
-            usuarios = auth.USUARIOS_DEFAULT.copy()
-            reglas_negocio = REGLAS_NEGOCIO_DEFAULT.copy()
-    else:
-        # Configuración inicial de matrices y tarifas
-        hotel = reiniciar_matriz()
-        tarifas = configurar_tarifas_hotel(len(hotel))
-        huespedes = []
-        usuarios = auth.USUARIOS_DEFAULT.copy()
-        reglas_negocio = REGLAS_NEGOCIO_DEFAULT.copy()
+    # 1. Configuración inicial de matrices y tarifas
+    hotel = reiniciar_matriz()
+    tarifas = configurar_tarifas_hotel(len(hotel))
+
+    # 2. Registros de huéspedes en memoria: [nombre, dni, dias, piso, habitacion, num_comercial, extras]
+    huespedes = []
+
+    # 3. Base de usuarios en memoria (Diccionarios y Roles - auth.py)
+    usuarios = auth.USUARIOS_DEFAULT.copy()
+
+    # 4. Diccionario de reglas de negocio configurables por el administrador
+    reglas_negocio = REGLAS_NEGOCIO_DEFAULT.copy()
 
     sistema_activo = True
 
@@ -345,10 +306,6 @@ def menu_principal():
         sesion = auth.flujo_login(usuarios, reglas_negocio)
 
         if sesion is None:
-            if confirmar_accion("\n¿Desea guardar los cambios en 'datos/hotel_data.json' antes de salir? (s/n): "):
-                persistencia.guardar_estado_json(hotel, huespedes, tarifas, usuarios, reglas_negocio)
-                persistencia.registrar_evento_auditoria("sistema", "CIERRE_SISTEMA", "Guardado al cerrar aplicación")
-                print("[Éxito] Datos persistidos.")
             print("\n¡Gracias por utilizar Room Master! Hasta luego.")
             sistema_activo = False
         else:
