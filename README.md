@@ -28,15 +28,15 @@ Para probar el sistema y evaluar los roles de acceso (RBAC), se dispone de los s
 
 ---
 
-## 🚀 Fase 2: Ampliación, Modularización y Persistencia
+## 🚀 Fase 2: Modularización, RBAC y Arquitectura en Memoria
 
 Habiendo completado satisfactoriamente la Fase 1, el proyecto evoluciona hacia una arquitectura modular robusta que incorpora los nuevos conceptos de la materia:
 
 ### 📌 Contenidos y Reglas de Negocio Incorporados:
-1. **Modularización:** División del monolito en 7 módulos con responsabilidades claras, parámetros y valores de retorno (sin variables globales descontroladas).
+1. **Modularización:** División del monolito en 6 módulos cohesivos con responsabilidades claras, parámetros y valores de retorno (sin variables globales descontroladas).
 2. **Autenticación y Roles (RBAC):** Sistema de control de accesos con tres roles estrictamente diferenciados:
    - **Administrador (`admin`):** Gestión total del hotel, tarifas, reglas de negocio, redimensionamiento, reportes ejecutivos y administración de cuentas.
-   - **Recepción (`recepcion`):** Personal de mostrador. Gestión operativa del ciclo del huésped (Check-in, Check-out, Swap, consumos extras, extensión, mantenimiento y reportes) respetando el Principio de Menor Privilegio.
+   - **Recepción (`recepcion`):** Personal de mostrador. Gestión operativa del ciclo del huésped (Check-in, Check-out con liquidación, Swap, consumos extras, extensión, mantenimiento y reportes) respetando el Principio de Menor Privilegio.
    - **Huésped / Usuario (`huesped`):** Portal de cliente: consulta de disponibilidad, reserva de habitación (propia o terceros) y consulta de estadía.
 3. **Modos Operativos del Hotel:** Configuración de modo Híbrido (portal online abierto) o Modo Recepción Exclusiva (solo mostrador registra).
 4. **Estados de Habitación Ampliados:** Matriz con estados `[L]` Libre, `[O]` Ocupada, `[S]` Sucia/Limpieza y `[M]` Mantenimiento/Fuera de servicio.
@@ -45,12 +45,12 @@ Habiendo completado satisfactoriamente la Fase 1, el proyecto evoluciona hacia u
 7. **Tuplas (`tuple`):** Representación inmutable de la sesión activa `(username, rol, nombre, dni)` y coordenadas de habitación `(piso, hab)`.
 8. **Conjuntos (`set`):** Control de pertenencia de permisos por rol (`PERMISOS_ADMIN`, `PERMISOS_RECEPCION`, `PERMISOS_HUESPED`).
 9. **Manejo de Excepciones (`try / except`):** Control preventivo en acceso a diccionarios, conversiones de datos y búsquedas seguras.
-10. **Persistencia en JSON (`.json`) y Texto (`.txt`):** Estado general en JSON y bitácora cronológica con timestamps en `auditoria.txt`.
-11. **Pruebas Unitarias (`unittest`):** Suite automatizada de pruebas unitarias distribuidas en funciones críticas.
+10. **Almacenamiento Estricto en Memoria (RAM):** Cumplimiento total de la restricción académica: todo el estado se mantiene exclusivamente en estructuras nativas de memoria (sin persistencia en archivos externos ni bases de datos).
+11. **Pruebas Unitarias (`unittest`):** Suite automatizada de 10 pruebas unitarias distribuidas en funciones críticas (`test_hotel.py`).
 12. **Restricciones Técnicas Estrictas:**
-    - ❌ Prohibido el uso de Clases / Programación Orientada a Objetos (POO).
-    - ❌ Prohibido el uso de bases de datos (SQL, etc.).
-    - ❌ Prohibido el uso de librerías externas no vistas en la materia (únicamente librerías estándar: `re`, `json`, `functools`, `unittest`, `datetime`).
+    - ❌ Prohibido el uso de Clases / Programación Orientada a Objetos (POO) en la lógica de negocio.
+    - ❌ Prohibido el uso de persistencia de datos o bases de datos (SQL, etc.): todo en memoria RAM.
+    - ❌ Prohibido el uso de librerías externas no vistas en la materia (únicamente librerías estándar: `re`, `functools`, `unittest`).
 
 ---
 
@@ -59,20 +59,16 @@ Habiendo completado satisfactoriamente la Fase 1, el proyecto evoluciona hacia u
 ```text
 room-master/
 │
-├── main.py               # Punto de entrada: inicialización, login y menú según rol
-├── auth.py               # Módulo de usuarios, contraseñas y roles (Dicts y Tuplas)
-├── hotel.py              # Matriz de habitaciones, visualización y control de hotel lleno
-├── tarifas.py            # Matriz de tarifas por piso y segmentación de suites
-├── huespedes.py          # Check-in, Check-out, búsquedas secuenciales y Swap
-├── reportes.py           # Reportes de ocupación y facturación (map, filter, reduce)
-├── persistencia.py       # Carga y guardado en JSON y logs en TXT (try/except)
-├── validaciones.py       # Expresiones regulares genéricas y validación de entradas
+├── main.py               # Punto de entrada: inicialización, login y menús según rol (Admin/Recepción/Huésped)
+├── auth.py               # Módulo de usuarios, contraseñas y roles RBAC (Dicts, Tuplas y Conjuntos)
+├── hotel.py              # Matriz de habitaciones, visualización, estados (L, O, S, M) y control anti-bucle
+├── tarifas.py            # Matriz de tarifas por piso, suites de lujo, precios dinámicos y reglas
+├── huespedes.py          # Check-in, Check-out con liquidación, consumos extras, extensión y Swap
+├── reportes.py           # Reportes de ocupación y facturación (map, filter, reduce y lambdas)
+├── validaciones.py       # Expresiones regulares genéricas y validación con cancelación segura (0)
 │
-├── test_hotel.py         # Suite de 10 pruebas unitarias con unittest
-├── datos/                # Directorio de persistencia
-│   ├── hotel_data.json   # Archivo JSON con la información del hotel
-│   └── auditoria.txt     # Archivo TXT con la bitácora de transacciones
-└── README.md             # Documentación del proyecto
+├── test_hotel.py         # Suite de 10 pruebas unitarias con unittest estándar
+└── README.md             # Documentación integral del proyecto
 ```
 
 ---
@@ -86,10 +82,10 @@ room-master/
 ### 📋 Asignación de Ramas por Integrante:
 | Integrante | Rama Asignada | Responsabilidades Principales |
 | :--- | :--- | :--- |
-| **Lucas** | `feature/fase2-auth-roles` | `auth.py`: Login, diccionarios de usuarios, tuplas de sesión, bifurcación de menús (Admin/Huésped). |
+| **Lucas** | `feature/fase2-auth-roles` | `auth.py`: Login, diccionarios de usuarios, tuplas de sesión, modelo RBAC (Admin/Recepción/Huésped). |
 | **Tiara** | `feature/fase2-hotel-disponibilidad` | `hotel.py` y `validaciones.py`: Desacople de matriz, solución del bucle infinito ante hotel lleno y cancelación con 0. |
-| **Luca** | `feature/fase2-operaciones-txt` | `huespedes.py`: Check-in, check-out, swap y escritura de bitácora en `auditoria.txt`. |
-| **Leandro** | `feature/fase2-persistencia-json-tests` | `persistencia.py`: Carga y guardado de `hotel_data.json` con `try/except`, y suite `test_hotel.py` con `unittest`. |
+| **Luca** | `feature/fase2-operaciones-txt` | `huespedes.py`: Check-in, check-out con liquidación, consumos extras, extensión y swap. |
+| **Leandro** | `feature/fase2-persistencia-json-tests` | `tarifas.py`, `reportes.py` y suite `test_hotel.py` con `unittest`. |
 
 ---
 
