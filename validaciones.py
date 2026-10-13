@@ -33,6 +33,35 @@ def validar_generico(mensaje, patron, mensaje_error):
     return dato_ingresado
 
 
+def validar_generico_con_cancelacion(mensaje, patron, mensaje_error):
+    """
+    Solicita una entrada al usuario con opción de cancelar ingresando '0'.
+    Si el usuario ingresa '0' o 'cancelar', retorna None.
+    Si el formato es inválido, muestra el mensaje de error y advierte sobre la cancelación.
+    """
+    while True:
+        dato_ingresado = input(mensaje).strip()
+        if dato_ingresado in ["0", "cancelar", "CANCELAR"]:
+            print("[Operación cancelada] Regresando...")
+            return None
+
+        if re.match(patron, dato_ingresado):
+            return dato_ingresado
+
+        print(mensaje_error)
+        print("(Tip: Ingrese '0' si desea cancelar la operación y volver al menú)")
+
+
+def confirmar_accion(mensaje="¿Confirma la operación? (s/n): "):
+    """
+    Solicita confirmación explícita al usuario para operaciones críticas
+    (Check-in, Check-out, Swap, etc.).
+    Retorna True si confirma ('s' o 'si'), False en caso contrario.
+    """
+    respuesta = input(mensaje).strip().lower()
+    return respuesta in ["s", "si", "sí"]
+
+
 def solicitar_dimension_valida(mensaje, min_val, max_val):
     """
     Solicita un número entero dentro de un rango numérico [min_val, max_val].
