@@ -9,7 +9,6 @@
 # =============================================================================
 
 import unittest
-import os
 import re
 
 import hotel
@@ -18,7 +17,6 @@ import tarifas
 import auth
 import reportes
 import huespedes
-import persistencia
 
 
 class TestRoomMaster(unittest.TestCase):
@@ -173,39 +171,27 @@ class TestRoomMaster(unittest.TestCase):
 
         self.assertFalse(hotel.hay_habitaciones_disponibles(self.matriz))
 
-    def test_10_persistencia_json_y_auditoria_txt(self):
+    def test_10_autenticacion_y_registro_usuarios_memoria(self):
         """
-        Verifica que el estado del hotel se serialice correctamente en JSON
-        y que los eventos se registren cronológicamente en auditoria.txt.
+        Verifica el ciclo de vida de usuarios puramente en memoria (RAM) mediante Diccionarios y Tuplas:
+        - Registro de un nuevo usuario huésped.
+        - Verificación exitosa de credenciales retornando Tupla inmutable de sesión.
+        - Rechazo de contraseñas incorrectas o usuarios inexistentes.
         """
-        ruta_test_json = os.path.join("datos", "test_hotel_data.json")
-        ruta_test_txt = os.path.join("datos", "test_auditoria.txt")
-
-        # Prueba de guardado JSON
-        exito_guardado = persistencia.guardar_estado_json(
-            self.matriz, self.lista_huespedes, self.tarifas, self.usuarios, self.reglas,
-            ruta=ruta_test_json
+        exito = auth.registrar_nuevo_usuario(
+            self.usuarios, "estudiante", "pass123", "Estudiante AED", "44111222", "huesped"
         )
-        self.assertTrue(exito_guardado, "El guardado en JSON debe ser exitoso.")
-        self.assertTrue(os.path.exists(ruta_test_json), "El archivo JSON debe existir en disco.")
+        self.assertTrue(exito, "El registro de usuario en memoria debe ser exitoso.")
+        self.assertIn("estudiante", self.usuarios)
 
-        # Prueba de lectura JSON
-        datos_recuperados = persistencia.cargar_estado_json(ruta=ruta_test_json)
-        self.assertIsNotNone(datos_recuperados)
-        self.assertEqual(len(datos_recuperados["hotel"]), 3)
+        # Verificación exitosa retornando Tupla inmutable
+        sesion = auth.verificar_credenciales(self.usuarios, "estudiante", "pass123")
+        self.assertIsNotNone(sesion)
+        self.assertEqual(sesion, ("estudiante", "huesped", "Estudiante AED", "44111222"))
 
-        # Prueba de bitácora TXT
-        exito_log = persistencia.registrar_evento_auditoria(
-            "admin", "TEST_ACCION", "Detalle de prueba unitaria", ruta=ruta_test_txt
-        )
-        self.assertTrue(exito_log, "La escritura en bitácora TXT debe ser exitosa.")
-        self.assertTrue(os.path.exists(ruta_test_txt), "El archivo TXT debe existir en disco.")
-
-        # Limpieza de archivos temporales de prueba
-        if os.path.exists(ruta_test_json):
-            os.remove(ruta_test_json)
-        if os.path.exists(ruta_test_txt):
-            os.remove(ruta_test_txt)
+        # Verificación con contraseña errónea
+        sesion_erronea = auth.verificar_credenciales(self.usuarios, "estudiante", "incorrecta")
+        self.assertIsNone(sesion_erronea)
 
 
 if __name__ == "__main__":
