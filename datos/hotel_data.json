@@ -1,0 +1,68 @@
+{
+    "version": "2.0",
+    "fecha_guardado": "2026-10-13 16:32:48",
+    "hotel": [
+        [
+            "L",
+            "L",
+            "L",
+            "L"
+        ],
+        [
+            "L",
+            "L",
+            "L",
+            "L"
+        ],
+        [
+            "L",
+            "L",
+            "L",
+            "L"
+        ]
+    ],
+    "huespedes": [],
+    "tarifas": [
+        [
+            1,
+            10000.0
+        ],
+        [
+            2,
+            12000.0
+        ],
+        [
+            3,
+            15000.0
+        ]
+    ],
+    "usuarios": {
+        "admin": {
+            "password": "admin",
+            "rol": "admin",
+            "nombre": "Administrador del Hotel",
+            "dni": "11111111"
+        },
+        "recepcion": {
+            "password": "1234",
+            "rol": "recepcion",
+            "nombre": "Recepcionista de Turno",
+            "dni": "22222222"
+        },
+        "cliente": {
+            "password": "1234",
+            "rol": "huesped",
+            "nombre": "Huésped Frecuente",
+            "dni": "33333333"
+        }
+    },
+    "reglas_negocio": {
+        "permitir_autoregistro": true,
+        "permitir_reserva_terceros": true,
+        "oferta_demanda_activa": false,
+        "umbral_ocupacion_demanda": 70.0,
+        "recargo_oferta_demanda": 20.0,
+        "max_dias_estadia": 30,
+        "descuento_cliente_frecuente": 5.0
+    }
+}

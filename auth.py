@@ -17,7 +17,7 @@ from validaciones import (
 )
 
 # Constantes inmutables representadas mediante Tuplas
-ROLES_VALIDOS = ("admin", "huesped")
+ROLES_VALIDOS = ("admin", "recepcion", "huesped")
 
 # Permisos definidos mediante Conjuntos (set) para verificar accesos
 PERMISOS_ADMIN = {
@@ -27,10 +27,27 @@ PERMISOS_ADMIN = {
     "swap",
     "buscar_dni",
     "reportes",
+    "cargar_extras",
+    "extender_estadia",
+    "limpieza",
+    "mantenimiento",
     "redimensionar",
     "restablecer",
     "gestionar_usuarios",
     "gestionar_reglas"
+}
+
+PERMISOS_RECEPCION = {
+    "ver_hotel",
+    "checkin",
+    "checkout",
+    "swap",
+    "buscar_dni",
+    "cargar_extras",
+    "extender_estadia",
+    "limpieza",
+    "mantenimiento",
+    "reportes"
 }
 
 PERMISOS_HUESPED = {
@@ -50,7 +67,7 @@ USUARIOS_DEFAULT = {
     },
     "recepcion": {
         "password": "1234",
-        "rol": "admin",
+        "rol": "recepcion",
         "nombre": "Recepcionista de Turno",
         "dni": "22222222"
     },
@@ -70,6 +87,8 @@ def obtener_permisos_por_rol(rol):
     """
     if rol == "admin":
         return PERMISOS_ADMIN.copy()
+    elif rol == "recepcion":
+        return PERMISOS_RECEPCION.copy()
     elif rol == "huesped":
         return PERMISOS_HUESPED.copy()
     return set()
@@ -193,12 +212,15 @@ def crear_usuario_por_admin(diccionario_usuarios):
 
     print("\nSeleccione el rol del usuario:")
     print("1. Administrador (admin)")
-    print("2. Huésped / Cliente (huesped)")
-    rol_opcion = input("Opción (1 o 2, o 0 para cancelar): ").strip()
+    print("2. Recepción / Conserjería (recepcion)")
+    print("3. Huésped / Cliente (huesped)")
+    rol_opcion = input("Opción (1, 2 o 3, o 0 para cancelar): ").strip()
 
     if rol_opcion == "1":
         rol_elegido = "admin"
     elif rol_opcion == "2":
+        rol_elegido = "recepcion"
+    elif rol_opcion == "3":
         rol_elegido = "huesped"
     else:
         print("[Operación cancelada] No se seleccionó rol.")
@@ -241,10 +263,24 @@ def modificar_rol_usuario(diccionario_usuarios, sesion_actual):
         return
 
     rol_actual = diccionario_usuarios[usuario_target]["rol"]
-    nuevo_rol = "huesped" if rol_actual == "admin" else "admin"
-
     print(f"\nEl usuario '{usuario_target}' actualmente tiene rol [{rol_actual.upper()}].")
-    print(f"Se cambiará su rol a: [{nuevo_rol.upper()}].")
+    print("Seleccione el nuevo rol a asignar:")
+    print("1. Administrador (admin)")
+    print("2. Recepción / Conserjería (recepcion)")
+    print("3. Huésped / Cliente (huesped)")
+    opcion_rol = input("Opción (1, 2 o 3, o 0 para cancelar): ").strip()
+
+    mapa_roles = {"1": "admin", "2": "recepcion", "3": "huesped"}
+    if opcion_rol not in mapa_roles:
+        print("[Operación cancelada] No se modificó el rol.")
+        return
+
+    nuevo_rol = mapa_roles[opcion_rol]
+    if nuevo_rol == rol_actual:
+        print(f"Aviso: El usuario ya posee el rol [{rol_actual.upper()}].")
+        return
+
+    print(f"\nSe cambiará su rol de [{rol_actual.upper()}] a [{nuevo_rol.upper()}].")
 
     if confirmar_accion(f"¿Confirma el cambio de rol para '{usuario_target}'? (s/n): "):
         diccionario_usuarios[usuario_target]["rol"] = nuevo_rol
