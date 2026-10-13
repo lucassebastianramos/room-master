@@ -1,16 +1,25 @@
 # =============================================================================
-# MÓDULO DE TARIFAS Y SEGMENTACIÓN POR PISOS (tarifas.py)
+# MÓDULO DE TARIFAS Y REGLAS DE NEGOCIO (tarifas.py)
 # =============================================================================
-# Responsabilidad: Configuración dinámica de la matriz de tarifas por piso,
-# segmentación de suites/lujo con recargo y consulta de precios por noche.
+# Responsabilidad: Esquema de precios por piso, segmentación dinámica de suites/lujo,
+# precios dinámicos por oferta/demanda y políticas de negocio configurables por el Admin.
 # =============================================================================
 
 from validaciones import (
     validar_generico,
     solicitar_dimension_valida,
+    confirmar_accion,
     PATRON_NUMERO_VALIDO,
     ERROR_NUMERO
 )
+
+# Diccionario inicial de reglas de negocio configurables
+REGLAS_NEGOCIO_DEFAULT = {
+    "permitir_reserva_terceros": True,
+    "oferta_demanda_activa": False,
+    "umbral_ocupacion_demanda": 70.0,  # % de ocupación a partir del cual rige alta demanda
+    "recargo_oferta_demanda": 20.0     # % de recargo aplicado sobre la tarifa por alta demanda
+}
 
 
 def configurar_tarifas_hotel(total_pisos):
@@ -77,31 +86,130 @@ def configurar_tarifas_hotel(total_pisos):
         matriz_tarifas.append([p, precio_piso])
 
     # 4. Mostrar resumen de tarifas
-    print("\n--- ESQUEMA DE TARIFAS CONFIGURADO ---")
-    for p, precio in matriz_tarifas:
-        tipo = "Suite / Lujo" if p >= piso_lujo_desde else "Estándar"
-        print(f"Piso {p} ({tipo}): ${precio:,.2f} por noche")
-    print("=" * 45)
+    mostrar_resumen_tarifas(matriz_tarifas, piso_lujo_desde)
     input("\nPresione [Enter] para continuar...")
 
     return matriz_tarifas
 
 
+def mostrar_resumen_tarifas(matriz_tarifas, piso_lujo_desde=None):
+    """
+    Imprime en consola el esquema de precios vigente por piso.
+    """
+    print("\n--- ESQUEMA DE TARIFAS VIGENTES ---")
+    for p, precio in matriz_tarifas:
+        tipo = ""
+        if piso_lujo_desde is not None and p >= piso_lujo_desde:
+            tipo = " (Suite / Lujo)"
+        elif piso_lujo_desde is not None:
+            tipo = " (Estándar)"
+        print(f"Piso {p}{tipo}: ${precio:,.2f} por noche")
+    print("=" * 45)
+
+
 def obtener_tarifa_habitacion(piso, matriz_tarifas):
     """
-    Retorna el precio base por noche según el piso del hotel.
-    matriz_tarifas tiene pares: [piso, precio_base] (piso 1-indexed: 1, 2, 3...)
+    Retorna el precio base por noche según el piso del hotel (1-indexed).
     """
     for i in range(len(matriz_tarifas)):
         if matriz_tarifas[i][0] == piso:
             return matriz_tarifas[i][1]
 
-    # Soporte por si se pasa piso en formato índice de matriz (0 para Piso 1)
     if piso == 0 and len(matriz_tarifas) > 0:
         return matriz_tarifas[0][1]
 
-    # Fallback al último piso si excede el rango
     if len(matriz_tarifas) > 0:
         return matriz_tarifas[-1][1]
 
     return 0.0
+
+
+def calcular_tarifa_dinamica(piso, matriz_tarifas, ocupacion_pct=0.0, reglas_negocio=None):
+    """
+    Calcula la tarifa aplicable a una habitación teniendo en cuenta las reglas
+    de negocio activas (por ejemplo: aumento de tarifa por oferta/demanda si la
+    ocupación supera el umbral configurado).
+    Retorna una tupla: (tarifa_final, aplico_demanda).
+    """
+    tarifa_base = float(obtener_tarifa_habitacion(piso, matriz_tarifas))
+
+    if reglas_negocio is None:
+        return tarifa_base, False
+
+    oferta_activa = reglas_negocio.get("oferta_demanda_activa", False)
+    umbral = reglas_negocio.get("umbral_ocupacion_demanda", 70.0)
+    recargo_pct = reglas_negocio.get("recargo_oferta_demanda", 20.0)
+
+    if oferta_activa and ocupacion_pct >= umbral:
+        tarifa_con_recargo = round(tarifa_base * (1 + recargo_pct / 100.0), 2)
+        return tarifa_con_recargo, True
+
+    return tarifa_base, False
+
+
+def menu_configuracion_reglas_negocio(matriz_tarifas, reglas_negocio, total_pisos):
+    """
+    Panel interactivo donde el Administrador puede ajustar políticas de negocio:
+    1. Reconfigurar tarifas por piso o eliminar/activar segmentación de lujo.
+    2. Activar/Desactivar aumentos por oferta y demanda.
+    3. Ajustar parámetros de oferta/demanda (umbral de ocupación y porcentaje).
+    4. Habilitar/Deshabilitar reservas para terceros por parte de huéspedes.
+    """
+    ejecutando = True
+
+    while ejecutando:
+        print("\n" + "=" * 55)
+        print("     PANEL DE REGLAS DE NEGOCIO Y TARIFAS (ADMIN)    ")
+        print("=" * 55)
+        print("1. Reconfigurar tarifas base y segmentación de suites")
+        print(f"2. Precios por Oferta/Demanda: [{'ACTIVO' if reglas_negocio['oferta_demanda_activa'] else 'INACTIVO'}]")
+        print(f"   (Umbral: {reglas_negocio['umbral_ocupacion_demanda']}% de ocupación | Recargo: +{reglas_negocio['recargo_oferta_demanda']}%)")
+        print(f"3. Reservas para terceros por huéspedes: [{'PERMITIDO' if reglas_negocio['permitir_reserva_terceros'] else 'DESHABILITADO'}]")
+        print("4. Ver estado actual de tarifas y reglas")
+        print("0. Volver al panel de administración")
+        print("=" * 55)
+
+        opcion = input("Seleccione una opción: ").strip()
+
+        if opcion == "1":
+            nuevas_tarifas = configurar_tarifas_hotel(total_pisos)
+            matriz_tarifas.clear()
+            for fila in nuevas_tarifas:
+                matriz_tarifas.append(fila)
+            print("\n[Éxito] Tarifas del hotel actualizadas.")
+
+        elif opcion == "2":
+            estado_actual = reglas_negocio["oferta_demanda_activa"]
+            reglas_negocio["oferta_demanda_activa"] = not estado_actual
+            nuevo_estado = "ACTIVADO" if reglas_negocio["oferta_demanda_activa"] else "DESACTIVADO"
+            print(f"\n[Éxito] Régimen de precios por Oferta/Demanda: {nuevo_estado}.")
+
+            if reglas_negocio["oferta_demanda_activa"]:
+                if confirmar_accion("¿Desea cambiar los parámetros de umbral y recargo? (s/n): "):
+                    umbral = float(validar_generico("Ingrese el % de ocupación mínimo (ej: 70): ", PATRON_NUMERO_VALIDO, ERROR_NUMERO))
+                    recargo = float(validar_generico("Ingrese el % de aumento por alta demanda (ej: 25): ", PATRON_NUMERO_VALIDO, ERROR_NUMERO))
+                    reglas_negocio["umbral_ocupacion_demanda"] = umbral
+                    reglas_negocio["recargo_oferta_demanda"] = recargo
+                    print("\n[Éxito] Parámetros de oferta/demanda actualizados.")
+
+        elif opcion == "3":
+            permitir = reglas_negocio["permitir_reserva_terceros"]
+            reglas_negocio["permitir_reserva_terceros"] = not permitir
+            nuevo_estado = "PERMITIDAS" if reglas_negocio["permitir_reserva_terceros"] else "DESHABILITADAS"
+            print(f"\n[Éxito] Reservas para terceros: {nuevo_estado}.")
+
+        elif opcion == "4":
+            print("\n=== RESUMEN DE REGLAS ACTIVAS ===")
+            print(f"- Oferta y Demanda:       {'ACTIVA' if reglas_negocio['oferta_demanda_activa'] else 'INACTIVA'}")
+            print(f"  * Umbral de ocupación:  {reglas_negocio['umbral_ocupacion_demanda']}%")
+            print(f"  * Recargo aplicado:     +{reglas_negocio['recargo_oferta_demanda']}%")
+            print(f"- Reservas de terceros:   {'PERMITIDAS' if reglas_negocio['permitir_reserva_terceros'] else 'DESHABILITADAS'}")
+            mostrar_resumen_tarifas(matriz_tarifas)
+
+        elif opcion == "0":
+            ejecutando = False
+        else:
+            print("Opción inválida. Intente nuevamente.")
+
+        if opcion != "0":
+            input("\nPresione [Enter] para continuar...")
