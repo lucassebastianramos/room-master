@@ -63,6 +63,15 @@ def obtener_permisos_por_rol(rol):
     return set()
 
 
+def tiene_permiso(rol, permiso):
+    """
+    Determina si un rol posee autorización para ejecutar una acción específica.
+    Consulta la pertenencia en el conjunto (set) de permisos correspondiente.
+    """
+    permisos = obtener_permisos_por_rol(rol)
+    return permiso in permisos
+
+
 def verificar_credenciales(diccionario_usuarios, username, password):
     """
     Verifica si el usuario y contraseña coinciden en el diccionario de usuarios.
