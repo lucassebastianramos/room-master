@@ -13,12 +13,15 @@ from validaciones import (
     ERROR_NUMERO
 )
 
-# Diccionario inicial de reglas de negocio configurables
+# Diccionario integral de reglas de negocio configurables
 REGLAS_NEGOCIO_DEFAULT = {
-    "permitir_reserva_terceros": True,
-    "oferta_demanda_activa": False,
-    "umbral_ocupacion_demanda": 70.0,  # % de ocupación a partir del cual rige alta demanda
-    "recargo_oferta_demanda": 20.0     # % de recargo aplicado sobre la tarifa por alta demanda
+    "permitir_autoregistro": True,         # Si es False, el hotel opera solo por mostrador/recepción
+    "permitir_reserva_terceros": True,     # Si los huéspedes pueden reservar para terceros
+    "oferta_demanda_activa": False,        # Precios dinámicos por alta demanda
+    "umbral_ocupacion_demanda": 70.0,      # % de ocupación a partir del cual rige alta demanda
+    "recargo_oferta_demanda": 20.0,        # % de recargo aplicado sobre la tarifa por alta demanda
+    "max_dias_estadia": 30,                # Límite máximo de estadía permitido por reserva
+    "descuento_cliente_frecuente": 5.0     # % de descuento por fidelidad a usuarios registrados
 }
 
 
@@ -32,7 +35,6 @@ def configurar_tarifas_hotel(total_pisos):
     print("      CONFIGURACIÓN DE TARIFAS DEL HOTEL     ")
     print("=" * 45)
 
-    # 1. Precio base general
     precio_base_valido = False
     precio_base = 0.0
 
@@ -48,9 +50,7 @@ def configurar_tarifas_hotel(total_pisos):
             print("Error: El precio base debe ser mayor a 0.")
 
     matriz_tarifas = []
-
-    # 2. Si el hotel tiene más de un piso, permitir segmentación de pisos lujosos
-    piso_lujo_desde = total_pisos + 1  # Por defecto, sin pisos de lujo
+    piso_lujo_desde = total_pisos + 1
     recargo_porcentaje = 0.0
 
     if total_pisos > 1:
@@ -77,7 +77,6 @@ def configurar_tarifas_hotel(total_pisos):
                 ERROR_NUMERO
             ))
 
-    # 3. Construir la lista de tarifas para cada piso (de 1 a total_pisos)
     for p in range(1, total_pisos + 1):
         if p >= piso_lujo_desde:
             precio_piso = round(precio_base * (1 + recargo_porcentaje / 100.0), 2)
@@ -85,7 +84,6 @@ def configurar_tarifas_hotel(total_pisos):
             precio_piso = round(precio_base, 2)
         matriz_tarifas.append([p, precio_piso])
 
-    # 4. Mostrar resumen de tarifas
     mostrar_resumen_tarifas(matriz_tarifas, piso_lujo_desde)
     input("\nPresione [Enter] para continuar...")
 
@@ -127,8 +125,7 @@ def obtener_tarifa_habitacion(piso, matriz_tarifas):
 def calcular_tarifa_dinamica(piso, matriz_tarifas, ocupacion_pct=0.0, reglas_negocio=None):
     """
     Calcula la tarifa aplicable a una habitación teniendo en cuenta las reglas
-    de negocio activas (por ejemplo: aumento de tarifa por oferta/demanda si la
-    ocupación supera el umbral configurado).
+    de negocio activas (por ejemplo: aumento de tarifa por oferta/demanda).
     Retorna una tupla: (tarifa_final, aplico_demanda).
     """
     tarifa_base = float(obtener_tarifa_habitacion(piso, matriz_tarifas))
@@ -149,25 +146,28 @@ def calcular_tarifa_dinamica(piso, matriz_tarifas, ocupacion_pct=0.0, reglas_neg
 
 def menu_configuracion_reglas_negocio(matriz_tarifas, reglas_negocio, total_pisos):
     """
-    Panel interactivo donde el Administrador puede ajustar políticas de negocio:
+    Panel interactivo donde el Administrador puede ajustar todas las políticas del hotel:
     1. Reconfigurar tarifas por piso o eliminar/activar segmentación de lujo.
-    2. Activar/Desactivar aumentos por oferta y demanda.
-    3. Ajustar parámetros de oferta/demanda (umbral de ocupación y porcentaje).
-    4. Habilitar/Deshabilitar reservas para terceros por parte de huéspedes.
+    2. Activar/Desactivar aumentos por oferta y demanda (y calibrar % de recargo).
+    3. Habilitar/Deshabilitar reservas para terceros por huéspedes.
+    4. Conmutar modo de operación del hotel (Permitir/Bloquear autorregistro online).
+    5. Configurar límite máximo de estadía permitida.
     """
     ejecutando = True
 
     while ejecutando:
-        print("\n" + "=" * 55)
-        print("     PANEL DE REGLAS DE NEGOCIO Y TARIFAS (ADMIN)    ")
-        print("=" * 55)
-        print("1. Reconfigurar tarifas base y segmentación de suites")
-        print(f"2. Precios por Oferta/Demanda: [{'ACTIVO' if reglas_negocio['oferta_demanda_activa'] else 'INACTIVO'}]")
-        print(f"   (Umbral: {reglas_negocio['umbral_ocupacion_demanda']}% de ocupación | Recargo: +{reglas_negocio['recargo_oferta_demanda']}%)")
-        print(f"3. Reservas para terceros por huéspedes: [{'PERMITIDO' if reglas_negocio['permitir_reserva_terceros'] else 'DESHABILITADO'}]")
-        print("4. Ver estado actual de tarifas y reglas")
+        print("\n" + "=" * 60)
+        print("        PANEL DE REGLAS DE NEGOCIO Y TARIFAS (ADMIN)        ")
+        print("=" * 60)
+        print("1. Reconfigurar tarifas base y suites/lujo")
+        print(f"2. Modo de Operación: [{'HÍBRIDO (Portal Online Activo)' if reglas_negocio['permitir_autoregistro'] else 'RECEPCIÓN EXCLUSIVA (Solo Mostrador)'}]")
+        print(f"3. Precios por Oferta/Demanda: [{'ACTIVO' if reglas_negocio['oferta_demanda_activa'] else 'INACTIVO'}]")
+        print(f"   (Umbral: {reglas_negocio['umbral_ocupacion_demanda']}% ocupación | Recargo: +{reglas_negocio['recargo_oferta_demanda']}%)")
+        print(f"4. Reservas para terceros por huéspedes: [{'PERMITIDO' if reglas_negocio['permitir_reserva_terceros'] else 'DESHABILITADO'}]")
+        print(f"5. Estadía máxima permitida: [{reglas_negocio['max_dias_estadia']} días]")
+        print("6. Ver resumen de todas las reglas y tarifas activas")
         print("0. Volver al panel de administración")
-        print("=" * 55)
+        print("=" * 60)
 
         opcion = input("Seleccione una opción: ").strip()
 
@@ -179,10 +179,14 @@ def menu_configuracion_reglas_negocio(matriz_tarifas, reglas_negocio, total_piso
             print("\n[Éxito] Tarifas del hotel actualizadas.")
 
         elif opcion == "2":
-            estado_actual = reglas_negocio["oferta_demanda_activa"]
-            reglas_negocio["oferta_demanda_activa"] = not estado_actual
-            nuevo_estado = "ACTIVADO" if reglas_negocio["oferta_demanda_activa"] else "DESACTIVADO"
-            print(f"\n[Éxito] Régimen de precios por Oferta/Demanda: {nuevo_estado}.")
+            reglas_negocio["permitir_autoregistro"] = not reglas_negocio["permitir_autoregistro"]
+            nuevo = "HÍBRIDO (Autorregistro habilitado)" if reglas_negocio["permitir_autoregistro"] else "EXCLUSIVO MOSTRADOR (Solo recepción registra)"
+            print(f"\n[Éxito] Modo de operación configurado a: {nuevo}.")
+
+        elif opcion == "3":
+            reglas_negocio["oferta_demanda_activa"] = not reglas_negocio["oferta_demanda_activa"]
+            nuevo = "ACTIVADO" if reglas_negocio["oferta_demanda_activa"] else "DESACTIVADO"
+            print(f"\n[Éxito] Régimen de precios por Oferta/Demanda: {nuevo}.")
 
             if reglas_negocio["oferta_demanda_activa"]:
                 if confirmar_accion("¿Desea cambiar los parámetros de umbral y recargo? (s/n): "):
@@ -192,18 +196,28 @@ def menu_configuracion_reglas_negocio(matriz_tarifas, reglas_negocio, total_piso
                     reglas_negocio["recargo_oferta_demanda"] = recargo
                     print("\n[Éxito] Parámetros de oferta/demanda actualizados.")
 
-        elif opcion == "3":
-            permitir = reglas_negocio["permitir_reserva_terceros"]
-            reglas_negocio["permitir_reserva_terceros"] = not permitir
-            nuevo_estado = "PERMITIDAS" if reglas_negocio["permitir_reserva_terceros"] else "DESHABILITADAS"
-            print(f"\n[Éxito] Reservas para terceros: {nuevo_estado}.")
-
         elif opcion == "4":
-            print("\n=== RESUMEN DE REGLAS ACTIVAS ===")
-            print(f"- Oferta y Demanda:       {'ACTIVA' if reglas_negocio['oferta_demanda_activa'] else 'INACTIVA'}")
-            print(f"  * Umbral de ocupación:  {reglas_negocio['umbral_ocupacion_demanda']}%")
-            print(f"  * Recargo aplicado:     +{reglas_negocio['recargo_oferta_demanda']}%")
-            print(f"- Reservas de terceros:   {'PERMITIDAS' if reglas_negocio['permitir_reserva_terceros'] else 'DESHABILITADAS'}")
+            reglas_negocio["permitir_reserva_terceros"] = not reglas_negocio["permitir_reserva_terceros"]
+            nuevo = "PERMITIDAS" if reglas_negocio["permitir_reserva_terceros"] else "DESHABILITADAS"
+            print(f"\n[Éxito] Reservas para terceros: {nuevo}.")
+
+        elif opcion == "5":
+            max_dias = int(validar_generico("Ingrese la cantidad máxima de días de estadía (ej: 30): ", PATRON_NUMERO_VALIDO, ERROR_NUMERO))
+            if max_dias > 0:
+                reglas_negocio["max_dias_estadia"] = max_dias
+                print(f"\n[Éxito] Estadía máxima fijada en {max_dias} días.")
+            else:
+                print("Error: Los días deben ser mayores a 0.")
+
+        elif opcion == "6":
+            print("\n=== RESUMEN DE POLÍTICAS DEL HOTEL ===")
+            print(f"- Autorregistro de usuarios: {'HABILITADO' if reglas_negocio['permitir_autoregistro'] else 'BLOQUEADO (Solo Mostrador)'}")
+            print(f"- Reservas de terceros:      {'PERMITIDAS' if reglas_negocio['permitir_reserva_terceros'] else 'DESHABILITADAS'}")
+            print(f"- Precios Oferta/Demanda:    {'ACTIVA' if reglas_negocio['oferta_demanda_activa'] else 'INACTIVA'}")
+            print(f"  * Umbral de ocupación:     {reglas_negocio['umbral_ocupacion_demanda']}%")
+            print(f"  * Recargo aplicado:        +{reglas_negocio['recargo_oferta_demanda']}%")
+            print(f"- Estadía máxima permitida:  {reglas_negocio['max_dias_estadia']} días")
+            print(f"- Descuento cliente fiel:    {reglas_negocio['descuento_cliente_frecuente']}%")
             mostrar_resumen_tarifas(matriz_tarifas)
 
         elif opcion == "0":
