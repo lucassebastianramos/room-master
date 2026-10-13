@@ -315,22 +315,28 @@ def menu_gestion_usuarios(diccionario_usuarios, sesion_actual):
             input("\nPresione [Enter] para continuar...")
 
 
-def flujo_login(diccionario_usuarios):
+def flujo_login(diccionario_usuarios, reglas_negocio=None):
     """
     Gestiona la pantalla interactiva de inicio de sesión o registro.
+    Respeta la política de autoregistro configurada por la administración.
     Retorna la Tupla de sesión (username, rol, nombre, dni) al loguearse con éxito,
     o None si el usuario decide salir del sistema.
     """
     sesion_iniciada = None
 
     while sesion_iniciada is None:
-        print("\n" + "=" * 50)
-        print("          ROOM MASTER - INICIO DE SESIÓN          ")
-        print("=" * 50)
+        permitir_autoregistro = True if reglas_negocio is None else reglas_negocio.get("permitir_autoregistro", True)
+
+        print("\n" + "=" * 52)
+        print("           ROOM MASTER - INICIO DE SESIÓN           ")
+        print("=" * 52)
         print("1. Iniciar sesión con usuario existente")
-        print("2. Registrarse como nuevo huésped")
+        if permitir_autoregistro:
+            print("2. Registrarse como nuevo huésped")
+        else:
+            print("2. Registrarse como nuevo huésped (SOLO RECEPCIÓN)")
         print("0. Salir de la aplicación")
-        print("=" * 50)
+        print("=" * 52)
 
         opcion = input("Seleccione una opción: ").strip()
 
@@ -353,6 +359,12 @@ def flujo_login(diccionario_usuarios):
                 print("\n[Error] Usuario o contraseña incorrectos. Intente nuevamente.")
 
         elif opcion == "2":
+            if not permitir_autoregistro:
+                print("\n[Aviso] El autorregistro online se encuentra DESHABILITADO por la administración.")
+                print("Este establecimiento opera bajo la modalidad de RECEPCIÓN EXCLUSIVA.")
+                print("Por favor, acérquese a la ventanilla para que el personal de recepción registre su estadía.")
+                continue
+
             print("\n--- REGISTRO DE NUEVO HUÉSPED ---")
             nuevo_user = input("Elija un nombre de usuario (o 0 para cancelar): ").strip().lower()
             if nuevo_user in ["0", "cancelar"]:

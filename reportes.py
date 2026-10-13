@@ -1,8 +1,9 @@
 # =============================================================================
 # MÓDULO DE REPORTES Y PROGRAMACIÓN FUNCIONAL (reportes.py)
 # =============================================================================
-# Responsabilidad: Métricas del hotel, porcentaje de ocupación, facturación
-# proyectada y recaudación total aplicando el paradigma de programación funcional:
+# Responsabilidad: Métricas del hotel, porcentaje de ocupación, desglose de estados
+# (Libre, Ocupada, Limpieza, Mantenimiento), facturación proyectada y recaudación total
+# aplicando el paradigma de programación funcional:
 # map, filter, functools.reduce y funciones anónimas lambda.
 # =============================================================================
 
@@ -12,8 +13,9 @@ from tarifas import obtener_tarifa_habitacion
 
 def generar_reporte_ocupacion(matriz_hotel):
     """
-    Genera un reporte analítico que muestra el total de habitaciones,
-    las que se encuentran ocupadas ('O') y el porcentaje de ocupación del hotel.
+    Genera un reporte analítico integral que muestra el total de habitaciones,
+    el desglose por estado (Ocupadas, Libres, En Limpieza, En Mantenimiento)
+    y el porcentaje exacto de ocupación del hotel.
     Utiliza functools.reduce y map con lambdas.
     """
     # 1. Total de habitaciones acumulando el largo de cada fila mediante reduce
@@ -23,24 +25,23 @@ def generar_reporte_ocupacion(matriz_hotel):
         0
     )
 
-    # 2. Cuenta las habitaciones ocupadas en cada fila usando reduce mapeado
-    ocupadas_por_fila = map(
-        lambda fila: functools.reduce(
-            lambda acum, hab: acum + (1 if hab == "O" else 0),
+    # 2. Conteo funcional por estados usando map y reduce
+    contar_estado = lambda estado: functools.reduce(
+        lambda acum, fila: acum + functools.reduce(
+            lambda sub, hab: sub + (1 if hab == estado else 0),
             fila,
             0
         ),
-        matriz_hotel
-    )
-
-    # 3. Acumula los subtotales de cada fila para obtener el gran total ocupado
-    habitaciones_ocupadas = functools.reduce(
-        lambda acumulado, cant: acumulado + cant,
-        ocupadas_por_fila,
+        matriz_hotel,
         0
     )
 
-    # 4. Cálculo porcentual seguro contra división por cero
+    habitaciones_ocupadas = contar_estado("O")
+    habitaciones_libres = contar_estado("L")
+    habitaciones_limpieza = contar_estado("S")
+    habitaciones_mantenimiento = contar_estado("M")
+
+    # 3. Cálculo porcentual seguro contra división por cero
     if total_habitaciones > 0:
         porcentaje_ocupacion = (habitaciones_ocupadas * 100.0) / total_habitaciones
     else:
@@ -48,33 +49,42 @@ def generar_reporte_ocupacion(matriz_hotel):
 
     porcentaje_ocupacion = round(porcentaje_ocupacion, 2)
 
-    print("\n" + "=" * 40)
-    print("        REPORTE DE OCUPACIÓN DEL HOTEL    ")
-    print("=" * 40)
-    print(f"Total de habitaciones:    {total_habitaciones}")
-    print(f"Habitaciones ocupadas:    {habitaciones_ocupadas}")
-    print(f"Porcentaje de ocupación:  {porcentaje_ocupacion}%")
-    print("=" * 40)
+    print("\n" + "=" * 52)
+    print("          REPORTE ANALÍTICO DE OCUPACIÓN Y ESTADOS       ")
+    print("=" * 52)
+    print(f"Total de habitaciones:       {total_habitaciones}")
+    print(f"- Habitaciones Ocupadas [O]: {habitaciones_ocupadas}")
+    print(f"- Habitaciones Libres   [L]: {habitaciones_libres}")
+    print(f"- En Limpieza           [S]: {habitaciones_limpieza}")
+    print(f"- En Mantenimiento      [M]: {habitaciones_mantenimiento}")
+    print("-" * 52)
+    print(f"Porcentaje de ocupación:     {porcentaje_ocupacion}%")
+    print("=" * 52)
 
 
 def calcular_subtotal(huesped, matriz_tarifas):
     """
     Calcula el subtotal a facturar por un huésped específico.
-    Aplica una función anónima (lambda) con 10% de bonificación para estadías mayores a 7 noches.
-    Retorna el subtotal calculado en punto flotante.
+    Aplica una función anónima (lambda) con 10% de bonificación para estadías mayores a 7 noches
+    e incorpora los consumos extras acumulados (Minibar, servicios).
+    Retorna el subtotal neto calculado en punto flotante.
     """
     dias = int(huesped[2])
     piso = int(huesped[3])
     piso_comercial = piso + 1
 
     precio_noche = float(obtener_tarifa_habitacion(piso_comercial, matriz_tarifas))
-    subtotal_bruto = precio_noche * dias
+    subtotal_estadia = precio_noche * dias
 
     # Descuento del 10% para estadías prolongadas (> 7 noches)
     aplicar_descuento = lambda d, monto: monto * 0.9 if d > 7 else monto
-    subtotal_neto = aplicar_descuento(dias, subtotal_bruto)
+    estadia_neta = aplicar_descuento(dias, subtotal_estadia)
 
-    return subtotal_neto
+    # Consumos extras si están registrados en el índice 6
+    consumos_extras = float(huesped[6]) if len(huesped) > 6 else 0.0
+
+    subtotal_total = estadia_neta + consumos_extras
+    return subtotal_total
 
 
 def calcular_recaudacion_total(lista_huespedes, matriz_tarifas):
@@ -102,11 +112,11 @@ def calcular_recaudacion_total(lista_huespedes, matriz_tarifas):
         0.0
     )
 
-    print("\n" + "=" * 40)
-    print("         RECAUDACIÓN TOTAL PROYECTADA     ")
-    print("=" * 40)
-    print(f"Huéspedes facturados:     {len(lista_huespedes)}")
-    print(f"Recaudación total:        ${recaudacion_total:,.2f}")
-    print("=" * 40)
+    print("\n" + "=" * 52)
+    print("            RECAUDACIÓN TOTAL PROYECTADA         ")
+    print("=" * 52)
+    print(f"Huéspedes facturados:        {len(lista_huespedes)}")
+    print(f"Recaudación total:           ${recaudacion_total:,.2f}")
+    print("=" * 52)
 
     return recaudacion_total

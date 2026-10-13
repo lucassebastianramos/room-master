@@ -3,12 +3,13 @@
 # =============================================================================
 # Responsabilidad: Creación, conversión de coordenadas, visualización y
 # control de estados y disponibilidad de las habitaciones del hotel.
-# Estados: 'L' (Libre), 'O' (Ocupada), 'S' (Sucia/Limpieza).
+# Estados: 'L' (Libre), 'O' (Ocupada), 'S' (Sucia/Limpieza), 'M' (Mantenimiento).
 # =============================================================================
 
 from validaciones import (
-    validar_generico,
+    validar_generico_con_cancelacion,
     solicitar_dimension_valida,
+    confirmar_accion,
     PATRON_NUMERO_VALIDO,
     ERROR_NUMERO
 )
@@ -50,8 +51,10 @@ def renderizar_hotel(matriz):
     Muestra la matriz en consola desde el piso más alto hasta el más bajo.
     Hace un salto de línea cada 10 habitaciones para evitar desbordes de pantalla.
     """
-    print("\n--- ESTADO ACTUAL DEL HOTEL ---")
-    print("Estados: [L] Libre | [O] Ocupada | [S] Sucia\n")
+    print("\n" + "=" * 50)
+    print("            ESTADO ACTUAL DEL HOTEL               ")
+    print("=" * 50)
+    print("Estados: [L] Libre | [O] Ocupada | [S] Sucia | [M] Mantenimiento\n")
 
     for f in range(len(matriz) - 1, -1, -1):
         print(f"Piso {f + 1}:")
@@ -93,20 +96,21 @@ def solicitar_habitacion_libre(matriz):
     hab_final = None
 
     while not es_valida:
-        num_comercial = int(validar_generico(
+        num_str = validar_generico_con_cancelacion(
             "\nIngrese el número de habitación (ej: 101, o 0 para cancelar): ",
             PATRON_NUMERO_VALIDO,
             ERROR_NUMERO
-        ))
-
-        if num_comercial == 0:
-            print("\n[Operación cancelada] Regresando al menú...")
+        )
+        if num_str is None:
             return None, None
 
+        num_comercial = int(num_str)
         piso, hab = obtener_indices_matriz(num_comercial)
 
         if piso < 0 or piso >= len(matriz) or hab < 0 or hab >= len(matriz[0]):
             print("Error: El piso o la habitación ingresada no existen en el hotel.")
+        elif matriz[piso][hab] == "M":
+            print(f"Error: La habitación {num_comercial} se encuentra en MANTENIMIENTO [M].")
         elif matriz[piso][hab] != "L":
             print(f"Error: La habitación {num_comercial} no está libre (estado actual: [{matriz[piso][hab]}]).")
         else:
@@ -115,6 +119,77 @@ def solicitar_habitacion_libre(matriz):
             hab_final = hab
 
     return piso_final, hab_final
+
+
+def enviar_a_mantenimiento(matriz_hotel):
+    """
+    Permite al Administrador poner una habitación fuera de servicio por averías o reformas.
+    Solo puede realizarse si la habitación está Libre ('L') o Sucia ('S'), no Ocupada ('O').
+    """
+    print("\n--- ENVIAR HABITACIÓN A MANTENIMIENTO [M] ---")
+    num_str = validar_generico_con_cancelacion(
+        "Ingrese el número de habitación (o 0 para cancelar): ",
+        PATRON_NUMERO_VALIDO,
+        ERROR_NUMERO
+    )
+    if num_str is None:
+        return
+
+    num_hab = int(num_str)
+    piso, hab = obtener_indices_matriz(num_hab)
+
+    if not (0 <= piso < len(matriz_hotel) and 0 <= hab < len(matriz_hotel[0])):
+        print(f"Error: La habitación {num_hab} no existe en el hotel.")
+        return
+
+    estado_actual = matriz_hotel[piso][hab]
+
+    if estado_actual == "O":
+        print(f"Error: La habitación {num_hab} está actualmente OCUPADA por un huésped.")
+        return
+    elif estado_actual == "M":
+        print(f"Aviso: La habitación {num_hab} ya se encuentra en Mantenimiento [M].")
+        return
+
+    motivo = input("Motivo del mantenimiento (ej: Pintura, Aire acondicionado, Plomería): ").strip()
+
+    if confirmar_accion(f"¿Confirma poner la habitación {num_hab} en mantenimiento por '{motivo}'? (s/n): "):
+        matriz_hotel[piso][hab] = "M"
+        print(f"\n[Éxito] Habitación {num_hab} puesta fuera de servicio en MANTENIMIENTO [M].")
+    else:
+        print("\n[Operación cancelada] No se modificó el estado.")
+
+
+def liberar_de_mantenimiento(matriz_hotel):
+    """
+    Permite al Administrador dar de alta una habitación reparada,
+    cambiando su estado de Mantenimiento ('M') a Libre ('L').
+    """
+    print("\n--- HABILITAR HABITACIÓN DESDE MANTENIMIENTO ---")
+    num_str = validar_generico_con_cancelacion(
+        "Ingrese el número de habitación (o 0 para cancelar): ",
+        PATRON_NUMERO_VALIDO,
+        ERROR_NUMERO
+    )
+    if num_str is None:
+        return
+
+    num_hab = int(num_str)
+    piso, hab = obtener_indices_matriz(num_hab)
+
+    if not (0 <= piso < len(matriz_hotel) and 0 <= hab < len(matriz_hotel[0])):
+        print(f"Error: La habitación {num_hab} no existe en el hotel.")
+        return
+
+    if matriz_hotel[piso][hab] != "M":
+        print(f"Error: La habitación {num_hab} no está en mantenimiento (estado actual: [{matriz_hotel[piso][hab]}]).")
+        return
+
+    if confirmar_accion(f"¿Confirma dar el alta técnica a la habitación {num_hab} para dejarla Libre [L]? (s/n): "):
+        matriz_hotel[piso][hab] = "L"
+        print(f"\n[Éxito] Habitación {num_hab} reparada y restablecida a estado LIBRE [L].")
+    else:
+        print("\n[Operación cancelada] La habitación continúa en mantenimiento.")
 
 
 def reiniciar_matriz():
