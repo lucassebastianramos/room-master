@@ -20,11 +20,11 @@ Para probar el sistema y evaluar los roles de acceso (RBAC), se dispone de los s
 
 | Usuario | Contraseña | Rol | Nombre y Apellido | DNI | Alcance y Permisos |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **`admin`** | `admin` | `admin` | Administrador del Hotel | `11111111` | Acceso irrestricto: gestión de usuarios y roles, reglas de negocio (oferta/demanda), redimensionamiento y reportes. |
-| **`recepcion`** | `1234` | `admin` | Recepcionista de Turno | `22222222` | Operaciones hoteleras: Check-in, Check-out, Swap, restablecer limpieza y facturación. |
-| **`cliente`** | `1234` | `huesped` | Huésped Frecuente | `33333333` | Portal del huésped: ver disponibilidad, reservar habitación (titular o terceros) y consultar estadía. |
+| **`admin`** | `admin` | `admin` | Administrador del Hotel | `11111111` | Acceso irrestricto: gestión de usuarios y roles, reglas de negocio (oferta/demanda), redimensionamiento de matriz, tarifas y reportes. |
+| **`recepcion`** | `1234` | `recepcion` | Recepcionista de Turno | `22222222` | Operaciones hoteleras en mostrador: Check-in, Check-out con liquidación y consumos extras, Swap, extensión de noches, limpieza [S], mantenimiento [M] y reportes (sin redimensionar ni alterar reglas de negocio). |
+| **`cliente`** | `1234` | `huesped` | Huésped Frecuente | `33333333` | Portal de autoservicio: ver disponibilidad, reservar habitación online (titular o terceros), extender estadía y consultar estadía por DNI. |
 
-> **Nota:** También es posible crear nuevos usuarios con roles diferenciados desde el Panel de Administración o registrarse libremente como huésped desde la pantalla de inicio de sesión.
+> **Nota:** También es posible crear nuevos usuarios con roles diferenciados desde el Panel de Administración o registrarse libremente como huésped desde la pantalla de inicio de sesión (cuando el modo online está activo).
 
 ---
 
@@ -33,16 +33,17 @@ Para probar el sistema y evaluar los roles de acceso (RBAC), se dispone de los s
 Habiendo completado satisfactoriamente la Fase 1, el proyecto evoluciona hacia una arquitectura modular robusta que incorpora los nuevos conceptos de la materia:
 
 ### 📌 Contenidos y Reglas de Negocio Incorporados:
-1. **Modularización:** División del monolito en módulos con responsabilidades claras, parámetros y valores de retorno (sin variables globales descontroladas).
-2. **Autenticación y Roles:** Sistema de inicio de sesión con roles diferenciados:
-   - **Administrador:** Gestión total del hotel, tarifas, reglas de negocio, redimensionamiento, reportes y auditoría.
-   - **Huésped / Usuario:** Consulta de disponibilidad, reserva de habitación (propia o terceros) y consulta de estadía.
+1. **Modularización:** División del monolito en 7 módulos con responsabilidades claras, parámetros y valores de retorno (sin variables globales descontroladas).
+2. **Autenticación y Roles (RBAC):** Sistema de control de accesos con tres roles estrictamente diferenciados:
+   - **Administrador (`admin`):** Gestión total del hotel, tarifas, reglas de negocio, redimensionamiento, reportes ejecutivos y administración de cuentas.
+   - **Recepción (`recepcion`):** Personal de mostrador. Gestión operativa del ciclo del huésped (Check-in, Check-out, Swap, consumos extras, extensión, mantenimiento y reportes) respetando el Principio de Menor Privilegio.
+   - **Huésped / Usuario (`huesped`):** Portal de cliente: consulta de disponibilidad, reserva de habitación (propia o terceros) y consulta de estadía.
 3. **Modos Operativos del Hotel:** Configuración de modo Híbrido (portal online abierto) o Modo Recepción Exclusiva (solo mostrador registra).
 4. **Estados de Habitación Ampliados:** Matriz con estados `[L]` Libre, `[O]` Ocupada, `[S]` Sucia/Limpieza y `[M]` Mantenimiento/Fuera de servicio.
 5. **Cargos Extras y Extensión de Estadía:** Carga de consumos adicionales (Minibar, Cochera, Servicios) y posibilidad de extender noches sin reingresar.
 6. **Diccionarios (`dict`):** Gestión de usuarios, credenciales y perfiles (`auth.py`) y reglas de negocio configurables (`tarifas.py`).
 7. **Tuplas (`tuple`):** Representación inmutable de la sesión activa `(username, rol, nombre, dni)` y coordenadas de habitación `(piso, hab)`.
-8. **Conjuntos (`set`):** Control de pertenencia de permisos por rol (`PERMISOS_ADMIN`, `PERMISOS_HUESPED`).
+8. **Conjuntos (`set`):** Control de pertenencia de permisos por rol (`PERMISOS_ADMIN`, `PERMISOS_RECEPCION`, `PERMISOS_HUESPED`).
 9. **Manejo de Excepciones (`try / except`):** Control preventivo en acceso a diccionarios, conversiones de datos y búsquedas seguras.
 10. **Persistencia en JSON (`.json`) y Texto (`.txt`):** Estado general en JSON y bitácora cronológica con timestamps en `auditoria.txt`.
 11. **Pruebas Unitarias (`unittest`):** Suite automatizada de pruebas unitarias distribuidas en funciones críticas.

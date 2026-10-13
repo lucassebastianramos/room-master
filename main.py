@@ -15,6 +15,7 @@
 # =============================================================================
 
 import auth
+import persistencia
 from hotel import (
     reiniciar_matriz,
     renderizar_hotel,
@@ -75,6 +76,8 @@ def menu_admin(hotel, huespedes, tarifas, sesion, usuarios, reglas_negocio):
         print("12. Redimensionar hotel (Reiniciar matriz)")
         print("13. Gestión de Usuarios y Roles (Crear, Editar, Listar)")
         print("14. Políticas de Negocio y Precios Dinámicos (Oferta/Demanda)")
+        print("15. Guardar estado del hotel en JSON (hotel_data.json)")
+        print("16. Cargar estado guardado desde JSON (hotel_data.json)")
         print("0.  Cerrar sesión")
         print("=" * 58)
 
@@ -129,6 +132,24 @@ def menu_admin(hotel, huespedes, tarifas, sesion, usuarios, reglas_negocio):
             auth.menu_gestion_usuarios(usuarios, sesion)
         elif opcion == "14":
             menu_configuracion_reglas_negocio(tarifas, reglas_negocio, len(hotel))
+        elif opcion == "15":
+            exito = persistencia.guardar_estado_json(hotel, huespedes, tarifas, usuarios, reglas_negocio)
+            if exito:
+                persistencia.registrar_evento_auditoria(username, "GUARDAR_DATOS", "Estado serializado en JSON")
+                print("\n[Éxito] Estado completo del hotel guardado exitosamente en 'datos/hotel_data.json'.")
+        elif opcion == "16":
+            datos_cargados = persistencia.cargar_estado_json()
+            if datos_cargados is not None:
+                if confirmar_accion("¿Confirma sobreescribir la memoria con los datos guardados en JSON? (s/n): "):
+                    hotel = datos_cargados.get("hotel", hotel)
+                    huespedes = datos_cargados.get("huespedes", huespedes)
+                    tarifas = datos_cargados.get("tarifas", tarifas)
+                    usuarios = datos_cargados.get("usuarios", usuarios)
+                    reglas_negocio = datos_cargados.get("reglas_negocio", reglas_negocio)
+                    persistencia.registrar_evento_auditoria(username, "CARGAR_DATOS", "Estado restaurado desde JSON")
+                    print("\n[Éxito] Estado del hotel cargado exitosamente desde JSON.")
+            else:
+                print("\n[Aviso] No se encontró o no se pudo leer el archivo 'datos/hotel_data.json'.")
         elif opcion == "0":
             print(f"\nCerrando sesión de {nombre}...")
             ejecutando = False
@@ -139,6 +160,95 @@ def menu_admin(hotel, huespedes, tarifas, sesion, usuarios, reglas_negocio):
             input("\nPresione [Enter] para continuar...")
 
     return hotel, tarifas
+
+
+def menu_recepcion(hotel, huespedes, tarifas, sesion, reglas_negocio):
+    """
+    Panel de operaciones de recepción y conserjería.
+    Acceso para personal operativo con rol 'recepcion'.
+    Permite gestionar el ciclo operativo del huésped (Check-in, Check-out, Swap, Extras,
+    Extensiones, Limpieza, Mantenimiento, Reportes) respetando el Principio de Menor Privilegio:
+    sin facultades de redimensionar el hotel, alterar reglas de negocio ni administrar usuarios.
+    """
+    username, rol, nombre = sesion[:3]
+    ejecutando = True
+
+    while ejecutando:
+        print("\n" + "=" * 58)
+        print(f"    PANEL DE RECEPCIÓN Y CONSERJERÍA - Operador: {nombre}")
+        print("=" * 58)
+        print("1.  Visualizar estado del hotel (Habitaciones y Estados)")
+        print("2.  Check-in (Registrar nuevo huésped en mostrador)")
+        print("3.  Check-out (Liberar habitación y liquidar cuenta con extras)")
+        print("4.  Reubicar huésped (Swap de habitación)")
+        print("5.  Cargar consumo adicional (Minibar, Cochera, Servicios)")
+        print("6.  Extender estadía de un huésped (Noches adicionales)")
+        print("7.  Buscar huésped por DNI")
+        print("8.  Reportes y Facturación (Métricas analíticas y filtros)")
+        print("9.  Poner habitación en Mantenimiento / Fuera de servicio [M]")
+        print("10. Habilitar habitación reparada desde Mantenimiento [L]")
+        print("11. Restablecer habitación a Disponible tras Limpieza [L]")
+        print("12. Guardar estado actual del hotel en JSON (hotel_data.json)")
+        print("0.  Cerrar sesión")
+        print("=" * 58)
+
+        opcion = input("Seleccione una opción: ").strip()
+
+        if opcion == "1":
+            renderizar_hotel(hotel)
+        elif opcion == "2":
+            renderizar_hotel(hotel)
+            hotel = realizar_checkin(hotel, huespedes, tarifas, sesion, reglas_negocio)
+        elif opcion == "3":
+            realizar_checkout(hotel, huespedes, tarifas, reglas_negocio)
+        elif opcion == "4":
+            reubicar_huesped_swap(hotel, huespedes)
+        elif opcion == "5":
+            cargar_consumo_habitacion(hotel, huespedes)
+        elif opcion == "6":
+            extender_estadia_huesped(hotel, huespedes, reglas_negocio)
+        elif opcion == "7":
+            dni_busqueda = validar_generico_con_cancelacion("Ingrese el DNI a buscar: ", PATRON_DNI_VALIDO, ERROR_DNI)
+            if dni_busqueda is not None:
+                buscar_huesped_por_dni(huespedes, dni_busqueda)
+        elif opcion == "8":
+            generar_reporte_ocupacion(hotel)
+            calcular_recaudacion_total(huespedes, tarifas)
+            if len(huespedes) > 0:
+                ver_filtro = input("\n¿Desea filtrar huéspedes de un piso específico? (s/n): ").strip().lower()
+                if ver_filtro in ["s", "si", "sí"]:
+                    piso_f = solicitar_dimension_valida(f"Piso a consultar (1 a {len(hotel)}): ", 1, len(hotel))
+                    filtrados = filtrar_huespedes_por_piso(huespedes, piso_f)
+                    if len(filtrados) > 0:
+                        print(f"\n--- Huéspedes alojados en Piso {piso_f} ---")
+                        for h in filtrados:
+                            extras = float(h[6]) if len(h) > 6 else 0.0
+                            extras_txt = f" | Extras: ${extras:,.2f}" if extras > 0 else ""
+                            print(f"- {h[0]} (DNI: {h[1]}) | Habitación: {h[5]} | Días: {h[2]}{extras_txt}")
+                    else:
+                        print(f"\n[Aviso] No hay huéspedes registrados en el Piso {piso_f}.")
+        elif opcion == "9":
+            enviar_a_mantenimiento(hotel)
+        elif opcion == "10":
+            liberar_de_mantenimiento(hotel)
+        elif opcion == "11":
+            print("\n--- RESTABLECER HABITACIÓN TRAS LIMPIEZA ---")
+            restablecer_limpieza(hotel)
+        elif opcion == "12":
+            exito = persistencia.guardar_estado_json(hotel, huespedes, tarifas, {}, reglas_negocio)
+            if exito:
+                persistencia.registrar_evento_auditoria(username, "GUARDAR_DATOS", "Operador de recepción guardó estado")
+                print("\n[Éxito] Estado del hotel guardado en 'datos/hotel_data.json'.")
+        elif opcion == "0":
+            print(f"\nCerrando sesión de {nombre}...")
+            ejecutando = False
+        else:
+            print("Opción inválida. Intente nuevamente.")
+
+        if opcion != "0":
+            input("\nPresione [Enter] para continuar...")
+
+    return hotel
 
 
 def menu_huesped(hotel, huespedes, tarifas, sesion, reglas_negocio):
@@ -203,18 +313,30 @@ def menu_principal():
     print("      BIENVENIDO AL SISTEMA HOTELERO ROOM MASTER     ")
     print("=" * 58)
 
-    # 1. Configuración inicial de matrices y tarifas
-    hotel = reiniciar_matriz()
-    tarifas = configurar_tarifas_hotel(len(hotel))
-
-    # 2. Registros de huéspedes en memoria: [nombre, dni, dias, piso, habitacion, num_comercial, extras]
-    huespedes = []
-
-    # 3. Base de usuarios en memoria (Diccionarios y Roles - auth.py)
-    usuarios = auth.USUARIOS_DEFAULT.copy()
-
-    # 4. Diccionario de reglas de negocio configurables por el administrador
-    reglas_negocio = REGLAS_NEGOCIO_DEFAULT.copy()
+    # 1. Verificación de persistencia previa en JSON
+    datos_previos = persistencia.cargar_estado_json()
+    if datos_previos is not None:
+        recuperar = input("\nSe detectó una sesión previa guardada en 'datos/hotel_data.json'. ¿Desea recuperarla? (s/n): ").strip().lower()
+        if recuperar in ["s", "si", "sí"]:
+            hotel = datos_previos.get("hotel", [])
+            tarifas = datos_previos.get("tarifas", [])
+            huespedes = datos_previos.get("huespedes", [])
+            usuarios = datos_previos.get("usuarios", auth.USUARIOS_DEFAULT.copy())
+            reglas_negocio = datos_previos.get("reglas_negocio", REGLAS_NEGOCIO_DEFAULT.copy())
+            print("\n[Éxito] Estado del hotel restaurado desde 'datos/hotel_data.json'.")
+        else:
+            hotel = reiniciar_matriz()
+            tarifas = configurar_tarifas_hotel(len(hotel))
+            huespedes = []
+            usuarios = auth.USUARIOS_DEFAULT.copy()
+            reglas_negocio = REGLAS_NEGOCIO_DEFAULT.copy()
+    else:
+        # Configuración inicial de matrices y tarifas
+        hotel = reiniciar_matriz()
+        tarifas = configurar_tarifas_hotel(len(hotel))
+        huespedes = []
+        usuarios = auth.USUARIOS_DEFAULT.copy()
+        reglas_negocio = REGLAS_NEGOCIO_DEFAULT.copy()
 
     sistema_activo = True
 
@@ -223,12 +345,18 @@ def menu_principal():
         sesion = auth.flujo_login(usuarios, reglas_negocio)
 
         if sesion is None:
+            if confirmar_accion("\n¿Desea guardar los cambios en 'datos/hotel_data.json' antes de salir? (s/n): "):
+                persistencia.guardar_estado_json(hotel, huespedes, tarifas, usuarios, reglas_negocio)
+                persistencia.registrar_evento_auditoria("sistema", "CIERRE_SISTEMA", "Guardado al cerrar aplicación")
+                print("[Éxito] Datos persistidos.")
             print("\n¡Gracias por utilizar Room Master! Hasta luego.")
             sistema_activo = False
         else:
             rol = sesion[1]
             if rol == "admin":
                 hotel, tarifas = menu_admin(hotel, huespedes, tarifas, sesion, usuarios, reglas_negocio)
+            elif rol == "recepcion":
+                hotel = menu_recepcion(hotel, huespedes, tarifas, sesion, reglas_negocio)
             elif rol == "huesped":
                 hotel = menu_huesped(hotel, huespedes, tarifas, sesion, reglas_negocio)
 

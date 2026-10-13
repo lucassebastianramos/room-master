@@ -30,6 +30,12 @@ from tarifas import (
     calcular_tarifa_dinamica
 )
 
+try:
+    from persistencia import registrar_evento_auditoria
+except ImportError:
+    def registrar_evento_auditoria(operador, accion, detalle):
+        return True
+
 
 def realizar_checkin(matriz, lista_huespedes, matriz_tarifas=None, sesion=None, reglas_negocio=None):
     """
@@ -163,6 +169,9 @@ def realizar_checkin(matriz, lista_huespedes, matriz_tarifas=None, sesion=None, 
     lista_huespedes.append(datos_huesped)
     matriz[piso][habitacion] = "O"
 
+    operador_log = sesion[0] if sesion else "mostrador"
+    registrar_evento_auditoria(operador_log, "CHECK-IN", f"{nombre} (DNI: {dni}) en hab {num_comercial} por {dias} noches")
+
     print(f"\n[Check-in exitoso] {nombre} registrado en habitación {num_comercial} (piso {piso + 1}).")
     return matriz
 
@@ -217,6 +226,7 @@ def cargar_consumo_habitacion(matriz_hotel, lista_huespedes):
                     huesped[6] += monto
                 else:
                     huesped.append(monto)
+                registrar_evento_auditoria("operador", "CONSUMO_EXTRA", f"Hab {num_comercial} ({huesped[0]}): {concepto} ${monto:,.2f}")
                 print(f"\n[Éxito] Se cargaron ${monto:,.2f} a la habitación {num_comercial}.")
                 print(f"Total acumulado en extras: ${huesped[6]:,.2f}")
             else:
@@ -279,6 +289,7 @@ def extender_estadia_huesped(matriz_hotel, lista_huespedes, reglas_negocio=None)
 
             if confirmar_accion("¿Confirma la extensión de la estadía? (s/n): "):
                 huesped[2] = total_noches
+                registrar_evento_auditoria("operador", "EXTENDER_ESTADIA", f"Hab {num_comercial} ({huesped[0]}): +{noches_extra} noches (Total: {total_noches})")
                 print(f"\n[Éxito] Estadía de {huesped[0]} extendida a {total_noches} noches.")
             else:
                 print("\n[Operación cancelada] No se modificó la estadía.")
@@ -403,6 +414,8 @@ def realizar_checkout(matriz_hotel, lista_huespedes, matriz_tarifas, reglas_nego
             matriz_hotel[piso][habitacion] = "S"
             lista_huespedes.remove(huesped)
 
+            registrar_evento_auditoria("operador", "CHECK-OUT", f"{nombre} (DNI: {dni_checkout}) liberó hab {num_comercial}. Cobrado ${total_a_liquidar:,.2f}")
+
             print("\n================ CHECK-OUT EXITOSO ================")
             print(f"Huésped:             {nombre}")
             print(f"Habitación liberada: {num_comercial} (requiere limpieza)")
@@ -485,6 +498,8 @@ def reubicar_huesped_swap(matriz_hotel, lista_huespedes):
             if len(huesped) > 5:
                 huesped[5] = nuevo_numero
 
+            registrar_evento_auditoria("operador", "SWAP", f"{huesped[0]} trasladado de hab {num_comercial} a {nuevo_numero}")
+
             print(f"\n[Swap exitoso] Huésped {huesped[0]} reubicado a la habitación {nuevo_numero}.")
             return
 
@@ -511,6 +526,7 @@ def restablecer_limpieza(matriz_hotel):
         if matriz_hotel[piso][habitacion] == "S":
             if confirmar_accion(f"¿Confirma restablecer la habitación {num_hab} a Libre [L]? (s/n): "):
                 matriz_hotel[piso][habitacion] = "L"
+                registrar_evento_auditoria("operador", "LIMPIEZA", f"Habitación {num_hab} restablecida a Libre [L]")
                 print(f"\n[Éxito] Habitación {num_hab} restablecida a disponible [L].")
             else:
                 print("\n[Operación cancelada] La habitación continúa en limpieza.")

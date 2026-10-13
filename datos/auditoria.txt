@@ -1,0 +1,6 @@
+[2026-10-13 16:31:57] [OPERADOR: operador] ACCION: MANTENIMIENTO      | Habitación 102 enviada a mantenimiento por 'Pintura y aire acondicionado'
+[2026-10-13 16:31:57] [OPERADOR: mostrador] ACCION: CHECK-IN           | Pedro Pascal (DNI: 31222333) en hab 101 por 10 noches
+[2026-10-13 16:31:57] [OPERADOR: operador] ACCION: CONSUMO_EXTRA      | Hab 101 (Pedro Pascal): Minibar y snacks $5,000.00
+[2026-10-13 16:31:57] [OPERADOR: operador] ACCION: EXTENDER_ESTADIA   | Hab 101 (Pedro Pascal): +2 noches (Total: 12)
+[2026-10-13 16:31:57] [OPERADOR: operador] ACCION: CHECK-OUT          | Pedro Pascal (DNI: 31222333) liberó hab 101. Cobrado $113,000.00
+[2026-10-13 16:31:57] [OPERADOR: operador] ACCION: ALTA_MANTENIMIENTO | Habitación 102 reparada y restablecida a Libre [L]

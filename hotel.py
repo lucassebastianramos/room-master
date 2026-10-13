@@ -14,6 +14,12 @@ from validaciones import (
     ERROR_NUMERO
 )
 
+try:
+    from persistencia import registrar_evento_auditoria
+except ImportError:
+    def registrar_evento_auditoria(operador, accion, detalle):
+        return True
+
 
 def inicializar_hotel(pisos, habitaciones):
     """
@@ -155,6 +161,7 @@ def enviar_a_mantenimiento(matriz_hotel):
 
     if confirmar_accion(f"¿Confirma poner la habitación {num_hab} en mantenimiento por '{motivo}'? (s/n): "):
         matriz_hotel[piso][hab] = "M"
+        registrar_evento_auditoria("operador", "MANTENIMIENTO", f"Habitación {num_hab} enviada a mantenimiento por '{motivo}'")
         print(f"\n[Éxito] Habitación {num_hab} puesta fuera de servicio en MANTENIMIENTO [M].")
     else:
         print("\n[Operación cancelada] No se modificó el estado.")
@@ -187,6 +194,7 @@ def liberar_de_mantenimiento(matriz_hotel):
 
     if confirmar_accion(f"¿Confirma dar el alta técnica a la habitación {num_hab} para dejarla Libre [L]? (s/n): "):
         matriz_hotel[piso][hab] = "L"
+        registrar_evento_auditoria("operador", "ALTA_MANTENIMIENTO", f"Habitación {num_hab} reparada y restablecida a Libre [L]")
         print(f"\n[Éxito] Habitación {num_hab} reparada y restablecida a estado LIBRE [L].")
     else:
         print("\n[Operación cancelada] La habitación continúa en mantenimiento.")
