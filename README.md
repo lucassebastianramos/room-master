@@ -32,19 +32,21 @@ Para probar el sistema y evaluar los roles de acceso (RBAC), se dispone de los s
 
 Habiendo completado satisfactoriamente la Fase 1, el proyecto evoluciona hacia una arquitectura modular robusta que incorpora los nuevos conceptos de la materia:
 
-### 📌 Contenidos Obligatorios Incorporados:
+### 📌 Contenidos y Reglas de Negocio Incorporados:
 1. **Modularización:** División del monolito en módulos con responsabilidades claras, parámetros y valores de retorno (sin variables globales descontroladas).
 2. **Autenticación y Roles:** Sistema de inicio de sesión con roles diferenciados:
-   - **Administrador:** Gestión total del hotel, tarifas, redimensionamiento, reportes y auditoría.
-   - **Huésped / Usuario:** Consulta de habitaciones disponibles, reserva de habitación y consulta de estadía.
-3. **Diccionarios (`dict`):** Gestión de usuarios, credenciales y roles (`auth.py`) y estructuración de datos para persistencia.
-4. **Tuplas (`tuple`):** Representación inmutable de la sesión activa `(username, rol)` y coordenadas de habitación `(piso, hab)`.
-5. **Conjuntos (`set`):** Control de unicidad de DNIs registrados y filtrado eficiente de estados de habitaciones.
-6. **Manejo de Excepciones (`try / except`):** Control preventivo en carga/guardado de archivos (`FileNotFoundError`, `JSONDecodeError`), conversiones de datos y búsquedas seguras.
-7. **Persistencia en JSON (`.json`):** Almacenamiento y recuperación completa del estado del hotel, tarifas, huéspedes y usuarios al iniciar/cerrar el sistema.
-8. **Persistencia en Texto (`.txt`):** Registro de auditoría cronológica (`auditoria.txt`) con timestamp para cada check-in, check-out o swap.
-9. **Pruebas Unitarias (`unittest`):** Suite automatizada de al menos 10 pruebas unitarias distribuidas en 5 funciones (casos válidos, inválidos, límite y dominio).
-10. **Restricciones Técnicas Estrictas:**
+   - **Administrador:** Gestión total del hotel, tarifas, reglas de negocio, redimensionamiento, reportes y auditoría.
+   - **Huésped / Usuario:** Consulta de disponibilidad, reserva de habitación (propia o terceros) y consulta de estadía.
+3. **Modos Operativos del Hotel:** Configuración de modo Híbrido (portal online abierto) o Modo Recepción Exclusiva (solo mostrador registra).
+4. **Estados de Habitación Ampliados:** Matriz con estados `[L]` Libre, `[O]` Ocupada, `[S]` Sucia/Limpieza y `[M]` Mantenimiento/Fuera de servicio.
+5. **Cargos Extras y Extensión de Estadía:** Carga de consumos adicionales (Minibar, Cochera, Servicios) y posibilidad de extender noches sin reingresar.
+6. **Diccionarios (`dict`):** Gestión de usuarios, credenciales y perfiles (`auth.py`) y reglas de negocio configurables (`tarifas.py`).
+7. **Tuplas (`tuple`):** Representación inmutable de la sesión activa `(username, rol, nombre, dni)` y coordenadas de habitación `(piso, hab)`.
+8. **Conjuntos (`set`):** Control de pertenencia de permisos por rol (`PERMISOS_ADMIN`, `PERMISOS_HUESPED`).
+9. **Manejo de Excepciones (`try / except`):** Control preventivo en acceso a diccionarios, conversiones de datos y búsquedas seguras.
+10. **Persistencia en JSON (`.json`) y Texto (`.txt`):** Estado general en JSON y bitácora cronológica con timestamps en `auditoria.txt`.
+11. **Pruebas Unitarias (`unittest`):** Suite automatizada de pruebas unitarias distribuidas en funciones críticas.
+12. **Restricciones Técnicas Estrictas:**
     - ❌ Prohibido el uso de Clases / Programación Orientada a Objetos (POO).
     - ❌ Prohibido el uso de bases de datos (SQL, etc.).
     - ❌ Prohibido el uso de librerías externas no vistas en la materia (únicamente librerías estándar: `re`, `json`, `functools`, `unittest`, `datetime`).
