@@ -1,5 +1,6 @@
 import functools
 import re
+import auth
 
 PATRON_NUMERO_VALIDO = r"^\d+$"
 PATRON_DNI_VALIDO = r"^\d{7,8}$"
@@ -95,26 +96,50 @@ def reiniciar_matriz():
     habitaciones = solicitar_dimension_valida("Ingrese la cantidad de habitaciones por piso (1 a 99): ", 1, 99)
     return inicializar_hotel(pisos, habitaciones)
 
+def hay_habitaciones_disponibles(matriz):
+    """
+    Verifica si existe al menos una habitación con estado 'L' (Libre) en el hotel.
+    Previene el bucle infinito cuando el hotel se encuentra al 100% de ocupación.
+    """
+    for fila in matriz:
+        if "L" in fila:
+            return True
+    return False
+
+
 def solicitar_habitacion_libre(matriz):
-    """Pide y valida una habitación libre."""
+    """
+    Pide y valida una habitación libre.
+    Si el hotel está lleno o el usuario ingresa 0, cancela la operación de forma segura.
+    Retorna (piso, habitacion) o (None, None) si se cancela.
+    """
+    if not hay_habitaciones_disponibles(matriz):
+        print("\n[Aviso] El hotel se encuentra 100% completo. No hay habitaciones libres disponibles.")
+        return None, None
+
     es_valida = False
-    piso_final = 0
-    hab_final = 0
-    
+    piso_final = None
+    hab_final = None
+
     while not es_valida:
-        num_comercial = int(validar_generico("\nIngrese el número de habitación (ej: 101): ", PATRON_NUMERO_VALIDO, ERROR_NUMERO))
+        num_comercial = int(validar_generico("\nIngrese el número de habitación (ej: 101, o 0 para cancelar): ", PATRON_NUMERO_VALIDO, ERROR_NUMERO))
+        if num_comercial == 0:
+            print("\n[Operación cancelada] Regresando al menú...")
+            return None, None
+
         piso, hab = obtener_indices_matriz(num_comercial)
-        
+
         if piso < 0 or piso >= len(matriz) or hab < 0 or hab >= len(matriz[0]):
             print("Error: El piso o la habitación ingresada no existen en el hotel.")
         elif matriz[piso][hab] != "L":
-            print("Error: La habitación no está libre.")
+            print(f"Error: La habitación {num_comercial} no está libre (estado actual: [{matriz[piso][hab]}]).")
         else:
             es_valida = True
             piso_final = piso
             hab_final = hab
-            
+
     return piso_final, hab_final
+
 
 def validar_generico(mensaje, patron, mensaje_error):
     """Pide un dato, lo valida contra 'patron' hasta que sea correcto y lo devuelve como texto."""
@@ -124,12 +149,15 @@ def validar_generico(mensaje, patron, mensaje_error):
         dato_ingresado = input(mensaje).strip()
     return dato_ingresado
 
+
 def realizar_checkin(matriz, lista_huespedes):
     """
     Gestiona el registro completo de un nuevo huésped en el sistema.
     Valida datos de los huéspedes con Regex.
     """
     piso, habitacion = solicitar_habitacion_libre(matriz)
+    if piso is None:
+        return matriz
 
     nombre = validar_generico("Ingrese el nombre del huésped: ", PATRON_TEXTO_VALIDO, ERROR_TEXTO)
     dni = validar_generico("Ingrese el DNI del huésped: ", PATRON_DNI_VALIDO, ERROR_DNI)
@@ -142,7 +170,7 @@ def realizar_checkin(matriz, lista_huespedes):
     lista_huespedes.append(datos_huesped)
 
     matriz[piso][habitacion] = "O"
-    
+
     print(f"\n[Check-in exitoso] {nombre} registrado en habitación {num_comercial} (piso {piso + 1}).")
 
     return matriz
@@ -454,35 +482,31 @@ def calcular_recaudacion_total(lista_huespedes,matriz_tarifas):
 
 # PROGRAMA PRINCIPAL
 
-def menu_principal():
-
-    # Inicializa matriz (reiniciar_matriz() se reutiliza para redimensionar el hotel)
-    hotel = reiniciar_matriz()
-    
-    # Matriz de tarifas dinámica: [ [Piso, Precio por noche], ... ]
-    tarifas = configurar_tarifas_hotel(len(hotel))
-    
-    # Registro de huéspedes (Formato: [nombre, dni, dias, piso, habitacion])
-    huespedes = []
-    
+def menu_admin(hotel, huespedes, tarifas, sesion, usuarios):
+    """
+    Menú de administración completa del hotel (exclusivo para rol 'admin').
+    """
+    username, rol, nombre = sesion
     ejecutando = True
-    
-    while ejecutando:
-        print("\nROOM MASTER - MENÚ PRINCIPAL\n")
 
+    while ejecutando:
+        print("\n" + "=" * 50)
+        print(f"   PANEL DE ADMINISTRACIÓN - Sesión: {nombre}")
+        print("=" * 50)
         print("1. Visualizar estado del hotel")
         print("2. Check-in (Nuevo huésped)")
-        print("3. Check-out (Liberar habitación)")
+        print("3. Check-out (Liberar habitación y facturar)")
         print("4. Reubicar huésped (Swap)")
         print("5. Buscar huésped por DNI")
         print("6. Reportes y Facturación")
         print("7. Redimensionar hotel")
-        print("8. Restablecer habitacion")
-        print("0. Salir")
-        print("==============================")
-        
-        opcion = input("Seleccione una opción: ")
-        
+        print("8. Restablecer habitación (Limpieza)")
+        print("9. Listar usuarios del sistema (Dicts/Roles)")
+        print("0. Cerrar sesión")
+        print("=" * 50)
+
+        opcion = input("Seleccione una opción: ").strip()
+
         if opcion == "1":
             print("Configuración de la vista del hotel")
             renderizar_hotel(hotel)
@@ -499,6 +523,18 @@ def menu_principal():
         elif opcion == "6":
             generar_reporte_ocupacion(hotel)
             calcular_recaudacion_total(huespedes, tarifas)
+            # Opción interactiva para filtrar huéspedes por piso usando 'filter'
+            if len(huespedes) > 0:
+                ver_filtro = input("\n¿Desea filtrar huéspedes de un piso específico? (s/n): ").strip().lower()
+                if ver_filtro in ["s", "si", "sí"]:
+                    piso_f = solicitar_dimension_valida(f"Piso a consultar (1 a {len(hotel)}): ", 1, len(hotel))
+                    filtrados = filtrar_huespedes_por_piso(huespedes, piso_f)
+                    if len(filtrados) > 0:
+                        print(f"\n--- Huéspedes alojados en Piso {piso_f} ---")
+                        for h in filtrados:
+                            print(f"- {h[0]} (DNI: {h[1]}) | Habitación: {h[5]} | Días: {h[2]}")
+                    else:
+                        print(f"\nNo hay huéspedes en el Piso {piso_f}.")
         elif opcion == "7":
             hotel = reiniciar_matriz()
             tarifas = configurar_tarifas_hotel(len(hotel))
@@ -507,16 +543,94 @@ def menu_principal():
         elif opcion == "8":
             print("\n--- RESTABLECER HABITACIÓN A LIBRE [L] ---")
             restablecer_limpieza(hotel)
-
+        elif opcion == "9":
+            print("\n--- USUARIOS REGISTRADOS EN EL SISTEMA ---")
+            for user_key, datos in usuarios.items():
+                print(f"Usuario: {user_key:<12} | Rol: [{datos['rol'].upper():<7}] | Nombre: {datos['nombre']}")
         elif opcion == "0":
-            print("Saliendo del sistema Room Master...")
-            ejecutando = False  # Sale del bucle
+            print(f"\nCerrando sesión de {nombre}...")
+            ejecutando = False
         else:
             print("Opción inválida. Intente nuevamente.")
 
-        # Muestra el resultado del menu de opciones hasta accion del usuario
         if opcion != "0":
             input("\nPresione [Enter] para continuar...")
+
+    return hotel, tarifas
+
+
+def menu_huesped(hotel, huespedes, tarifas, sesion):
+    """
+    Portal interactivo para el huésped/cliente (rol 'huesped').
+    Permite ver habitaciones, reservar de forma autónoma y consultar su estadía.
+    """
+    username, rol, nombre = sesion
+    ejecutando = True
+
+    while ejecutando:
+        print("\n" + "=" * 50)
+        print(f"      PORTAL DEL HUÉSPED - Bienvenido/a {nombre}")
+        print("=" * 50)
+        print("1. Visualizar disponibilidad del hotel")
+        print("2. Reservar habitación (Check-in)")
+        print("3. Consultar mi reserva / estadía")
+        print("4. Ver tarifas vigentes por piso")
+        print("0. Cerrar sesión")
+        print("=" * 50)
+
+        opcion = input("Seleccione una opción: ").strip()
+
+        if opcion == "1":
+            renderizar_hotel(hotel)
+        elif opcion == "2":
+            renderizar_hotel(hotel)
+            hotel = realizar_checkin(hotel, huespedes)
+        elif opcion == "3":
+            dni_busqueda = validar_generico("Ingrese su DNI para buscar su reserva: ", PATRON_DNI_VALIDO, ERROR_DNI)
+            buscar_huesped_por_dni(huespedes, dni_busqueda)
+        elif opcion == "4":
+            print("\n--- ESQUEMA DE TARIFAS VIGENTES ---")
+            for p, precio in tarifas:
+                print(f"Piso {p}: ${precio:,.2f} por noche")
+        elif opcion == "0":
+            print(f"\nCerrando sesión de {nombre}...")
+            ejecutando = False
+        else:
+            print("Opción inválida. Intente nuevamente.")
+
+        if opcion != "0":
+            input("\nPresione [Enter] para continuar...")
+
+    return hotel
+
+
+def menu_principal():
+    # Inicializa matriz del hotel y tarifas
+    hotel = reiniciar_matriz()
+    tarifas = configurar_tarifas_hotel(len(hotel))
+
+    # Registro de huéspedes (Formato: [nombre, dni, dias, piso, habitacion, num_comercial])
+    huespedes = []
+
+    # Diccionario de usuarios cargado desde el módulo auth (Fase 2)
+    usuarios = auth.USUARIOS_DEFAULT.copy()
+
+    sistema_activo = True
+
+    while sistema_activo:
+        # Flujo de login obligatorio (retorna Tupla de sesión o None)
+        sesion = auth.flujo_login(usuarios)
+
+        if sesion is None:
+            # El usuario eligió salir de la aplicación
+            print("\n¡Gracias por utilizar Room Master! Hasta luego.")
+            sistema_activo = False
+        else:
+            rol = sesion[1]
+            if rol == "admin":
+                hotel, tarifas = menu_admin(hotel, huespedes, tarifas, sesion, usuarios)
+            elif rol == "huesped":
+                hotel = menu_huesped(hotel, huespedes, tarifas, sesion)
 
 # Ejecución
 if __name__ == "__main__":
