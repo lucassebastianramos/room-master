@@ -4,19 +4,20 @@
 # Cátedra: Lic. Gustavo E. Escandell - Programación 1 / Algoritmos y Estructuras 1
 # Responsabilidad: Verificación automatizada de funciones críticas del sistema:
 # Matrices, Conversiones, Validaciones Regex, Ciclo de Vida de Huéspedes,
-# Tarifas y Descuentos, RBAC (Roles y Permisos), Mantenimiento y Persistencia.
+# Tarifas y Descuentos, Tuplas Inmutables, Conjuntos (set) y Persistencia JSON.
 # Ejecución: python -m unittest test_hotel.py -v
 # =============================================================================
 
 import unittest
 import re
+import os
 
 import hotel
 import validaciones
 import tarifas
-import auth
 import reportes
 import huespedes
+import persistencia
 
 
 class TestRoomMaster(unittest.TestCase):
@@ -32,9 +33,18 @@ class TestRoomMaster(unittest.TestCase):
         self.habitaciones_por_piso = 4
         self.matriz = hotel.inicializar_hotel(self.pisos, self.habitaciones_por_piso)
         self.tarifas = [[1, 10000.0], [2, 12000.0], [3, 15000.0]]
-        self.usuarios = auth.USUARIOS_DEFAULT.copy()
-        self.reglas = tarifas.REGLAS_NEGOCIO_DEFAULT.copy()
         self.lista_huespedes = []
+        self.ruta_test_json = os.path.join("datos", "test_hotel_data.json")
+
+    def tearDown(self):
+        """
+        Limpia archivos temporales de prueba si se crearon.
+        """
+        if os.path.exists(self.ruta_test_json):
+            try:
+                os.remove(self.ruta_test_json)
+            except OSError:
+                pass
 
     def test_01_inicializacion_matriz_hotel(self):
         """
@@ -51,16 +61,18 @@ class TestRoomMaster(unittest.TestCase):
         """
         Verifica la biyección matemática entre índices de matriz (0, 0)
         y números comerciales de habitación (101, 204, 302).
+        Retorna Tuplas inmutables.
         """
         self.assertEqual(hotel.obtener_numero_comercial(0, 0), 101)
         self.assertEqual(hotel.obtener_numero_comercial(1, 3), 204)
         self.assertEqual(hotel.obtener_numero_comercial(2, 1), 302)
 
-        piso, hab = hotel.obtener_indices_matriz(101)
-        self.assertEqual((piso, hab), (0, 0))
+        indices = hotel.obtener_indices_matriz(101)
+        self.assertIsInstance(indices, tuple, "Las coordenadas de matriz deben ser una tupla.")
+        self.assertEqual(indices, (0, 0))
 
-        piso, hab = hotel.obtener_indices_matriz(304)
-        self.assertEqual((piso, hab), (2, 3))
+        indices_304 = hotel.obtener_indices_matriz(304)
+        self.assertEqual(indices_304, (2, 3))
 
     def test_03_validaciones_expresiones_regulares(self):
         """
@@ -79,33 +91,35 @@ class TestRoomMaster(unittest.TestCase):
         self.assertTrue(re.match(validaciones.PATRON_TEXTO_VALIDO, "Tiara Menéndez"))
         self.assertFalse(re.match(validaciones.PATRON_TEXTO_VALIDO, "User123"))
 
-    def test_04_control_de_roles_rbac(self):
+    def test_04_estructuras_datos_tuplas_y_conjuntos(self):
         """
-        Verifica el modelo de seguridad basado en roles (RBAC):
-        - Administrador: posee permisos de gestión, reglas y redimensionamiento.
-        - Recepción: posee permisos operativos (checkin, checkout, extras, limpieza) pero no de gestión de reglas/redimensionar.
-        - Huésped: permisos restringidos a autoservicio.
+        Verifica el uso explícito de Tuplas para datos inmutables y Conjuntos (set)
+        para búsquedas rápidas y validación de unicidad:
+        - Tupla inmutable ESTADOS_VALIDOS
+        - Conjuntos (set) de habitaciones por estado (L, O, S, M)
+        - Conjunto (set) de DNIs activos para búsqueda O(1)
         """
-        self.assertIn("recepcion", auth.ROLES_VALIDOS)
-        permisos_admin = auth.obtener_permisos_por_rol("admin")
-        permisos_recepcion = auth.obtener_permisos_por_rol("recepcion")
-        permisos_huesped = auth.obtener_permisos_por_rol("huesped")
+        # Tupla inmutable de estados
+        self.assertIsInstance(hotel.ESTADOS_VALIDOS, tuple)
+        self.assertEqual(hotel.ESTADOS_VALIDOS, ("L", "O", "S", "M"))
 
-        # Recepción puede operar pero NO redimensionar ni cambiar reglas
-        self.assertTrue(auth.tiene_permiso("recepcion", "checkin"))
-        self.assertTrue(auth.tiene_permiso("recepcion", "checkout"))
-        self.assertTrue(auth.tiene_permiso("recepcion", "cargar_extras"))
-        self.assertFalse(auth.tiene_permiso("recepcion", "redimensionar"))
-        self.assertFalse(auth.tiene_permiso("recepcion", "gestionar_reglas"))
+        # Conjunto de habitaciones libres
+        libres = hotel.obtener_habitaciones_por_estado(self.matriz, "L")
+        self.assertIsInstance(libres, set)
+        self.assertEqual(len(libres), 12)
+        self.assertIn(101, libres)
 
-        # Admin tiene todo
-        self.assertTrue(auth.tiene_permiso("admin", "redimensionar"))
-        self.assertTrue(auth.tiene_permiso("admin", "gestionar_reglas"))
+        # Registro con tuplas inmutables
+        identidad = ("44123456", "Juan Perez")
+        config_hab = (0, 0, 101)
+        huesped = [identidad, config_hab, 3, 0.0]
+        self.lista_huespedes.append(huesped)
 
-        # Huésped solo autoservicio
-        self.assertTrue(auth.tiene_permiso("huesped", "reservar"))
-        self.assertFalse(auth.tiene_permiso("huesped", "redimensionar"))
-        self.assertFalse(auth.tiene_permiso("huesped", "checkin"))
+        # Validación con conjunto de DNIs
+        conjunto_dnis = huespedes.obtener_conjunto_dnis(self.lista_huespedes)
+        self.assertIsInstance(conjunto_dnis, set)
+        self.assertIn("44123456", conjunto_dnis)
+        self.assertNotIn("99999999", conjunto_dnis)
 
     def test_05_ciclo_mantenimiento_habitaciones(self):
         """
@@ -115,23 +129,30 @@ class TestRoomMaster(unittest.TestCase):
         self.matriz[0][1] = "M"
         self.assertEqual(self.matriz[0][1], "M")
 
+        # Verificar que aparezca en el conjunto de mantenimiento
+        en_mant = hotel.obtener_habitaciones_por_estado(self.matriz, "M")
+        self.assertIn(102, en_mant)
+
         # Dar el alta técnica
         self.matriz[0][1] = "L"
         self.assertEqual(self.matriz[0][1], "L")
+        libres = hotel.obtener_habitaciones_por_estado(self.matriz, "L")
+        self.assertIn(102, libres)
 
     def test_06_calculo_subtotal_con_descuento_larga_estadia(self):
         """
         Verifica el cálculo de liquidación mediante orden superior (lambda):
         - Estadía <= 7 noches: tarifa plena.
         - Estadía > 7 noches: 10% de bonificación automática.
+        Soporta la estructura de tuplas inmutables.
         """
         # Huésped 1: 5 noches en piso 1 ($10,000/noche) = $50,000
-        huesped_corto = ["Juan Perez", "12345678", 5, 0, 0, 101, 0.0]
+        huesped_corto = [("12345678", "Juan Perez"), (0, 0, 101), 5, 0.0]
         subtotal_corto = reportes.calcular_subtotal(huesped_corto, self.tarifas)
         self.assertEqual(subtotal_corto, 50000.0)
 
         # Huésped 2: 10 noches en piso 1 ($10,000/noche) = $100,000 - 10% = $90,000
-        huesped_largo = ["Maria Gomez", "87654321", 10, 0, 1, 102, 0.0]
+        huesped_largo = [("87654321", "Maria Gomez"), (0, 1, 102), 10, 0.0]
         subtotal_largo = reportes.calcular_subtotal(huesped_largo, self.tarifas)
         self.assertEqual(subtotal_largo, 90000.0)
 
@@ -141,7 +162,7 @@ class TestRoomMaster(unittest.TestCase):
         y su correcto impacto en la facturación del huésped.
         """
         # Huésped con 3 noches en piso 2 ($12,000/noche = $36,000) + $4,500 en extras
-        huesped_extras = ["Carlos Tevez", "20111222", 3, 1, 0, 201, 4500.0]
+        huesped_extras = [("20111222", "Carlos Tevez"), (1, 0, 201), 3, 4500.0]
         subtotal_con_extras = reportes.calcular_subtotal(huesped_extras, self.tarifas)
         self.assertEqual(subtotal_con_extras, 40500.0)
 
@@ -149,8 +170,8 @@ class TestRoomMaster(unittest.TestCase):
         """
         Verifica el uso de map y reduce para calcular la recaudación total proyectada.
         """
-        h1 = ["Huesped 1", "11111111", 2, 0, 0, 101, 0.0]   # 2 x 10,000 = 20,000
-        h2 = ["Huesped 2", "22222222", 2, 1, 0, 201, 1000.0] # 2 x 12,000 + 1,000 = 25,000
+        h1 = [("11111111", "Huesped 1"), (0, 0, 101), 2, 0.0]    # 2 x 10,000 = 20,000
+        h2 = [("22222222", "Huesped 2"), (1, 0, 201), 2, 1000.0]  # 2 x 12,000 + 1,000 = 25,000
         lista = [h1, h2]
 
         total = reportes.calcular_recaudacion_total(lista, self.tarifas)
@@ -171,28 +192,43 @@ class TestRoomMaster(unittest.TestCase):
 
         self.assertFalse(hotel.hay_habitaciones_disponibles(self.matriz))
 
-    def test_10_autenticacion_y_registro_usuarios_memoria(self):
+    def test_10_persistencia_datos_json(self):
         """
-        Verifica el ciclo de vida de usuarios puramente en memoria (RAM) mediante Diccionarios y Tuplas:
-        - Registro de un nuevo usuario huésped.
-        - Verificación exitosa de credenciales retornando Tupla inmutable de sesión.
-        - Rechazo de contraseñas incorrectas o usuarios inexistentes.
+        Verifica la persistencia de datos en formato JSON mediante persistencia.py:
+        - Guardar estado de hotel, huéspedes y tarifas.
+        - Cargar estado y verificar restauración de tuplas inmutables.
+        - Manejo seguro de excepciones sin caídas.
         """
-        exito = auth.registrar_nuevo_usuario(
-            self.usuarios, "estudiante", "pass123", "Estudiante AED", "44111222", "huesped"
+        self.matriz[0][0] = "O"
+        huesped_original = [("30123456", "Ana Diaz"), (0, 0, 101), 4, 1500.0]
+        self.lista_huespedes.append(huesped_original)
+
+        # Guardar en archivo JSON de prueba
+        exito_guardar = persistencia.guardar_datos_json(
+            self.matriz,
+            self.lista_huespedes,
+            self.tarifas,
+            ruta=self.ruta_test_json
         )
-        self.assertTrue(exito, "El registro de usuario en memoria debe ser exitoso.")
-        self.assertIn("estudiante", self.usuarios)
+        self.assertTrue(exito_guardar, "El guardado en JSON debe ser exitoso.")
+        self.assertTrue(os.path.exists(self.ruta_test_json))
 
-        # Verificación exitosa retornando Tupla inmutable
-        sesion = auth.verificar_credenciales(self.usuarios, "estudiante", "pass123")
-        self.assertIsNotNone(sesion)
-        self.assertEqual(sesion, ("estudiante", "huesped", "Estudiante AED", "44111222"))
+        # Cargar desde archivo JSON
+        datos_recuperados = persistencia.cargar_datos_json(ruta=self.ruta_test_json)
+        self.assertIsNotNone(datos_recuperados)
+        self.assertEqual(datos_recuperados["hotel"][0][0], "O")
+        self.assertEqual(len(datos_recuperados["huespedes"]), 1)
 
-        # Verificación con contraseña errónea
-        sesion_erronea = auth.verificar_credenciales(self.usuarios, "estudiante", "incorrecta")
-        self.assertIsNone(sesion_erronea)
+        # Verificar que las tuplas se reconstruyeron inmutables
+        recuperado = datos_recuperados["huespedes"][0]
+        self.assertIsInstance(recuperado[0], tuple, "La identidad debe ser una tupla inmutable.")
+        self.assertIsInstance(recuperado[1], tuple, "La configuración de hab debe ser una tupla inmutable.")
+        self.assertEqual(recuperado[0], ("30123456", "Ana Diaz"))
+        self.assertEqual(recuperado[1], (0, 0, 101))
+        self.assertEqual(recuperado[2], 4)
+        self.assertEqual(recuperado[3], 1500.0)
 
 
 if __name__ == "__main__":
     unittest.main()
+
