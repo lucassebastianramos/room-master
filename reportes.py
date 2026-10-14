@@ -65,12 +65,24 @@ def generar_reporte_ocupacion(matriz_hotel):
 def calcular_subtotal(huesped, matriz_tarifas):
     """
     Calcula el subtotal a facturar por un huésped específico.
+    Soporta la estructura moderna con tuplas inmutables:
+    huesped = [(dni, nombre), (piso, habitacion, num_comercial), dias, consumos_extras]
+    así como estructuras planas anteriores por compatibilidad.
     Aplica una función anónima (lambda) con 10% de bonificación para estadías mayores a 7 noches
     e incorpora los consumos extras acumulados (Minibar, servicios).
     Retorna el subtotal neto calculado en punto flotante.
     """
-    dias = int(huesped[2])
-    piso = int(huesped[3])
+    if isinstance(huesped[0], (tuple, list)):
+        # Tuplas inmutables: huesped[1] es (piso, habitacion, num_comercial)
+        piso = int(huesped[1][0])
+        dias = int(huesped[2])
+        consumos_extras = float(huesped[3]) if len(huesped) > 3 else 0.0
+    else:
+        # Formato plano histórico
+        dias = int(huesped[2])
+        piso = int(huesped[3])
+        consumos_extras = float(huesped[6]) if len(huesped) > 6 else 0.0
+
     piso_comercial = piso + 1
 
     precio_noche = float(obtener_tarifa_habitacion(piso_comercial, matriz_tarifas))
@@ -79,9 +91,6 @@ def calcular_subtotal(huesped, matriz_tarifas):
     # Descuento del 10% para estadías prolongadas (> 7 noches)
     aplicar_descuento = lambda d, monto: monto * 0.9 if d > 7 else monto
     estadia_neta = aplicar_descuento(dias, subtotal_estadia)
-
-    # Consumos extras si están registrados en el índice 6
-    consumos_extras = float(huesped[6]) if len(huesped) > 6 else 0.0
 
     subtotal_total = estadia_neta + consumos_extras
     return subtotal_total
