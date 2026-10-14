@@ -3,18 +3,17 @@
 # =============================================================================
 # Materia: Algoritmos y Estructura de Datos 1 / Programación 1
 # Cátedra: Lic. Gustavo E. Escandell
-# Arquitectura de Software: Modular, Multicapa y Desacoplada
+# Arquitectura: Modular, Procedural y Desacoplada (Sin POO, Vista Única)
 # =============================================================================
 # Módulos del Sistema:
-#   - auth.py: Autenticación, control de roles (RBAC), perfiles y gestión de usuarios.
-#   - hotel.py: Matrices bidimensionales, renderizado, estados (L, O, S, M) y mantenimiento.
-#   - tarifas.py: Precios por piso, suites, oferta/demanda y políticas configurables.
-#   - huespedes.py: Check-in, liquidación con consumos extras, extensión, swap y búsqueda.
-#   - reportes.py: Análisis y facturación mediante orden superior (map, filter, reduce).
+#   - hotel.py: Matrices bidimensionales, estados (L, O, S, M), coordenadas y sets.
+#   - huespedes.py: Check-in, Check-out, Swap, consumos extras, extensiones y búsqueda.
+#   - tarifas.py: Precios por piso y segmentación de suites de lujo.
+#   - reportes.py: Análisis y facturación mediante map, filter y functools.reduce.
+#   - persistencia.py: Almacenamiento y recuperación en archivos JSON.
 #   - validaciones.py: Integridad de datos y expresiones regulares (Regex).
 # =============================================================================
 
-import auth
 from hotel import (
     reiniciar_matriz,
     renderizar_hotel,
@@ -24,8 +23,7 @@ from hotel import (
 from tarifas import (
     configurar_tarifas_hotel,
     mostrar_resumen_tarifas,
-    menu_configuracion_reglas_negocio,
-    REGLAS_NEGOCIO_DEFAULT
+    menu_configuracion_tarifas
 )
 from huespedes import (
     realizar_checkin,
@@ -41,197 +39,196 @@ from reportes import (
     generar_reporte_ocupacion,
     calcular_recaudacion_total
 )
+from persistencia import (
+    guardar_datos_json,
+    cargar_datos_json,
+    existe_datos_json
+)
 from validaciones import (
     validar_generico_con_cancelacion,
     solicitar_dimension_valida,
+    confirmar_accion,
     PATRON_DNI_VALIDO,
     ERROR_DNI
 )
 
 
-def menu_admin(hotel, huespedes, tarifas, sesion, usuarios, reglas_negocio):
+def ejecutar_menu_hotel(hotel, huespedes, tarifas):
     """
-    Panel de administración integral del hotel.
-    Acceso exclusivo para usuarios con rol 'admin'.
+    Menú interactivo unificado de administración y gestión integral del hotel.
+    Reúne el ciclo de vida completo: Alta, Baja, Modificación, Consulta,
+    Mantenimiento, Limpieza, Reportes y Persistencia JSON.
     """
-    username, rol, nombre = sesion[:3]
     ejecutando = True
 
     while ejecutando:
-        print("\n" + "=" * 58)
-        print(f"     PANEL DE ADMINISTRACIÓN GENERAL - Operador: {nombre}")
-        print("=" * 58)
+        print("\n" + "=" * 60)
+        print("          ROOM MASTER - PANEL DE GESTIÓN INTEGRAL          ")
+        print("=" * 60)
         print("1.  Visualizar estado del hotel (Habitaciones y Estados)")
-        print("2.  Check-in (Registrar nuevo huésped con confirmación)")
-        print("3.  Check-out (Liberar habitación y liquidar cuenta con extras)")
-        print("4.  Reubicar huésped (Swap de habitación)")
-        print("5.  Cargar consumo adicional (Minibar, Cochera, Servicios)")
+        print("2.  Check-in (Alta de reserva con confirmación y validación de DNI)")
+        print("3.  Check-out (Baja y liquidación con consumos extras)")
+        print("4.  Reubicar huésped (Modificación - Swap de habitación)")
+        print("5.  Cargar consumos adicionales (Minibar, Cochera, Servicios)")
         print("6.  Extender estadía de un huésped (Noches adicionales)")
-        print("7.  Buscar huésped por DNI")
-        print("8.  Reportes y Facturación (Métricas analíticas y filtros)")
-        print("9.  Poner habitación en Mantenimiento / Fuera de servicio [M]")
-        print("10. Habilitar habitación reparada desde Mantenimiento [L]")
-        print("11. Restablecer habitación a Disponible tras Limpieza [L]")
-        print("12. Redimensionar hotel (Reiniciar matriz)")
-        print("13. Gestión de Usuarios y Roles (Crear, Editar, Listar)")
-        print("14. Políticas de Negocio y Precios Dinámicos (Oferta/Demanda)")
-        print("0.  Cerrar sesión")
-        print("=" * 58)
+        print("7.  Buscar huésped por DNI (Consulta rápida con conjunto/set)")
+        print("8.  Filtrar huéspedes por piso (Consulta funcional con filter)")
+        print("9.  Reportes y Facturación (Ocupación y Recaudación Total)")
+        print("10. Enviar habitación a Mantenimiento [M]")
+        print("11. Habilitar habitación reparada desde Mantenimiento [L]")
+        print("12. Restablecer habitación a Disponible tras Limpieza [L]")
+        print("13. Configuración y consulta de tarifas por piso")
+        print("14. Guardar estado del hotel en archivo JSON")
+        print("15. Cargar estado del hotel desde archivo JSON")
+        print("16. Redimensionar hotel (Reiniciar matriz y tarifas)")
+        print("0.  Salir del sistema")
+        print("=" * 60)
 
         opcion = input("Seleccione una opción: ").strip()
 
         if opcion == "1":
             renderizar_hotel(hotel)
+
         elif opcion == "2":
             renderizar_hotel(hotel)
-            hotel = realizar_checkin(hotel, huespedes, tarifas, sesion, reglas_negocio)
+            hotel = realizar_checkin(hotel, huespedes, tarifas)
+
         elif opcion == "3":
-            realizar_checkout(hotel, huespedes, tarifas, reglas_negocio)
+            realizar_checkout(hotel, huespedes, tarifas)
+
         elif opcion == "4":
             reubicar_huesped_swap(hotel, huespedes)
+
         elif opcion == "5":
             cargar_consumo_habitacion(hotel, huespedes)
+
         elif opcion == "6":
-            extender_estadia_huesped(hotel, huespedes, reglas_negocio)
+            extender_estadia_huesped(hotel, huespedes)
+
         elif opcion == "7":
-            dni_busqueda = validar_generico_con_cancelacion("Ingrese el DNI a buscar: ", PATRON_DNI_VALIDO, ERROR_DNI)
+            dni_busqueda = validar_generico_con_cancelacion(
+                "Ingrese el DNI a buscar (o 0 para cancelar): ",
+                PATRON_DNI_VALIDO,
+                ERROR_DNI
+            )
             if dni_busqueda is not None:
                 buscar_huesped_por_dni(huespedes, dni_busqueda)
+
         elif opcion == "8":
+            if len(huespedes) == 0:
+                print("\n[Aviso] No hay huéspedes alojados actualmente en el hotel.")
+            else:
+                piso_f = solicitar_dimension_valida(
+                    f"Piso a consultar (1 a {len(hotel)}): ",
+                    1,
+                    len(hotel)
+                )
+                filtrados = filtrar_huespedes_por_piso(huespedes, piso_f)
+                if len(filtrados) > 0:
+                    print(f"\n--- Huéspedes alojados en Piso {piso_f} ---")
+                    for h in filtrados:
+                        # Estructura: [(dni, nombre), (piso, hab, num), dias, extras]
+                        nombre = h[0][1]
+                        dni = h[0][0]
+                        num_hab = h[1][2]
+                        dias = h[2]
+                        extras = float(h[3]) if len(h) > 3 else 0.0
+                        extras_txt = f" | Extras: ${extras:,.2f}" if extras > 0 else ""
+                        print(f"- {nombre} (DNI: {dni}) | Habitación: {num_hab} | Estadía: {dias} noches{extras_txt}")
+                else:
+                    print(f"\n[Aviso] No hay huéspedes registrados en el Piso {piso_f}.")
+
+        elif opcion == "9":
             generar_reporte_ocupacion(hotel)
             calcular_recaudacion_total(huespedes, tarifas)
-            if len(huespedes) > 0:
-                ver_filtro = input("\n¿Desea filtrar huéspedes de un piso específico? (s/n): ").strip().lower()
-                if ver_filtro in ["s", "si", "sí"]:
-                    piso_f = solicitar_dimension_valida(f"Piso a consultar (1 a {len(hotel)}): ", 1, len(hotel))
-                    filtrados = filtrar_huespedes_por_piso(huespedes, piso_f)
-                    if len(filtrados) > 0:
-                        print(f"\n--- Huéspedes alojados en Piso {piso_f} ---")
-                        for h in filtrados:
-                            extras = float(h[6]) if len(h) > 6 else 0.0
-                            extras_txt = f" | Extras: ${extras:,.2f}" if extras > 0 else ""
-                            print(f"- {h[0]} (DNI: {h[1]}) | Habitación: {h[5]} | Días: {h[2]}{extras_txt}")
-                    else:
-                        print(f"\n[Aviso] No hay huéspedes registrados en el Piso {piso_f}.")
-        elif opcion == "9":
-            enviar_a_mantenimiento(hotel)
+
         elif opcion == "10":
-            liberar_de_mantenimiento(hotel)
+            enviar_a_mantenimiento(hotel)
+
         elif opcion == "11":
-            print("\n--- RESTABLECER HABITACIÓN TRAS LIMPIEZA ---")
-            restablecer_limpieza(hotel)
+            liberar_de_mantenimiento(hotel)
+
         elif opcion == "12":
-            hotel = reiniciar_matriz()
-            tarifas = configurar_tarifas_hotel(len(hotel))
-            huespedes.clear()
-            print("\n[Éxito] Hotel redimensionado y registros reiniciados.")
+            restablecer_limpieza(hotel)
+
         elif opcion == "13":
-            auth.menu_gestion_usuarios(usuarios, sesion)
+            menu_configuracion_tarifas(tarifas, len(hotel))
+
         elif opcion == "14":
-            menu_configuracion_reglas_negocio(tarifas, reglas_negocio, len(hotel))
+            if guardar_datos_json(hotel, huespedes, tarifas):
+                print("\n[Éxito] El estado del hotel se guardó correctamente en archivo JSON.")
+
+        elif opcion == "15":
+            if confirmar_accion("¿Está seguro de cargar datos de JSON? Se sobrescribirá el estado actual en memoria (s/n): "):
+                datos = cargar_datos_json()
+                if datos:
+                    hotel = datos["hotel"]
+                    huespedes.clear()
+                    for h in datos["huespedes"]:
+                        huespedes.append(h)
+                    tarifas.clear()
+                    for t in datos["tarifas"]:
+                        tarifas.append(t)
+                    print("\n[Éxito] Estado restaurado exitosamente desde archivo JSON.")
+                else:
+                    print("\n[Aviso] No se pudo cargar el archivo JSON o no existe.")
+
+        elif opcion == "16":
+            if confirmar_accion("¿Confirma redimensionar el hotel? Esto reseteará las habitaciones y huéspedes (s/n): "):
+                hotel = reiniciar_matriz()
+                tarifas = configurar_tarifas_hotel(len(hotel))
+                huespedes.clear()
+                print("\n[Éxito] Hotel redimensionado y registros reiniciados.")
+
         elif opcion == "0":
-            print(f"\nCerrando sesión de {nombre}...")
+            if confirmar_accion("¿Desea guardar los cambios en archivo JSON antes de salir? (s/n): "):
+                guardar_datos_json(hotel, huespedes, tarifas)
+                print("[Éxito] Datos guardados.")
+            print("\n¡Gracias por utilizar Room Master! Hasta luego.")
             ejecutando = False
+
         else:
             print("Opción inválida. Intente nuevamente.")
 
         if opcion != "0":
             input("\nPresione [Enter] para continuar...")
 
-    return hotel, tarifas
-
-
-def menu_huesped(hotel, huespedes, tarifas, sesion, reglas_negocio):
-    """
-    Portal de autoservicio para clientes y huéspedes.
-    Acceso para usuarios con rol 'huesped'.
-    """
-    username = sesion[0]
-    nombre = sesion[2]
-    dni_cuenta = sesion[3] if len(sesion) > 3 else ""
-    ejecutando = True
-
-    while ejecutando:
-        print("\n" + "=" * 55)
-        print(f"      PORTAL DEL HUÉSPED - Bienvenido/a {nombre}")
-        print("=" * 55)
-        print("1. Visualizar disponibilidad del hotel")
-        print("2. Reservar habitación (Check-in online)")
-        print("3. Consultar mi reserva / estadía")
-        print("4. Extender estadía (Noches adicionales)")
-        print("5. Ver tarifas vigentes por piso")
-        print("0. Cerrar sesión")
-        print("=" * 55)
-
-        opcion = input("Seleccione una opción: ").strip()
-
-        if opcion == "1":
-            renderizar_hotel(hotel)
-        elif opcion == "2":
-            renderizar_hotel(hotel)
-            hotel = realizar_checkin(hotel, huespedes, tarifas, sesion, reglas_negocio)
-        elif opcion == "3":
-            if dni_cuenta:
-                print(f"\nConsultando reserva con su DNI registrado ({dni_cuenta})...")
-                buscar_huesped_por_dni(huespedes, dni_cuenta)
-            else:
-                dni_busqueda = validar_generico_con_cancelacion("Ingrese su DNI para buscar su reserva: ", PATRON_DNI_VALIDO, ERROR_DNI)
-                if dni_busqueda is not None:
-                    buscar_huesped_por_dni(huespedes, dni_busqueda)
-        elif opcion == "4":
-            extender_estadia_huesped(hotel, huespedes, reglas_negocio)
-        elif opcion == "5":
-            mostrar_resumen_tarifas(tarifas)
-        elif opcion == "0":
-            print(f"\nCerrando sesión de {nombre}...")
-            ejecutando = False
-        else:
-            print("Opción inválida. Intente nuevamente.")
-
-        if opcion != "0":
-            input("\nPresione [Enter] para continuar...")
-
-    return hotel
+    return hotel, huespedes, tarifas
 
 
 def menu_principal():
     """
     Punto de entrada de la aplicación Room Master.
-    Inicializa el estado en memoria y gestiona la autenticación con roles RBAC.
+    Verifica existencia de persistencia JSON previa o inicializa nueva matriz.
     """
-    print("\n" + "=" * 58)
+    print("\n" + "=" * 60)
     print("      BIENVENIDO AL SISTEMA HOTELERO ROOM MASTER     ")
-    print("=" * 58)
+    print("=" * 60)
 
-    # 1. Configuración inicial de matrices y tarifas
-    hotel = reiniciar_matriz()
-    tarifas = configurar_tarifas_hotel(len(hotel))
-
-    # 2. Registros de huéspedes en memoria: [nombre, dni, dias, piso, habitacion, num_comercial, extras]
+    hotel = None
     huespedes = []
+    tarifas = []
 
-    # 3. Base de usuarios en memoria (Diccionarios y Roles - auth.py)
-    usuarios = auth.USUARIOS_DEFAULT.copy()
+    # Verificación de datos persistidos en JSON
+    if existe_datos_json():
+        print("\nSe encontró un archivo de datos guardado previamente en formato JSON.")
+        if confirmar_accion("¿Desea restaurar el estado del hotel desde JSON? (s/n): "):
+            datos = cargar_datos_json()
+            if datos:
+                hotel = datos["hotel"]
+                huespedes = datos["huespedes"]
+                tarifas = datos["tarifas"]
+                print(f"[Éxito] Restaurado hotel de {len(hotel)} pisos con {len(huespedes)} huéspedes registrados.")
 
-    # 4. Diccionario de reglas de negocio configurables por el administrador
-    reglas_negocio = REGLAS_NEGOCIO_DEFAULT.copy()
+    # Si no se cargó desde JSON, inicializa configuración fresca
+    if hotel is None:
+        hotel = reiniciar_matriz()
+        tarifas = configurar_tarifas_hotel(len(hotel))
+        huespedes = []
 
-    sistema_activo = True
-
-    while sistema_activo:
-        # Flujo de login obligatorio (Retorna tupla (usuario, rol, nombre, dni) o None al salir)
-        sesion = auth.flujo_login(usuarios, reglas_negocio)
-
-        if sesion is None:
-            print("\n¡Gracias por utilizar Room Master! Hasta luego.")
-            sistema_activo = False
-        else:
-            rol = sesion[1]
-            if rol == "admin":
-                hotel, tarifas = menu_admin(hotel, huespedes, tarifas, sesion, usuarios, reglas_negocio)
-            elif rol == "huesped":
-                hotel = menu_huesped(hotel, huespedes, tarifas, sesion, reglas_negocio)
+    ejecutar_menu_hotel(hotel, huespedes, tarifas)
 
 
 if __name__ == "__main__":
     menu_principal()
+

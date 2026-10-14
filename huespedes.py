@@ -1,10 +1,11 @@
 # =============================================================================
 # MÓDULO DE GESTIÓN DE HUÉSPEDES (huespedes.py)
 # =============================================================================
-# Responsabilidad: Ciclo de vida y transacciones de los huéspedes del hotel:
-# Check-in inteligente (propio o terceros), confirmaciones explícitas con resumen,
-# cancelaciones seguras con '0', cargos de consumos extras (Minibar, Cochera),
-# extensión de estadía, Check-out con liquidación detallada, Swap y limpieza.
+# Responsabilidad: Ciclo de vida y operaciones completas de gestión:
+# Alta (Check-in), Baja (Check-out con liquidación), Modificación (Swap,
+# consumos adicionales, extensión de estadía) y Consulta (búsquedas y filtros).
+# Uso de Tuplas para datos inmutables (DNI, configuración fija de habitación)
+# y Conjuntos (set) para búsquedas O(1) y validación de unicidad.
 # =============================================================================
 
 from validaciones import (
@@ -23,23 +24,38 @@ from hotel import (
     obtener_numero_comercial,
     obtener_indices_matriz,
     solicitar_habitacion_libre,
-    hay_habitaciones_disponibles
+    hay_habitaciones_disponibles,
+    obtener_habitaciones_por_estado
 )
-from tarifas import (
-    obtener_tarifa_habitacion,
-    calcular_tarifa_dinamica
-)
+from tarifas import obtener_tarifa_habitacion
 
 
-def realizar_checkin(matriz, lista_huespedes, matriz_tarifas=None, sesion=None, reglas_negocio=None):
+def obtener_conjunto_dnis(lista_huespedes):
     """
-    Gestiona el registro de un nuevo huésped en el hotel:
-    - Previene bucle si el hotel está 100% ocupado.
-    - Soporta reservas propias o para terceros si la política lo permite.
-    - Valida el límite de estadía máxima configurado.
-    - Calcula la tarifa dinámica estimada (considerando alta demanda si rige).
-    - Muestra resumen completo y solicita confirmación explícita (s/n) antes de registrar.
-    Estructura de registro: [nombre, dni, dias, piso, habitacion, num_comercial, consumos_extras].
+    Retorna un conjunto (set) con todos los DNIs de los huéspedes actualmente alojados.
+    Permite búsquedas y validaciones en tiempo constante O(1).
+    """
+    return {huesped[0][0] for huesped in lista_huespedes}
+
+
+def obtener_conjunto_habitaciones_ocupadas(lista_huespedes):
+    """
+    Retorna un conjunto (set) con los números comerciales de las habitaciones ocupadas.
+    Garantiza elementos únicos y validaciones directas.
+    """
+    return {huesped[1][2] for huesped in lista_huespedes}
+
+
+def realizar_checkin(matriz, lista_huespedes, matriz_tarifas=None):
+    """
+    Alta de reserva (Check-in):
+    - Valida que haya habitaciones disponibles.
+    - Asigna una habitación libre.
+    - Valida unicidad de DNI mediante conjunto (set).
+    - Almacena datos inmutables en Tuplas:
+      * identidad = (dni, nombre)
+      * config_habitacion = (piso, habitacion, num_comercial)
+    - Solicita confirmación explícita antes de asentar en la matriz.
     """
     if not hay_habitaciones_disponibles(matriz):
         print("\n[Aviso] El hotel se encuentra 100% completo. No hay habitaciones libres disponibles.")
@@ -50,96 +66,32 @@ def realizar_checkin(matriz, lista_huespedes, matriz_tarifas=None, sesion=None, 
         return matriz
 
     num_comercial = obtener_numero_comercial(piso, habitacion)
-    nombre = None
-    dni = None
 
-    # Determinación del huésped titular según el rol de la sesión activa
-    if sesion is not None and sesion[1] == "huesped":
-        nombre_sesion = sesion[2]
-        dni_sesion = sesion[3] if len(sesion) > 3 else ""
-        permitir_terceros = True if reglas_negocio is None else reglas_negocio.get("permitir_reserva_terceros", True)
+    print("\n--- REGISTRO DE NUEVO HUÉSPED ---")
+    dni = validar_generico_con_cancelacion("DNI del huésped: ", PATRON_DNI_VALIDO, ERROR_DNI)
+    if dni is None:
+        return matriz
 
-        if permitir_terceros:
-            print(f"\nTitular de la cuenta: {nombre_sesion} (DNI: {dni_sesion if dni_sesion else 'No registrado'})")
-            es_para_si_mismo = input("¿La reserva es para usted mismo? (s/n, o 0 para cancelar): ").strip().lower()
+    # Validación de unicidad de DNI mediante Conjunto (set)
+    dnis_activos = obtener_conjunto_dnis(lista_huespedes)
+    if dni in dnis_activos:
+        print(f"\n[Error] El huésped con DNI {dni} ya posee una reserva activa en el hotel.")
+        return matriz
 
-            if es_para_si_mismo in ["0", "cancelar"]:
-                print("[Operación cancelada] Regresando al menú...")
-                return matriz
+    nombre = validar_generico_con_cancelacion("Nombre y Apellido del huésped: ", PATRON_TEXTO_VALIDO, ERROR_TEXTO)
+    if nombre is None:
+        return matriz
 
-            if es_para_si_mismo in ["s", "si", "sí"]:
-                nombre = nombre_sesion
-                if dni_sesion:
-                    dni = dni_sesion
-                else:
-                    dni = validar_generico_con_cancelacion("Ingrese su DNI: ", PATRON_DNI_VALIDO, ERROR_DNI)
-                    if dni is None:
-                        return matriz
-            else:
-                print("\n--- DATOS DE LA PERSONA A HOSPEDAR ---")
-                nombre = validar_generico_con_cancelacion("Nombre completo del huésped: ", PATRON_TEXTO_VALIDO, ERROR_TEXTO)
-                if nombre is None:
-                    return matriz
-                dni = validar_generico_con_cancelacion("DNI del huésped: ", PATRON_DNI_VALIDO, ERROR_DNI)
-                if dni is None:
-                    return matriz
-        else:
-            print(f"\n[Política del Hotel] Las reservas online deben realizarse a nombre del titular ({nombre_sesion}).")
-            nombre = nombre_sesion
-            if dni_sesion:
-                dni = dni_sesion
-            else:
-                dni = validar_generico_con_cancelacion("Ingrese su DNI: ", PATRON_DNI_VALIDO, ERROR_DNI)
-                if dni is None:
-                    return matriz
-    else:
-        print("\n--- DATOS DEL HUÉSPED ---")
-        nombre = validar_generico_con_cancelacion("Nombre completo del huésped: ", PATRON_TEXTO_VALIDO, ERROR_TEXTO)
-        if nombre is None:
-            return matriz
+    dias_str = validar_generico_con_cancelacion("Cantidad de días de estadía: ", PATRON_DIAS_VALIDO, ERROR_DIAS)
+    if dias_str is None:
+        return matriz
+    dias = int(dias_str)
 
-        dni = validar_generico_con_cancelacion("DNI del huésped: ", PATRON_DNI_VALIDO, ERROR_DNI)
-        if dni is None:
-            return matriz
-
-    # Límite máximo de estadía configurado por la administración
-    max_dias = reglas_negocio.get("max_dias_estadia", 30) if reglas_negocio else 30
-
-    dias_validos = False
-    dias = 0
-    while not dias_validos:
-        dias_str = validar_generico_con_cancelacion(
-            f"Cantidad de días de estadía (máximo {max_dias} días): ",
-            PATRON_DIAS_VALIDO,
-            ERROR_DIAS
-        )
-        if dias_str is None:
-            return matriz
-        dias_candidatos = int(dias_str)
-        if dias_candidatos <= max_dias:
-            dias = dias_candidatos
-            dias_validos = True
-        else:
-            print(f"Error: La estadía máxima permitida por el hotel es de {max_dias} días.")
-
-    # Cálculo tarifario y detección de alta demanda
-    total_hab = len(matriz) * len(matriz[0])
-    ocupadas = sum(1 for fila in matriz for h in fila if h == "O")
-    ocupacion_pct = (ocupadas * 100.0) / total_hab if total_hab > 0 else 0.0
-
-    if matriz_tarifas is not None:
-        tarifa_noche, aplico_demanda = calcular_tarifa_dinamica(
-            piso + 1,
-            matriz_tarifas,
-            ocupacion_pct,
-            reglas_negocio
-        )
-    else:
-        tarifa_noche, aplico_demanda = 0.0, False
-
+    # Cálculo tarifario
+    tarifa_noche = float(obtener_tarifa_habitacion(piso + 1, matriz_tarifas)) if matriz_tarifas else 0.0
     total_estimado = tarifa_noche * dias
 
-    # Resumen y confirmación previa de la operación
+    # Resumen y confirmación previa
     print("\n" + "=" * 52)
     print("             CONFIRMACIÓN DE CHECK-IN             ")
     print("=" * 52)
@@ -147,9 +99,8 @@ def realizar_checkin(matriz, lista_huespedes, matriz_tarifas=None, sesion=None, 
     print(f"DNI:                  {dni}")
     print(f"Habitación asignada:  {num_comercial} (Piso {piso + 1})")
     print(f"Días de estadía:      {dias} noches")
-    if matriz_tarifas is not None:
-        demanda_txt = " (+ Recargo por Oferta/Demanda)" if aplico_demanda else ""
-        print(f"Tarifa por noche:     ${tarifa_noche:,.2f}{demanda_txt}")
+    if matriz_tarifas:
+        print(f"Tarifa por noche:     ${tarifa_noche:,.2f}")
         print(f"Total estimado:       ${total_estimado:,.2f}")
     print("=" * 52)
 
@@ -157,194 +108,27 @@ def realizar_checkin(matriz, lista_huespedes, matriz_tarifas=None, sesion=None, 
         print("\n[Operación cancelada] No se realizó el Check-in.")
         return matriz
 
-    # Confirmación aceptada: inicializa consumos_extras en 0.0
+    # Almacenamiento con Tuplas inmutables
+    identidad_inmutable = (str(dni), str(nombre))
+    config_habitacion = (int(piso), int(habitacion), int(num_comercial))
     consumos_extras = 0.0
-    datos_huesped = [nombre, dni, dias, piso, habitacion, num_comercial, consumos_extras]
-    lista_huespedes.append(datos_huesped)
+
+    registro_huesped = [identidad_inmutable, config_habitacion, dias, consumos_extras]
+    lista_huespedes.append(registro_huesped)
     matriz[piso][habitacion] = "O"
 
     print(f"\n[Check-in exitoso] {nombre} registrado en habitación {num_comercial} (piso {piso + 1}).")
     return matriz
 
 
-def cargar_consumo_habitacion(matriz_hotel, lista_huespedes):
+def realizar_checkout(matriz_hotel, lista_huespedes, matriz_tarifas):
     """
-    Permite cargar consumos adicionales (Minibar, Cochera, Desayuno, Spa, etc.)
-    a una habitación ocupada, para ser cobrados en la liquidación final de Check-out.
-    """
-    print("\n--- CARGAR CONSUMO EXTRA A HABITACIÓN ---")
-    if len(lista_huespedes) == 0:
-        print("[Aviso] No hay huéspedes registrados actualmente en el hotel.")
-        return
-
-    num_str = validar_generico_con_cancelacion(
-        "Ingrese el número de habitación (o 0 para cancelar): ",
-        PATRON_NUMERO_VALIDO,
-        ERROR_NUMERO
-    )
-    if num_str is None:
-        return
-    num_hab = int(num_str)
-
-    for huesped in lista_huespedes:
-        piso, hab = int(huesped[3]), int(huesped[4])
-        num_comercial = obtener_numero_comercial(piso, hab)
-
-        if num_comercial == num_hab:
-            print(f"\nHuésped alojado: {huesped[0]} (DNI: {huesped[1]})")
-            concepto = input("Concepto del consumo (ej: Minibar, Cochera, Room Service): ").strip()
-            if not concepto:
-                concepto = "Consumo general"
-
-            monto_str = validar_generico_con_cancelacion(
-                "Ingrese el monto del consumo ($): ",
-                PATRON_NUMERO_VALIDO,
-                ERROR_NUMERO
-            )
-            if monto_str is None:
-                return
-            monto = float(monto_str)
-
-            print("\n=== RESUMEN DEL CONSUMO EXTRA ===")
-            print(f"Habitación:  {num_comercial}")
-            print(f"Huésped:     {huesped[0]}")
-            print(f"Concepto:    {concepto}")
-            print(f"Importe:     ${monto:,.2f}")
-            print("=================================")
-
-            if confirmar_accion("¿Confirma cargar este consumo a la habitación? (s/n): "):
-                if len(huesped) > 6:
-                    huesped[6] += monto
-                else:
-                    huesped.append(monto)
-                print(f"\n[Éxito] Se cargaron ${monto:,.2f} a la habitación {num_comercial}.")
-                print(f"Total acumulado en extras: ${huesped[6]:,.2f}")
-            else:
-                print("\n[Operación cancelada] No se imputó el consumo.")
-            return
-
-    print(f"\n[Aviso] No se encontró ningún huésped alojado en la habitación {num_hab}.")
-
-
-def extender_estadia_huesped(matriz_hotel, lista_huespedes, reglas_negocio=None):
-    """
-    Permite prolongar los días de estadía de un huésped actualmente alojado
-    sin necesidad de realizar un Check-out y Check-in adicional.
-    """
-    print("\n--- EXTENDER ESTADÍA DE HUÉSPED ---")
-    if len(lista_huespedes) == 0:
-        print("[Aviso] No hay huéspedes registrados actualmente en el hotel.")
-        return
-
-    num_str = validar_generico_con_cancelacion(
-        "Ingrese el número de habitación (o 0 para cancelar): ",
-        PATRON_NUMERO_VALIDO,
-        ERROR_NUMERO
-    )
-    if num_str is None:
-        return
-    num_hab = int(num_str)
-
-    max_dias = reglas_negocio.get("max_dias_estadia", 30) if reglas_negocio else 30
-
-    for huesped in lista_huespedes:
-        piso, hab = int(huesped[3]), int(huesped[4])
-        num_comercial = obtener_numero_comercial(piso, hab)
-
-        if num_comercial == num_hab:
-            dias_actuales = int(huesped[2])
-            print(f"\nHuésped: {huesped[0]} | Estadía contratada: {dias_actuales} noches.")
-
-            adicional_str = validar_generico_con_cancelacion(
-                "Cantidad de noches adicionales a extender: ",
-                PATRON_DIAS_VALIDO,
-                ERROR_DIAS
-            )
-            if adicional_str is None:
-                return
-            noches_extra = int(adicional_str)
-            total_noches = dias_actuales + noches_extra
-
-            if total_noches > max_dias:
-                print(f"Error: La estadía total resultante ({total_noches} noches) supera el límite de {max_dias} días.")
-                return
-
-            print("\n=== CONFIRMACIÓN DE EXTENSIÓN ===")
-            print(f"Huésped:             {huesped[0]}")
-            print(f"Habitación:          {num_comercial}")
-            print(f"Noches actuales:     {dias_actuales}")
-            print(f"Noches a agregar:    +{noches_extra}")
-            print(f"Nueva estadía total: {total_noches} noches")
-            print("=================================")
-
-            if confirmar_accion("¿Confirma la extensión de la estadía? (s/n): "):
-                huesped[2] = total_noches
-                print(f"\n[Éxito] Estadía de {huesped[0]} extendida a {total_noches} noches.")
-            else:
-                print("\n[Operación cancelada] No se modificó la estadía.")
-            return
-
-    print(f"\n[Aviso] No se encontró ningún huésped alojado en la habitación {num_hab}.")
-
-
-def buscar_huesped_por_dni(lista_huespedes, dni_busqueda):
-    """
-    Realiza una búsqueda secuencial en la lista de huéspedes.
-    Estructura de cada registro: [nombre, dni, dias, piso, habitacion, num_comercial, consumos_extras].
-    """
-    if dni_busqueda is None:
-        return
-
-    encontrado = False
-
-    for i in range(len(lista_huespedes)):
-        huesped = lista_huespedes[i]
-        nombre = huesped[0]
-        dni_actual = huesped[1]
-        dias = huesped[2]
-        piso = int(huesped[3])
-        hab = int(huesped[4])
-        extras = float(huesped[6]) if len(huesped) > 6 else 0.0
-
-        num_comercial = huesped[5] if len(huesped) > 5 else obtener_numero_comercial(piso, hab)
-        piso_real = piso + 1
-
-        if str(dni_actual).strip() == str(dni_busqueda).strip():
-            encontrado = True
-            print("\n=== DATOS DEL HUÉSPED ENCONTRADO ===")
-            print("Nombre:               ", nombre)
-            print("DNI:                  ", dni_actual)
-            print("Días de estadía:      ", dias)
-            print("Piso asignado:        ", piso_real)
-            print("Habitación:           ", num_comercial)
-            if extras > 0:
-                print(f"Consumos adicionales: ${extras:,.2f}")
-            print("====================================")
-
-    if not encontrado:
-        print(f"\n[Aviso] No se encontró ningún huésped alojado con el DNI: {dni_busqueda}")
-
-
-def filtrar_huespedes_por_piso(lista_huespedes, piso_objetivo):
-    """
-    Filtra los huéspedes de un piso específico utilizando 'filter' y 'lambda'.
-    'piso_objetivo' representa el número comercial de piso (1 para primer piso, etc.).
-    """
-    indice_piso = int(piso_objetivo) - 1
-    filtrados = list(filter(
-        lambda huesped: int(huesped[3]) == indice_piso,
-        lista_huespedes
-    ))
-    return filtrados
-
-
-def realizar_checkout(matriz_hotel, lista_huespedes, matriz_tarifas, reglas_negocio=None):
-    """
-    Procesa la salida de un huésped:
-    - Solicita DNI con opción de cancelar con '0'.
-    - Desglosa liquidación: Noches x Tarifa, Descuento estadía larga (>7 noches),
-      Descuento cliente frecuente y Consumos adicionales (Minibar, extras).
-    - Solicita confirmación explícita antes de liberar la habitación a 'S'.
+    Baja de reserva (Check-out):
+    - Valida existencia del DNI utilizando conjunto (set).
+    - Desglosa liquidación: noches x tarifa, bonificación del 10% si noches > 7,
+      y consumos adicionales (minibar/servicios).
+    - Solicita confirmación explícita previa.
+    - Libera la habitación a estado Sucio/Limpieza ('S') y retira al huésped.
     """
     print("\n--- CHECK-OUT ---")
     if len(lista_huespedes) == 0:
@@ -359,24 +143,26 @@ def realizar_checkout(matriz_hotel, lista_huespedes, matriz_tarifas, reglas_nego
     if dni_checkout is None:
         return
 
+    # Comprobación rápida O(1) con Conjunto (set)
+    dnis_activos = obtener_conjunto_dnis(lista_huespedes)
+    if dni_checkout not in dnis_activos:
+        print(f"\n[Aviso] No se encontró ningún huésped alojado con el DNI: {dni_checkout}")
+        return
+
     for huesped in lista_huespedes:
-        if str(huesped[1]) == str(dni_checkout):
-            nombre = huesped[0]
+        dni_actual = huesped[0][0]
+        if dni_actual == dni_checkout:
+            nombre = huesped[0][1]
+            piso, habitacion, num_comercial = huesped[1]
             dias = int(huesped[2])
-            piso = huesped[3]
-            habitacion = huesped[4]
-            num_comercial = obtener_numero_comercial(piso, habitacion)
+            consumos_extras = float(huesped[3])
 
             piso_comercial = piso + 1
             tarifa = float(obtener_tarifa_habitacion(piso_comercial, matriz_tarifas))
             subtotal_habitacion = tarifa * dias
 
-            # Bonificación 10% por estadía larga (> 7 noches)
+            # Bonificación 10% por estadía prolongada (> 7 noches)
             descuento_larga = (subtotal_habitacion * 0.10) if dias > 7 else 0.0
-
-            # Consumos extras acumulados (Minibar, cochera, etc.)
-            consumos_extras = float(huesped[6]) if len(huesped) > 6 else 0.0
-
             total_a_liquidar = (subtotal_habitacion - descuento_larga) + consumos_extras
 
             print("\n" + "=" * 54)
@@ -399,25 +185,22 @@ def realizar_checkout(matriz_hotel, lista_huespedes, matriz_tarifas, reglas_nego
                 print("\n[Operación cancelada] El huésped permanece registrado.")
                 return
 
-            # Confirmación aprobada: habitación pasa a sucia ('S') para limpieza
+            # Habitación pasa a sucia ('S') para posterior limpieza
             matriz_hotel[piso][habitacion] = "S"
             lista_huespedes.remove(huesped)
 
             print("\n================ CHECK-OUT EXITOSO ================")
             print(f"Huésped:             {nombre}")
-            print(f"Habitación liberada: {num_comercial} (requiere limpieza)")
+            print(f"Habitación liberada: {num_comercial} (requiere limpieza [S])")
             print(f"TOTAL COBRADO:       ${total_a_liquidar:,.2f}")
             print("===================================================")
             return
 
-    print(f"\n[Aviso] No se encontró al huésped con DNI: {dni_checkout}")
-
 
 def reubicar_huesped_swap(matriz_hotel, lista_huespedes):
     """
-    Traslada a un huésped de una habitación a otra disponible:
-    - Permite cancelar con '0' en cada paso.
-    - Pide confirmación explícita con el resumen del traslado antes de aplicar el swap.
+    Modificación de reserva: Reubicación de habitación (Swap).
+    Traslada a un huésped a otra habitación libre y actualiza su tupla de habitación fija.
     """
     print("\n--- REUBICACIÓN DE HUÉSPED (SWAP) ---")
     if len(lista_huespedes) == 0:
@@ -425,7 +208,7 @@ def reubicar_huesped_swap(matriz_hotel, lista_huespedes):
         return
 
     habitacion_swap_str = validar_generico_con_cancelacion(
-        "Ingrese el número de habitación a reubicar: ",
+        "Ingrese el número de habitación actual a reubicar: ",
         PATRON_NUMERO_VALIDO,
         ERROR_NUMERO
     )
@@ -433,43 +216,47 @@ def reubicar_huesped_swap(matriz_hotel, lista_huespedes):
         return
     habitacion_swap = int(habitacion_swap_str)
 
-    encontrado = False
+    # Validación de que la habitación esté ocupada usando Conjuntos
+    ocupadas_set = obtener_conjunto_habitaciones_ocupadas(lista_huespedes)
+    if habitacion_swap not in ocupadas_set:
+        print(f"\n[Aviso] No se encontró ningún huésped alojado en la habitación {habitacion_swap}.")
+        return
 
     for huesped in lista_huespedes:
-        piso, habitacion = int(huesped[3]), int(huesped[4])
-        num_comercial = obtener_numero_comercial(piso, habitacion)
+        piso_ant, hab_ant, num_ant = huesped[1]
 
-        if num_comercial == habitacion_swap:
-            encontrado = True
+        if num_ant == habitacion_swap:
+            nombre = huesped[0][1]
+            libres_set = obtener_habitaciones_por_estado(matriz_hotel, "L")
+
+            if len(libres_set) == 0:
+                print("\n[Aviso] No hay otras habitaciones libres disponibles para reubicar al huésped.")
+                return
+
             habitacion_valida = False
             nuevo_piso = 0
-            nueva_habitacion = 0
+            nueva_hab = 0
             nuevo_numero = 0
 
             while not habitacion_valida:
-                nuevo_numero_str = validar_generico_con_cancelacion(
-                    "Ingrese el nuevo número de habitación: ",
+                nuevo_num_str = validar_generico_con_cancelacion(
+                    "Ingrese el nuevo número de habitación libre: ",
                     PATRON_NUMERO_VALIDO,
                     ERROR_NUMERO
                 )
-                if nuevo_numero_str is None:
+                if nuevo_num_str is None:
                     return
-                nuevo_numero = int(nuevo_numero_str)
+                nuevo_numero = int(nuevo_num_str)
 
-                nuevo_piso, nueva_habitacion = obtener_indices_matriz(nuevo_numero)
-
-                if nuevo_piso < 0 or nuevo_piso >= len(matriz_hotel) or nueva_habitacion < 0 or nueva_habitacion >= len(matriz_hotel[0]):
-                    print(f"Error: La habitación {nuevo_numero} no existe en el hotel.")
-                elif matriz_hotel[nuevo_piso][nueva_habitacion] == "M":
-                    print(f"Error: La habitación {nuevo_numero} está en Mantenimiento [M].")
-                elif matriz_hotel[nuevo_piso][nueva_habitacion] != "L":
-                    print(f"Error: La habitación {nuevo_numero} no está libre (estado actual: [{matriz_hotel[nuevo_piso][nueva_habitacion]}]).")
+                if nuevo_numero not in libres_set:
+                    print(f"Error: La habitación {nuevo_numero} no está libre para swap.")
                 else:
+                    nuevo_piso, nueva_hab = obtener_indices_matriz(nuevo_numero)
                     habitacion_valida = True
 
             print("\n=== CONFIRMACIÓN DE REUBICACIÓN ===")
-            print(f"Huésped a trasladar: {huesped[0]}")
-            print(f"Habitación origen:   {num_comercial}")
+            print(f"Huésped a trasladar: {nombre}")
+            print(f"Habitación origen:   {num_ant}")
             print(f"Habitación destino:  {nuevo_numero}")
             print("===================================")
 
@@ -477,19 +264,173 @@ def reubicar_huesped_swap(matriz_hotel, lista_huespedes):
                 print("\n[Operación cancelada] No se realizaron cambios.")
                 return
 
-            # Ejecución atómica del swap
-            matriz_hotel[piso][habitacion] = "L"
-            matriz_hotel[nuevo_piso][nueva_habitacion] = "O"
-            huesped[3] = nuevo_piso
-            huesped[4] = nueva_habitacion
-            if len(huesped) > 5:
-                huesped[5] = nuevo_numero
+            # Ejecución atómica del traslado
+            matriz_hotel[piso_ant][hab_ant] = "L"
+            matriz_hotel[nuevo_piso][nueva_hab] = "O"
 
-            print(f"\n[Swap exitoso] Huésped {huesped[0]} reubicado a la habitación {nuevo_numero}.")
+            # Reasignación de tupla inmutable de habitación fija
+            huesped[1] = (nuevo_piso, nueva_hab, nuevo_numero)
+
+            print(f"\n[Swap exitoso] Huésped {nombre} reubicado a la habitación {nuevo_numero}.")
             return
 
-    if not encontrado:
-        print(f"\n[Aviso] No se encontró ningún huésped alojado en la habitación {habitacion_swap}.")
+
+def cargar_consumo_habitacion(matriz_hotel, lista_huespedes):
+    """
+    Modificación de reserva: Cargar consumos adicionales (Minibar, Cochera, Servicios).
+    """
+    print("\n--- CARGAR CONSUMO EXTRA A HABITACIÓN ---")
+    if len(lista_huespedes) == 0:
+        print("[Aviso] No hay huéspedes registrados actualmente en el hotel.")
+        return
+
+    num_str = validar_generico_con_cancelacion(
+        "Ingrese el número de habitación (o 0 para cancelar): ",
+        PATRON_NUMERO_VALIDO,
+        ERROR_NUMERO
+    )
+    if num_str is None:
+        return
+    num_hab = int(num_str)
+
+    ocupadas = obtener_conjunto_habitaciones_ocupadas(lista_huespedes)
+    if num_hab not in ocupadas:
+        print(f"\n[Aviso] No se encontró ningún huésped alojado en la habitación {num_hab}.")
+        return
+
+    for huesped in lista_huespedes:
+        if huesped[1][2] == num_hab:
+            nombre = huesped[0][1]
+            dni = huesped[0][0]
+            print(f"\nHuésped alojado: {nombre} (DNI: {dni})")
+
+            concepto = input("Concepto del consumo (ej: Minibar, Cochera, Room Service): ").strip()
+            if not concepto:
+                concepto = "Consumo general"
+
+            monto_str = validar_generico_con_cancelacion(
+                "Ingrese el monto del consumo ($): ",
+                PATRON_NUMERO_VALIDO,
+                ERROR_NUMERO
+            )
+            if monto_str is None:
+                return
+            monto = float(monto_str)
+
+            print("\n=== RESUMEN DEL CONSUMO EXTRA ===")
+            print(f"Habitación:  {num_hab}")
+            print(f"Huésped:     {nombre}")
+            print(f"Concepto:    {concepto}")
+            print(f"Importe:     ${monto:,.2f}")
+            print("=================================")
+
+            if confirmar_accion("¿Confirma cargar este consumo a la habitación? (s/n): "):
+                huesped[3] += monto
+                print(f"\n[Éxito] Se cargaron ${monto:,.2f} a la habitación {num_hab}.")
+                print(f"Total acumulado en extras: ${huesped[3]:,.2f}")
+            else:
+                print("\n[Operación cancelada] No se imputó el consumo.")
+            return
+
+
+def extender_estadia_huesped(matriz_hotel, lista_huespedes):
+    """
+    Modificación de reserva: Prolongar noches de estadía de un huésped.
+    """
+    print("\n--- EXTENDER ESTADÍA DE HUÉSPED ---")
+    if len(lista_huespedes) == 0:
+        print("[Aviso] No hay huéspedes registrados actualmente en el hotel.")
+        return
+
+    num_str = validar_generico_con_cancelacion(
+        "Ingrese el número de habitación (o 0 para cancelar): ",
+        PATRON_NUMERO_VALIDO,
+        ERROR_NUMERO
+    )
+    if num_str is None:
+        return
+    num_hab = int(num_str)
+
+    ocupadas = obtener_conjunto_habitaciones_ocupadas(lista_huespedes)
+    if num_hab not in ocupadas:
+        print(f"\n[Aviso] No se encontró ningún huésped alojado en la habitación {num_hab}.")
+        return
+
+    for huesped in lista_huespedes:
+        if huesped[1][2] == num_hab:
+            nombre = huesped[0][1]
+            dias_actuales = int(huesped[2])
+            print(f"\nHuésped: {nombre} | Estadía actual: {dias_actuales} noches.")
+
+            adicional_str = validar_generico_con_cancelacion(
+                "Cantidad de noches adicionales a extender: ",
+                PATRON_DIAS_VALIDO,
+                ERROR_DIAS
+            )
+            if adicional_str is None:
+                return
+            noches_extra = int(adicional_str)
+            total_noches = dias_actuales + noches_extra
+
+            print("\n=== CONFIRMACIÓN DE EXTENSIÓN ===")
+            print(f"Huésped:             {nombre}")
+            print(f"Habitación:          {num_hab}")
+            print(f"Noches actuales:     {dias_actuales}")
+            print(f"Noches a agregar:    +{noches_extra}")
+            print(f"Nueva estadía total: {total_noches} noches")
+            print("=================================")
+
+            if confirmar_accion("¿Confirma la extensión de la estadía? (s/n): "):
+                huesped[2] = total_noches
+                print(f"\n[Éxito] Estadía de {nombre} extendida a {total_noches} noches.")
+            else:
+                print("\n[Operación cancelada] No se modificó la estadía.")
+            return
+
+
+def buscar_huesped_por_dni(lista_huespedes, dni_busqueda):
+    """
+    Consulta de reserva: Búsqueda rápida por DNI mediante Conjunto (set).
+    """
+    if dni_busqueda is None:
+        return
+
+    dnis_activos = obtener_conjunto_dnis(lista_huespedes)
+    if dni_busqueda not in dnis_activos:
+        print(f"\n[Aviso] No se encontró ningún huésped alojado con el DNI: {dni_busqueda}")
+        return
+
+    for huesped in lista_huespedes:
+        dni_actual = huesped[0][0]
+        if dni_actual == str(dni_busqueda).strip():
+            nombre = huesped[0][1]
+            piso, hab, num_comercial = huesped[1]
+            dias = huesped[2]
+            extras = huesped[3]
+
+            print("\n=== DATOS DEL HUÉSPED ENCONTRADO ===")
+            print(f"Nombre:               {nombre}")
+            print(f"DNI:                  {dni_actual}")
+            print(f"Días de estadía:      {dias} noches")
+            print(f"Piso asignado:        {piso + 1}")
+            print(f"Habitación:           {num_comercial}")
+            if extras > 0:
+                print(f"Consumos adicionales: ${extras:,.2f}")
+            print("====================================")
+            return
+
+
+def filtrar_huespedes_por_piso(lista_huespedes, piso_objetivo):
+    """
+    Consulta de reserva: Filtrado de huéspedes por piso utilizando 'filter' y 'lambda'.
+    'piso_objetivo' es el número comercial de piso (1 para primer piso).
+    """
+    indice_piso = int(piso_objetivo) - 1
+    filtrados = list(filter(
+        lambda huesped: huesped[1][0] == indice_piso,
+        lista_huespedes
+    ))
+    return filtrados
 
 
 def restablecer_limpieza(matriz_hotel):
@@ -497,8 +438,13 @@ def restablecer_limpieza(matriz_hotel):
     Restaura una habitación con estado 'S' (Sucia/Limpieza) a estado 'L' (Libre)
     con opción de cancelar y confirmación previa.
     """
+    sucias_set = obtener_habitaciones_por_estado(matriz_hotel, "S")
+    if len(sucias_set) == 0:
+        print("\n[Aviso] No hay habitaciones pendientes de limpieza en el hotel.")
+        return
+
     num_hab_str = validar_generico_con_cancelacion(
-        "Ingrese el número de habitación en limpieza: ",
+        "Ingrese el número de habitación en limpieza a habilitar: ",
         PATRON_NUMERO_VALIDO,
         ERROR_NUMERO
     )
@@ -506,15 +452,13 @@ def restablecer_limpieza(matriz_hotel):
         return
     num_hab = int(num_hab_str)
 
+    if num_hab not in sucias_set:
+        print(f"Error: La habitación {num_hab} no se encuentra en estado de limpieza [S].")
+        return
+
     piso, habitacion = obtener_indices_matriz(num_hab)
-    if 0 <= piso < len(matriz_hotel) and 0 <= habitacion < len(matriz_hotel[0]):
-        if matriz_hotel[piso][habitacion] == "S":
-            if confirmar_accion(f"¿Confirma restablecer la habitación {num_hab} a Libre [L]? (s/n): "):
-                matriz_hotel[piso][habitacion] = "L"
-                print(f"\n[Éxito] Habitación {num_hab} restablecida a disponible [L].")
-            else:
-                print("\n[Operación cancelada] La habitación continúa en limpieza.")
-        else:
-            print(f"Error: La habitación {num_hab} no está en limpieza (estado actual: [{matriz_hotel[piso][habitacion]}]).")
+    if confirmar_accion(f"¿Confirma restablecer la habitación {num_hab} a Libre [L]? (s/n): "):
+        matriz_hotel[piso][habitacion] = "L"
+        print(f"\n[Éxito] Habitación {num_hab} restablecida a disponible [L].")
     else:
-        print(f"Error: La habitación {num_hab} no existe en el hotel.")
+        print("\n[Operación cancelada] La habitación continúa en limpieza.")

@@ -14,42 +14,32 @@ Sistema de control y gestión hotelera desarrollado por consola en Python para l
 
 ---
 
-## 🔑 Usuarios y Credenciales por Defecto
+## 🚀 Arquitectura Simplificada: Vista Única y Persistencia JSON
 
-Para probar el sistema y evaluar los roles de acceso (RBAC), se dispone de los siguientes usuarios preconfigurados:
+Siguiendo los requerimientos unificados del equipo de trabajo, el sistema cuenta con una arquitectura simplificada, desacoplada y directa:
 
-| Usuario | Contraseña | Rol | Nombre y Apellido | DNI | Alcance y Permisos |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **`admin`** | `admin` | `admin` | Administrador del Hotel | `11111111` | Acceso irrestricto: gestión de usuarios y roles, reglas de negocio (oferta/demanda), redimensionamiento y reportes. |
-| **`recepcion`** | `1234` | `admin` | Recepcionista de Turno | `22222222` | Operaciones hoteleras: Check-in, Check-out, Swap, restablecer limpieza y facturación. |
-| **`cliente`** | `1234` | `huesped` | Huésped Frecuente | `33333333` | Portal del huésped: ver disponibilidad, reservar habitación (titular o terceros) y consultar estadía. |
-
-> **Nota:** También es posible crear nuevos usuarios con roles diferenciados desde el Panel de Administración o registrarse libremente como huésped desde la pantalla de inicio de sesión.
-
----
-
-## 🚀 Fase 2: Ampliación, Modularización y Persistencia
-
-Habiendo completado satisfactoriamente la Fase 1, el proyecto evoluciona hacia una arquitectura modular robusta que incorpora los nuevos conceptos de la materia:
-
-### 📌 Contenidos y Reglas de Negocio Incorporados:
-1. **Modularización:** División del monolito en módulos con responsabilidades claras, parámetros y valores de retorno (sin variables globales descontroladas).
-2. **Autenticación y Roles:** Sistema de inicio de sesión con roles diferenciados:
-   - **Administrador:** Gestión total del hotel, tarifas, reglas de negocio, redimensionamiento, reportes y auditoría.
-   - **Huésped / Usuario:** Consulta de disponibilidad, reserva de habitación (propia o terceros) y consulta de estadía.
-3. **Modos Operativos del Hotel:** Configuración de modo Híbrido (portal online abierto) o Modo Recepción Exclusiva (solo mostrador registra).
-4. **Estados de Habitación Ampliados:** Matriz con estados `[L]` Libre, `[O]` Ocupada, `[S]` Sucia/Limpieza y `[M]` Mantenimiento/Fuera de servicio.
-5. **Cargos Extras y Extensión de Estadía:** Carga de consumos adicionales (Minibar, Cochera, Servicios) y posibilidad de extender noches sin reingresar.
-6. **Diccionarios (`dict`):** Gestión de usuarios, credenciales y perfiles (`auth.py`) y reglas de negocio configurables (`tarifas.py`).
-7. **Tuplas (`tuple`):** Representación inmutable de la sesión activa `(username, rol, nombre, dni)` y coordenadas de habitación `(piso, hab)`.
-8. **Conjuntos (`set`):** Control de pertenencia de permisos por rol (`PERMISOS_ADMIN`, `PERMISOS_HUESPED`).
-9. **Manejo de Excepciones (`try / except`):** Control preventivo en acceso a diccionarios, conversiones de datos y búsquedas seguras.
-10. **Persistencia en JSON (`.json`) y Texto (`.txt`):** Estado general en JSON y bitácora cronológica con timestamps en `auditoria.txt`.
-11. **Pruebas Unitarias (`unittest`):** Suite automatizada de pruebas unitarias distribuidas en funciones críticas.
-12. **Restricciones Técnicas Estrictas:**
-    - ❌ Prohibido el uso de Clases / Programación Orientada a Objetos (POO).
-    - ❌ Prohibido el uso de bases de datos (SQL, etc.).
-    - ❌ Prohibido el uso de librerías externas no vistas en la materia (únicamente librerías estándar: `re`, `json`, `functools`, `unittest`, `datetime`).
+1. **Vista Única de Administración:** Se eliminó la diferenciación por roles y pantallas de inicio de sesión (`auth.py`). El sistema arranca directamente en el panel de gestión integral con todas las operaciones del hotel disponibles.
+2. **Ciclo Completo de Gestión Hotelera:**
+   - **Alta (Check-in):** Asignación de habitación libre con confirmación previa y validación de DNI único mediante conjuntos (`set`).
+   - **Baja (Check-out):** Liquidación con desglose de estadía, bonificación del 10% para estadías mayores a 7 noches, imputación de consumos adicionales (minibar/servicios) y liberación a estado de limpieza (`[S]`).
+   - **Modificación:** Reubicación de habitación (**Swap**), carga de consumos extras y extensión de días de estadía sin reingresar datos.
+   - **Consulta:** Búsqueda rápida de huésped por DNI mediante conjuntos (`set`) en tiempo $O(1)$ y filtrado funcional por piso mediante `filter` y `lambda`.
+   - **Mantenimiento y Limpieza:** Estados de habitación `[L]` Libre, `[O]` Ocupada, `[S]` Sucia/Limpieza y `[M]` Mantenimiento/Fuera de servicio.
+   - **Reportes Analíticos:** Desglose porcentual de ocupación y cálculo de facturación proyectada mediante programación funcional (`map`, `filter`, `functools.reduce` y `lambda`).
+3. **Estructuras de Datos Nativas:**
+   - **Tuplas (`tuple`):** Empleadas estrictamente para datos inmutables:
+     - Identidad del huésped: `(dni, nombre)`
+     - Configuración fija de habitación: `(piso, habitacion, num_comercial)`
+     - Coordenadas de matriz: `(piso, habitacion)`
+     - Estados válidos de habitación: `("L", "O", "S", "M")`
+   - **Conjuntos (`set`):** Empleados para búsquedas en tiempo constante $O(1)$ y validación de unicidad:
+     - Conjunto de DNIs activos: evita duplicados en check-in y acelera la búsqueda.
+     - Conjunto de habitaciones ocupadas y por estado (`obtener_habitaciones_por_estado`).
+     - Conjunto total de habitaciones para validación rápida.
+4. **Persistencia en JSON:** Módulo `persistencia.py` que serializa y recupera el estado completo del hotel (`hotel`, `huespedes`, `tarifas`) en `datos/hotel_data.json` con reconstrucción explícita de tuplas inmutables y control robusto de excepciones (`FileNotFoundError`, `JSONDecodeError`, `OSError`).
+5. **Restricciones Académicas:**
+   - ❌ Sin Clases / POO en la lógica de negocio (diseño puramente modular y funcional).
+   - ❌ Sin librerías externas: exclusivamente módulos estándar de Python (`re`, `functools`, `json`, `os`, `unittest`).
 
 ---
 
@@ -58,41 +48,49 @@ Habiendo completado satisfactoriamente la Fase 1, el proyecto evoluciona hacia u
 ```text
 room-master/
 │
-├── main.py               # Punto de entrada: inicialización, login y menú según rol
-├── auth.py               # Módulo de usuarios, contraseñas y roles (Dicts y Tuplas)
-├── hotel.py              # Matriz de habitaciones, visualización y control de hotel lleno
-├── tarifas.py            # Matriz de tarifas por piso y segmentación de suites
-├── huespedes.py          # Check-in, Check-out, búsquedas secuenciales y Swap
-├── reportes.py           # Reportes de ocupación y facturación (map, filter, reduce)
-├── persistencia.py       # Carga y guardado en JSON y logs en TXT (try/except)
-├── validaciones.py       # Expresiones regulares genéricas y validación de entradas
+├── main.py               # Punto de entrada y panel interactivo unificado de administración
+├── hotel.py              # Matrices bidimensionales, conversión de coordenadas, estados (L, O, S, M) y sets
+├── huespedes.py          # Check-in, Check-out con liquidación, Swap, extras, extensiones y búsqueda O(1)
+├── tarifas.py            # Tarifas por piso y segmentación de suites de lujo
+├── reportes.py           # Métricas analíticas y facturación (map, filter, reduce y lambdas)
+├── persistencia.py       # Almacenamiento y recuperación en archivos JSON (datos/hotel_data.json)
+├── validaciones.py       # Expresiones regulares genéricas y cancelación segura (0)
 │
-├── test_hotel.py         # Suite de 10 pruebas unitarias con unittest
-├── datos/                # Directorio de persistencia
-│   ├── hotel_data.json   # Archivo JSON con la información del hotel
-│   └── auditoria.txt     # Archivo TXT con la bitácora de transacciones
-└── README.md             # Documentación del proyecto
+├── datos/
+│   └── hotel_data.json   # Archivo de persistencia de datos del hotel
+│
+├── test_hotel.py         # Suite de 10 pruebas unitarias con unittest estándar
+└── README.md             # Documentación integral del proyecto
 ```
 
 ---
 
-## 🌿 Flujo de Trabajo en Git (Fase 2)
+## 🧪 Pruebas Unitarias Automatizadas
 
-- `main`: Código final testeado y entregable.
-- `develop`: Rama de integración donde se unen las características de la Fase 2.
-- `feature/fase2-<nombre>`: Ramas de trabajo asignadas a cada integrante.
+El proyecto incluye 10 pruebas unitarias automatizadas en [test_hotel.py](test_hotel.py) que validan:
+1. Inicialización de matriz y estados `[L]`.
+2. Biyección matemática y coordenadas inmutables en tuplas.
+3. Expresiones regulares de validación (DNI, Nombres, Números).
+4. Estructuras de datos: Tuplas inmutables y Conjuntos (`set`) para búsquedas $O(1)$.
+5. Ciclo de mantenimiento y recuperación de habitaciones.
+6. Cálculo de subtotal con bonificación funcional (10% en > 7 noches).
+7. Consumos adicionales y liquidación de extras.
+8. Recaudación total proyectada mediante `map` y `functools.reduce`.
+9. Prevención de bucles infinitos ante hotel 100% completo.
+10. Persistencia JSON: serialización, deserialización y restauración de tuplas inmutables.
 
-### 📋 Asignación de Ramas por Integrante:
-| Integrante | Rama Asignada | Responsabilidades Principales |
-| :--- | :--- | :--- |
-| **Lucas** | `feature/fase2-auth-roles` | `auth.py`: Login, diccionarios de usuarios, tuplas de sesión, bifurcación de menús (Admin/Huésped). |
-| **Tiara** | `feature/fase2-hotel-disponibilidad` | `hotel.py` y `validaciones.py`: Desacople de matriz, solución del bucle infinito ante hotel lleno y cancelación con 0. |
-| **Luca** | `feature/fase2-operaciones-txt` | `huespedes.py`: Check-in, check-out, swap y escritura de bitácora en `auditoria.txt`. |
-| **Leandro** | `feature/fase2-persistencia-json-tests` | `persistencia.py`: Carga y guardado de `hotel_data.json` con `try/except`, y suite `test_hotel.py` con `unittest`. |
+Para ejecutar la suite de pruebas:
+```bash
+python -m unittest test_hotel.py -v
+```
 
 ---
 
-### 💻 Guía Rápida para el Equipo:
+## 🌿 Flujo de Trabajo en Git
+
+- `main`: Código final testeado y entregable.
+- `develop`: Rama de integración común.
+- `feature/fase2-<nombre>`: Ramas de trabajo del equipo.
 
 ```bash
 # 1. Asegurarse de traer todos los cambios de develop

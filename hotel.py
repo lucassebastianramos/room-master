@@ -3,7 +3,8 @@
 # =============================================================================
 # Responsabilidad: Creación, conversión de coordenadas, visualización y
 # control de estados y disponibilidad de las habitaciones del hotel.
-# Estados: 'L' (Libre), 'O' (Ocupada), 'S' (Sucia/Limpieza), 'M' (Mantenimiento).
+# Uso de Tuplas para configuraciones y estados inmutables, y Conjuntos (set)
+# para búsquedas rápidas de disponibilidad y filtros de unicidad.
 # =============================================================================
 
 from validaciones import (
@@ -13,6 +14,9 @@ from validaciones import (
     PATRON_NUMERO_VALIDO,
     ERROR_NUMERO
 )
+
+# Tupla inmutable que define los estados válidos de una habitación
+ESTADOS_VALIDOS = ("L", "O", "S", "M")
 
 
 def inicializar_hotel(pisos, habitaciones):
@@ -40,10 +44,36 @@ def obtener_numero_comercial(piso, habitacion):
 def obtener_indices_matriz(numero_comercial):
     """
     Convierte el número comercial visible (101) a índices de matriz (0, 0).
+    Retorna una Tupla inmutable: (piso, habitacion).
     """
     piso = (numero_comercial // 100) - 1
     habitacion = (numero_comercial % 100) - 1
-    return piso, habitacion
+    return (piso, habitacion)
+
+
+def obtener_habitaciones_por_estado(matriz, estado):
+    """
+    Retorna un conjunto (set) con los números comerciales de las habitaciones
+    que se encuentran en el estado especificado ('L', 'O', 'S', 'M').
+    Demuestra el uso de conjuntos para búsquedas eficientes en tiempo constante O(1).
+    """
+    habitaciones_set = set()
+    for f in range(len(matriz)):
+        for c in range(len(matriz[0])):
+            if matriz[f][c] == estado:
+                habitaciones_set.add(obtener_numero_comercial(f, c))
+    return habitaciones_set
+
+
+def obtener_todas_las_habitaciones(matriz):
+    """
+    Retorna un conjunto (set) con la totalidad de números de habitaciones del hotel.
+    """
+    total_set = set()
+    for f in range(len(matriz)):
+        for c in range(len(matriz[0])):
+            total_set.add(obtener_numero_comercial(f, c))
+    return total_set
 
 
 def renderizar_hotel(matriz):
@@ -72,24 +102,27 @@ def renderizar_hotel(matriz):
 
 def hay_habitaciones_disponibles(matriz):
     """
-    Verifica si existe al menos una habitación con estado 'L' (Libre) en el hotel.
+    Verifica si existe al menos una habitación con estado 'L' (Libre) en el hotel
+    utilizando el conjunto de habitaciones disponibles.
     Previene el bucle infinito cuando el hotel se encuentra al 100% de ocupación.
     """
-    for fila in matriz:
-        if "L" in fila:
-            return True
-    return False
+    libres = obtener_habitaciones_por_estado(matriz, "L")
+    return len(libres) > 0
 
 
 def solicitar_habitacion_libre(matriz):
     """
-    Pide y valida una habitación libre.
+    Pide y valida una habitación libre mediante conjuntos (set).
     Si el hotel está lleno o el usuario ingresa 0, cancela la operación de forma segura.
     Retorna (piso, habitacion) o (None, None) si se cancela.
     """
     if not hay_habitaciones_disponibles(matriz):
         print("\n[Aviso] El hotel se encuentra 100% completo. No hay habitaciones libres disponibles.")
         return None, None
+
+    todas_habitaciones = obtener_todas_las_habitaciones(matriz)
+    libres_set = obtener_habitaciones_por_estado(matriz, "L")
+    mantenimiento_set = obtener_habitaciones_por_estado(matriz, "M")
 
     es_valida = False
     piso_final = None
@@ -105,15 +138,17 @@ def solicitar_habitacion_libre(matriz):
             return None, None
 
         num_comercial = int(num_str)
-        piso, hab = obtener_indices_matriz(num_comercial)
 
-        if piso < 0 or piso >= len(matriz) or hab < 0 or hab >= len(matriz[0]):
-            print("Error: El piso o la habitación ingresada no existen en el hotel.")
-        elif matriz[piso][hab] == "M":
+        # Validación rápida O(1) mediante conjuntos
+        if num_comercial not in todas_habitaciones:
+            print(f"Error: La habitación {num_comercial} no existe en el hotel.")
+        elif num_comercial in mantenimiento_set:
             print(f"Error: La habitación {num_comercial} se encuentra en MANTENIMIENTO [M].")
-        elif matriz[piso][hab] != "L":
+        elif num_comercial not in libres_set:
+            piso, hab = obtener_indices_matriz(num_comercial)
             print(f"Error: La habitación {num_comercial} no está libre (estado actual: [{matriz[piso][hab]}]).")
         else:
+            piso, hab = obtener_indices_matriz(num_comercial)
             es_valida = True
             piso_final = piso
             hab_final = hab
@@ -123,7 +158,7 @@ def solicitar_habitacion_libre(matriz):
 
 def enviar_a_mantenimiento(matriz_hotel):
     """
-    Permite al Administrador poner una habitación fuera de servicio por averías o reformas.
+    Permite poner una habitación fuera de servicio por averías o reformas.
     Solo puede realizarse si la habitación está Libre ('L') o Sucia ('S'), no Ocupada ('O').
     """
     print("\n--- ENVIAR HABITACIÓN A MANTENIMIENTO [M] ---")
@@ -152,6 +187,8 @@ def enviar_a_mantenimiento(matriz_hotel):
         return
 
     motivo = input("Motivo del mantenimiento (ej: Pintura, Aire acondicionado, Plomería): ").strip()
+    if not motivo:
+        motivo = "Mantenimiento general"
 
     if confirmar_accion(f"¿Confirma poner la habitación {num_hab} en mantenimiento por '{motivo}'? (s/n): "):
         matriz_hotel[piso][hab] = "M"
@@ -162,7 +199,7 @@ def enviar_a_mantenimiento(matriz_hotel):
 
 def liberar_de_mantenimiento(matriz_hotel):
     """
-    Permite al Administrador dar de alta una habitación reparada,
+    Permite dar de alta una habitación reparada,
     cambiando su estado de Mantenimiento ('M') a Libre ('L').
     """
     print("\n--- HABILITAR HABITACIÓN DESDE MANTENIMIENTO ---")
@@ -196,7 +233,7 @@ def reiniciar_matriz():
     """
     Solicita las dimensiones validadas e instancia una nueva matriz limpia ('L').
     """
-    print("--- Inicializar matriz ---\n")
+    print("--- Inicializar matriz del hotel ---\n")
     pisos = solicitar_dimension_valida("Ingrese la cantidad de pisos del hotel (1 a 99): ", 1, 99)
     habitaciones = solicitar_dimension_valida("Ingrese la cantidad de habitaciones por piso (1 a 99): ", 1, 99)
     return inicializar_hotel(pisos, habitaciones)
