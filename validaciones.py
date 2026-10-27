@@ -1,9 +1,6 @@
 # =============================================================================
 # MÓDULO DE VALIDACIONES GENÉRICAS (validaciones.py)
 # =============================================================================
-# Responsabilidad: Capa de validación de entradas de usuario basada en
-# Expresiones Regulares (re).
-# =============================================================================
 
 import re
 
@@ -45,4 +42,3 @@ def solicitar_dimension_valida(mensaje, min_val, max_val):
             print(f"Error: El valor debe estar entre {min_val} y {max_val}.")
 
     return valor_num
-

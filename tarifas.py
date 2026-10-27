@@ -1,9 +1,6 @@
 # =============================================================================
 # MÓDULO DE TARIFAS Y PRECIOS (tarifas.py)
 # =============================================================================
-# Responsabilidad: Esquema de precios por piso y segmentación de suites/lujo.
-# Provee funciones para configurar, consultar y visualizar las tarifas del hotel.
-# =============================================================================
 
 from validaciones import (
     validar_generico,
@@ -16,8 +13,6 @@ from validaciones import (
 def configurar_tarifas_hotel(total_pisos):
     """
     Permite configurar dinámicamente las tarifas del hotel por piso.
-    Permite definir un precio base general y segmentar pisos superiores como lujosos/suites con recargo.
-    Retorna una matriz de tarifas: [[piso, precio_base], ...] donde piso va de 1 a total_pisos.
     """
     print("\n" + "=" * 45)
     print("      CONFIGURACIÓN DE TARIFAS DEL HOTEL     ")
@@ -100,19 +95,15 @@ def mostrar_resumen_tarifas(matriz_tarifas, piso_lujo_desde=None):
 def obtener_tarifa_habitacion(piso, matriz_tarifas):
     """
     Retorna el precio base por noche según el piso del hotel.
-    matriz_tarifas tiene pares: [piso, precio_base] (piso 1-indexed: 1, 2, 3...)
     """
     for i in range(len(matriz_tarifas)):
         if matriz_tarifas[i][0] == piso:
             return matriz_tarifas[i][1]
 
-    # Soporte por si se pasa piso en formato índice de matriz (0 para Piso 1)
     if piso == 0 and len(matriz_tarifas) > 0:
         return matriz_tarifas[0][1]
 
-    # Fallback al último piso si excede el rango
     if len(matriz_tarifas) > 0:
         return matriz_tarifas[-1][1]
 
     return 0.0
-

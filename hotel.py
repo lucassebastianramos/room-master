@@ -56,11 +56,10 @@ def renderizar_hotel(matriz):
             num_hab = obtener_numero_comercial(f, c)
             print(f"[{num_hab}: {matriz[f][c]}]", end="  ")
 
-            # Al llegar a 10 habitaciones hace un salto de línea
             if (c + 1) % 10 == 0:
                 print()
 
-        print("\n")  # Separación entre pisos
+        print("\n")
 
 
 def reiniciar_matriz():
@@ -98,4 +97,3 @@ def solicitar_habitacion_libre(matriz):
             hab_final = hab
 
     return piso_final, hab_final
-
