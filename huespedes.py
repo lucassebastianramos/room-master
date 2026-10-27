@@ -20,6 +20,15 @@ from hotel import (
 )
 from tarifas import obtener_tarifa_habitacion
 
+def validar_dni(dni_nuevo, lista_huespedes):
+    """
+    Se fija que el DNI no se repita.
+    """
+    for i in range (len(lista_huespedes)):
+        while lista_huespedes[i][1] == dni_nuevo:
+            print(f"Error, el DNI {dni_nuevo} ya está registrado")
+            dni_nuevo = validar_generico("Ingrese el DNI del huésped: ", PATRON_DNI_VALIDO, ERROR_DNI)
+    return dni_nuevo
 
 def realizar_checkin(matriz, lista_huespedes):
     """
@@ -32,6 +41,7 @@ def realizar_checkin(matriz, lista_huespedes):
 
     nombre = validar_generico("Ingrese el nombre del huésped: ", PATRON_TEXTO_VALIDO, ERROR_TEXTO)
     dni = validar_generico("Ingrese el DNI del huésped: ", PATRON_DNI_VALIDO, ERROR_DNI)
+    dni = validar_dni(dni, lista_huespedes)
     dias = int(validar_generico("Cantidad de días de estadía: ", PATRON_DIAS_VALIDO, ERROR_DIAS))
 
     num_comercial = obtener_numero_comercial(piso, habitacion)
