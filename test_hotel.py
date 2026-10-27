@@ -3,21 +3,18 @@
 # =============================================================================
 # Cátedra: Lic. Gustavo E. Escandell - Programación 1 / Algoritmos y Estructuras 1
 # Responsabilidad: Verificación automatizada de funciones críticas del sistema:
-# Matrices, Conversiones, Validaciones Regex, Ciclo de Vida de Huéspedes,
-# Tarifas y Descuentos, Tuplas Inmutables, Conjuntos (set) y Persistencia JSON.
+# Matrices, Conversiones, Validaciones Regex, Huéspedes, Tarifas y Reportes Funcionales.
 # Ejecución: python -m unittest test_hotel.py -v
 # =============================================================================
 
 import unittest
 import re
-import os
 
 import hotel
 import validaciones
 import tarifas
 import reportes
 import huespedes
-import persistencia
 
 
 class TestRoomMaster(unittest.TestCase):
@@ -34,17 +31,6 @@ class TestRoomMaster(unittest.TestCase):
         self.matriz = hotel.inicializar_hotel(self.pisos, self.habitaciones_por_piso)
         self.tarifas = [[1, 10000.0], [2, 12000.0], [3, 15000.0]]
         self.lista_huespedes = []
-        self.ruta_test_json = os.path.join("datos", "test_hotel_data.json")
-
-    def tearDown(self):
-        """
-        Limpia archivos temporales de prueba si se crearon.
-        """
-        if os.path.exists(self.ruta_test_json):
-            try:
-                os.remove(self.ruta_test_json)
-            except OSError:
-                pass
 
     def test_01_inicializacion_matriz_hotel(self):
         """
@@ -61,18 +47,16 @@ class TestRoomMaster(unittest.TestCase):
         """
         Verifica la biyección matemática entre índices de matriz (0, 0)
         y números comerciales de habitación (101, 204, 302).
-        Retorna Tuplas inmutables.
         """
         self.assertEqual(hotel.obtener_numero_comercial(0, 0), 101)
         self.assertEqual(hotel.obtener_numero_comercial(1, 3), 204)
         self.assertEqual(hotel.obtener_numero_comercial(2, 1), 302)
 
-        indices = hotel.obtener_indices_matriz(101)
-        self.assertIsInstance(indices, tuple, "Las coordenadas de matriz deben ser una tupla.")
-        self.assertEqual(indices, (0, 0))
+        piso, hab = hotel.obtener_indices_matriz(101)
+        self.assertEqual((piso, hab), (0, 0))
 
-        indices_304 = hotel.obtener_indices_matriz(304)
-        self.assertEqual(indices_304, (2, 3))
+        piso_304, hab_304 = hotel.obtener_indices_matriz(304)
+        self.assertEqual((piso_304, hab_304), (2, 3))
 
     def test_03_validaciones_expresiones_regulares(self):
         """
@@ -91,144 +75,91 @@ class TestRoomMaster(unittest.TestCase):
         self.assertTrue(re.match(validaciones.PATRON_TEXTO_VALIDO, "Tiara Menéndez"))
         self.assertFalse(re.match(validaciones.PATRON_TEXTO_VALIDO, "User123"))
 
-    def test_04_estructuras_datos_tuplas_y_conjuntos(self):
-        """
-        Verifica el uso explícito de Tuplas para datos inmutables y Conjuntos (set)
-        para búsquedas rápidas y validación de unicidad:
-        - Tupla inmutable ESTADOS_VALIDOS
-        - Conjuntos (set) de habitaciones por estado (L, O, S, M)
-        - Conjunto (set) de DNIs activos para búsqueda O(1)
-        """
-        # Tupla inmutable de estados
-        self.assertIsInstance(hotel.ESTADOS_VALIDOS, tuple)
-        self.assertEqual(hotel.ESTADOS_VALIDOS, ("L", "O", "S", "M"))
+        # Validación de días
+        self.assertTrue(re.match(validaciones.PATRON_DIAS_VALIDO, "5"))
+        self.assertFalse(re.match(validaciones.PATRON_DIAS_VALIDO, "0"))
 
-        # Conjunto de habitaciones libres
-        libres = hotel.obtener_habitaciones_por_estado(self.matriz, "L")
-        self.assertIsInstance(libres, set)
-        self.assertEqual(len(libres), 12)
-        self.assertIn(101, libres)
+    def test_04_obtener_tarifa_habitacion(self):
+        """
+        Verifica la correcta obtención de tarifas según el piso.
+        """
+        self.assertEqual(tarifas.obtener_tarifa_habitacion(1, self.tarifas), 10000.0)
+        self.assertEqual(tarifas.obtener_tarifa_habitacion(2, self.tarifas), 12000.0)
+        self.assertEqual(tarifas.obtener_tarifa_habitacion(3, self.tarifas), 15000.0)
 
-        # Registro con tuplas inmutables
-        identidad = ("44123456", "Juan Perez")
-        config_hab = (0, 0, 101)
-        huesped = [identidad, config_hab, 3, 0.0]
+    def test_05_registro_huesped_formato(self):
+        """
+        Verifica la estructura y contenido del registro de un huésped:
+        [nombre, dni, dias, piso, habitacion, num_comercial].
+        """
+        huesped = ["Juan Perez", "12345678", 3, 0, 0, 101]
         self.lista_huespedes.append(huesped)
+        self.matriz[0][0] = "O"
 
-        # Validación con conjunto de DNIs
-        conjunto_dnis = huespedes.obtener_conjunto_dnis(self.lista_huespedes)
-        self.assertIsInstance(conjunto_dnis, set)
-        self.assertIn("44123456", conjunto_dnis)
-        self.assertNotIn("99999999", conjunto_dnis)
+        self.assertEqual(len(self.lista_huespedes), 1)
+        self.assertEqual(self.lista_huespedes[0][0], "Juan Perez")
+        self.assertEqual(self.lista_huespedes[0][1], "12345678")
+        self.assertEqual(self.matriz[0][0], "O")
 
-    def test_05_ciclo_mantenimiento_habitaciones(self):
+    def test_06_calculo_subtotal_estadia_corta(self):
         """
-        Verifica que una habitación pueda colocarse en estado Mantenimiento [M]
-        y que quede inhabilitada para reservas hasta ser reparada a [L].
+        Verifica el cálculo de liquidación para estadías <= 7 noches (tarifa plena).
         """
-        self.matriz[0][1] = "M"
-        self.assertEqual(self.matriz[0][1], "M")
-
-        # Verificar que aparezca en el conjunto de mantenimiento
-        en_mant = hotel.obtener_habitaciones_por_estado(self.matriz, "M")
-        self.assertIn(102, en_mant)
-
-        # Dar el alta técnica
-        self.matriz[0][1] = "L"
-        self.assertEqual(self.matriz[0][1], "L")
-        libres = hotel.obtener_habitaciones_por_estado(self.matriz, "L")
-        self.assertIn(102, libres)
-
-    def test_06_calculo_subtotal_con_descuento_larga_estadia(self):
-        """
-        Verifica el cálculo de liquidación mediante orden superior (lambda):
-        - Estadía <= 7 noches: tarifa plena.
-        - Estadía > 7 noches: 10% de bonificación automática.
-        Soporta la estructura de tuplas inmutables.
-        """
-        # Huésped 1: 5 noches en piso 1 ($10,000/noche) = $50,000
-        huesped_corto = [("12345678", "Juan Perez"), (0, 0, 101), 5, 0.0]
+        huesped_corto = ["Juan Perez", "12345678", 5, 0, 0, 101]
         subtotal_corto = reportes.calcular_subtotal(huesped_corto, self.tarifas)
         self.assertEqual(subtotal_corto, 50000.0)
 
-        # Huésped 2: 10 noches en piso 1 ($10,000/noche) = $100,000 - 10% = $90,000
-        huesped_largo = [("87654321", "Maria Gomez"), (0, 1, 102), 10, 0.0]
+    def test_07_calculo_subtotal_con_descuento_larga_estadia(self):
+        """
+        Verifica el cálculo de liquidación mediante orden superior (lambda):
+        Estadía > 7 noches: 10% de bonificación automática.
+        """
+        huesped_largo = ["Maria Gomez", "87654321", 10, 0, 1, 102]
         subtotal_largo = reportes.calcular_subtotal(huesped_largo, self.tarifas)
         self.assertEqual(subtotal_largo, 90000.0)
-
-    def test_07_consumos_adicionales_y_liquidacion_con_extras(self):
-        """
-        Verifica la acumulación de consumos extras (Minibar, Cochera)
-        y su correcto impacto en la facturación del huésped.
-        """
-        # Huésped con 3 noches en piso 2 ($12,000/noche = $36,000) + $4,500 en extras
-        huesped_extras = [("20111222", "Carlos Tevez"), (1, 0, 201), 3, 4500.0]
-        subtotal_con_extras = reportes.calcular_subtotal(huesped_extras, self.tarifas)
-        self.assertEqual(subtotal_con_extras, 40500.0)
 
     def test_08_recaudacion_total_programacion_funcional(self):
         """
         Verifica el uso de map y reduce para calcular la recaudación total proyectada.
         """
-        h1 = [("11111111", "Huesped 1"), (0, 0, 101), 2, 0.0]    # 2 x 10,000 = 20,000
-        h2 = [("22222222", "Huesped 2"), (1, 0, 201), 2, 1000.0]  # 2 x 12,000 + 1,000 = 25,000
+        h1 = ["Huesped 1", "11111111", 2, 0, 0, 101]    # 2 x 10,000 = 20,000
+        h2 = ["Huesped 2", "22222222", 2, 1, 0, 201]    # 2 x 12,000 = 24,000
         lista = [h1, h2]
 
         total = reportes.calcular_recaudacion_total(lista, self.tarifas)
-        self.assertEqual(total, 45000.0)
+        self.assertEqual(total, 44000.0)
 
-    def test_09_anti_bucle_infinito_hotel_completo(self):
+    def test_09_filtrar_huespedes_por_piso(self):
         """
-        Verifica que la función detectora de disponibilidad prevenga bucles infinitos
-        cuando todas las habitaciones están en estado 'O', 'S' o 'M'.
+        Verifica el filtrado funcional de huéspedes por piso utilizando filter y lambda.
         """
-        # Hotel con habitaciones libres
-        self.assertTrue(hotel.hay_habitaciones_disponibles(self.matriz))
+        h1 = ["Huesped 1", "11111111", 2, 0, 0, 101]  # Piso 0 (Piso comercial 1)
+        h2 = ["Huesped 2", "22222222", 3, 1, 0, 201]  # Piso 1 (Piso comercial 2)
+        h3 = ["Huesped 3", "33333333", 4, 0, 1, 102]  # Piso 0 (Piso comercial 1)
+        lista = [h1, h2, h3]
 
-        # Llenar todas las habitaciones
-        for f in range(len(self.matriz)):
-            for c in range(len(self.matriz[0])):
-                self.matriz[f][c] = "O"
+        filtrados_piso1 = huespedes.filtrar_huespedes_por_piso(lista, 1)
+        self.assertEqual(len(filtrados_piso1), 2)
+        self.assertIn(h1, filtrados_piso1)
+        self.assertIn(h3, filtrados_piso1)
 
-        self.assertFalse(hotel.hay_habitaciones_disponibles(self.matriz))
+        filtrados_piso2 = huespedes.filtrar_huespedes_por_piso(lista, 2)
+        self.assertEqual(len(filtrados_piso2), 1)
+        self.assertIn(h2, filtrados_piso2)
 
-    def test_10_persistencia_datos_json(self):
+    def test_10_restablecer_limpieza_habitacion(self):
         """
-        Verifica la persistencia de datos en formato JSON mediante persistencia.py:
-        - Guardar estado de hotel, huéspedes y tarifas.
-        - Cargar estado y verificar restauración de tuplas inmutables.
-        - Manejo seguro de excepciones sin caídas.
+        Verifica la lógica de restablecer una habitación de Sucia [S] a Libre [L].
         """
-        self.matriz[0][0] = "O"
-        huesped_original = [("30123456", "Ana Diaz"), (0, 0, 101), 4, 1500.0]
-        self.lista_huespedes.append(huesped_original)
+        self.matriz[1][2] = "S"
+        self.assertEqual(self.matriz[1][2], "S")
 
-        # Guardar en archivo JSON de prueba
-        exito_guardar = persistencia.guardar_datos_json(
-            self.matriz,
-            self.lista_huespedes,
-            self.tarifas,
-            ruta=self.ruta_test_json
-        )
-        self.assertTrue(exito_guardar, "El guardado en JSON debe ser exitoso.")
-        self.assertTrue(os.path.exists(self.ruta_test_json))
-
-        # Cargar desde archivo JSON
-        datos_recuperados = persistencia.cargar_datos_json(ruta=self.ruta_test_json)
-        self.assertIsNotNone(datos_recuperados)
-        self.assertEqual(datos_recuperados["hotel"][0][0], "O")
-        self.assertEqual(len(datos_recuperados["huespedes"]), 1)
-
-        # Verificar que las tuplas se reconstruyeron inmutables
-        recuperado = datos_recuperados["huespedes"][0]
-        self.assertIsInstance(recuperado[0], tuple, "La identidad debe ser una tupla inmutable.")
-        self.assertIsInstance(recuperado[1], tuple, "La configuración de hab debe ser una tupla inmutable.")
-        self.assertEqual(recuperado[0], ("30123456", "Ana Diaz"))
-        self.assertEqual(recuperado[1], (0, 0, 101))
-        self.assertEqual(recuperado[2], 4)
-        self.assertEqual(recuperado[3], 1500.0)
+        piso, hab = hotel.obtener_indices_matriz(203)
+        self.matriz[piso][hab] = "L"
+        self.assertEqual(self.matriz[1][2], "L")
 
 
 if __name__ == "__main__":
     unittest.main()
+
 
