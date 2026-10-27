@@ -2,7 +2,7 @@
 
 Sistema de control y gestión hotelera desarrollado por consola en Python para la materia **Programación 1 / Algoritmo y Estructura de Datos 1 (UADE)**.  
 **Docente:** Lic. Gustavo E. Escandell  
-**Fecha de entrega Fase 2:** 05/11/2026  
+**Entrega:** Modularización del Código por Archivos (Fase 2)
 
 ---
 
@@ -14,72 +14,80 @@ Sistema de control y gestión hotelera desarrollado por consola en Python para l
 
 ---
 
-## 🚀 Arquitectura Simplificada: Vista Única y Persistencia JSON
+## 🚀 Modularización del Proyecto
 
-Siguiendo los requerimientos unificados del equipo de trabajo, el sistema cuenta con una arquitectura simplificada, desacoplada y directa:
+Para la Fase 2, el sistema ha sido reorganizado respetando la lógica acordada por el equipo, dividiendo el código en módulos temáticos desacoplados para mejorar la mantenibilidad, escalabilidad y trabajo colaborativo:
 
-1. **Vista Única de Administración:** Se eliminó la diferenciación por roles y pantallas de inicio de sesión (`auth.py`). El sistema arranca directamente en el panel de gestión integral con todas las operaciones del hotel disponibles.
-2. **Ciclo Completo de Gestión Hotelera:**
-   - **Alta (Check-in):** Asignación de habitación libre con confirmación previa y validación de DNI único mediante conjuntos (`set`).
-   - **Baja (Check-out):** Liquidación con desglose de estadía, bonificación del 10% para estadías mayores a 7 noches, imputación de consumos adicionales (minibar/servicios) y liberación a estado de limpieza (`[S]`).
-   - **Modificación:** Reubicación de habitación (**Swap**), carga de consumos extras y extensión de días de estadía sin reingresar datos.
-   - **Consulta:** Búsqueda rápida de huésped por DNI mediante conjuntos (`set`) en tiempo $O(1)$ y filtrado funcional por piso mediante `filter` y `lambda`.
-   - **Mantenimiento y Limpieza:** Estados de habitación `[L]` Libre, `[O]` Ocupada, `[S]` Sucia/Limpieza y `[M]` Mantenimiento/Fuera de servicio.
-   - **Reportes Analíticos:** Desglose porcentual de ocupación y cálculo de facturación proyectada mediante programación funcional (`map`, `filter`, `functools.reduce` y `lambda`).
-3. **Estructuras de Datos Nativas:**
-   - **Tuplas (`tuple`):** Empleadas estrictamente para datos inmutables:
-     - Identidad del huésped: `(dni, nombre)`
-     - Configuración fija de habitación: `(piso, habitacion, num_comercial)`
-     - Coordenadas de matriz: `(piso, habitacion)`
-     - Estados válidos de habitación: `("L", "O", "S", "M")`
-   - **Conjuntos (`set`):** Empleados para búsquedas en tiempo constante $O(1)$ y validación de unicidad:
-     - Conjunto de DNIs activos: evita duplicados en check-in y acelera la búsqueda.
-     - Conjunto de habitaciones ocupadas y por estado (`obtener_habitaciones_por_estado`).
-     - Conjunto total de habitaciones para validación rápida.
-4. **Persistencia en JSON:** Módulo `persistencia.py` que serializa y recupera el estado completo del hotel (`hotel`, `huespedes`, `tarifas`) en `datos/hotel_data.json` con reconstrucción explícita de tuplas inmutables y control robusto de excepciones (`FileNotFoundError`, `JSONDecodeError`, `OSError`).
-5. **Restricciones Académicas:**
-   - ❌ Sin Clases / POO en la lógica de negocio (diseño puramente modular y funcional).
-   - ❌ Sin librerías externas: exclusivamente módulos estándar de Python (`re`, `functools`, `json`, `os`, `unittest`).
+1. **`validaciones.py`**:
+   - Centralización de expresiones regulares (`re`): validación de DNIs (7 u 8 dígitos numéricos), nombres (solo caracteres alfabéticos y espacios), enteros positivos y dimensiones.
+   - Función `validar_generico` para asegurar entradas limpias con reintento automático.
+   - Función `solicitar_dimension_valida` para dimensiones de la matriz del hotel.
+
+2. **`hotel.py`**:
+   - Inicialización de la matriz bidimensional del hotel con estado Libre (`[L]`).
+   - Conversión de coordenadas entre índices de matriz `(piso, habitacion)` y número comercial `(piso + 1) * 100 + (habitacion + 1)` (ej: piso 0, hab 0 $\rightarrow$ 101).
+   - Renderizado visual en consola con formato de grilla alineada.
+   - Verificación de disponibilidad y prevención de bucles infinitos en hoteles completos.
+
+3. **`tarifas.py`**:
+   - Configuración dinámica de tarifas por piso.
+   - Sobretasa para pisos superiores (habitaciones de lujo/suites).
+   - Función `obtener_tarifa_habitacion` para consultar el precio por noche según el piso.
+
+4. **`huespedes.py`**:
+   - **Check-in (`realizar_checkin`):** Registro de nuevo huésped y ocupación de habitación (`[O]`).
+   - **Estructura del registro:** Sublista `[nombre, dni, dias, piso, habitacion, num_comercial]`.
+   - **Búsqueda (`buscar_huesped_por_dni`):** Búsqueda secuencial exhaustiva por DNI.
+   - **Filtro funcional (`filtrar_huespedes_por_piso`):** Uso de `filter` y `lambda` para aislar huéspedes alojados en un piso determinado.
+   - **Check-out (`realizar_checkout`):** Liberación de habitación, pase a estado Sucio (`[S]`) para limpieza y cálculo de liquidación.
+   - **Reubicación / Swap (`reubicar_huesped_swap`):** Traslado de un huésped a una habitación libre o intercambio de habitaciones entre huéspedes.
+   - **Restablecer limpieza (`restablecer_limpieza`):** Transición de habitación de estado Sucio (`[S]`) a Libre (`[L]`).
+
+5. **`reportes.py`**:
+   - **Reporte de ocupación (`generar_reporte_ocupacion`):** Conteo de habitaciones ocupadas y porcentaje global de ocupación utilizando `functools.reduce`.
+   - **Cálculo de subtotal (`calcular_subtotal`):** Cálculo del costo de estadía con bonificación del 10% mediante función `lambda` para estadías superiores a 7 noches.
+   - **Recaudación total (`calcular_recaudacion_total`):** Programación funcional pura mediante `map` y `functools.reduce` para proyectar los ingresos totales.
+
+6. **`main.py`**:
+   - Punto de entrada principal con menú interactivo por consola (Opciones 1 a 8 y 0 para salir).
+   - Importación y orquestación limpia de los módulos anteriores.
 
 ---
 
-## 📁 Estructura Modular del Proyecto
+## 📁 Estructura de Archivos
 
 ```text
 room-master/
 │
-├── main.py               # Punto de entrada y panel interactivo unificado de administración
-├── hotel.py              # Matrices bidimensionales, conversión de coordenadas, estados (L, O, S, M) y sets
-├── huespedes.py          # Check-in, Check-out con liquidación, Swap, extras, extensiones y búsqueda O(1)
-├── tarifas.py            # Tarifas por piso y segmentación de suites de lujo
-├── reportes.py           # Métricas analíticas y facturación (map, filter, reduce y lambdas)
-├── persistencia.py       # Almacenamiento y recuperación en archivos JSON (datos/hotel_data.json)
-├── validaciones.py       # Expresiones regulares genéricas y cancelación segura (0)
+├── main.py               # Menú principal y flujo de ejecución
+├── hotel.py              # Gestión de matrices, renderizado y coordenadas
+├── huespedes.py          # Check-in, Check-out, Swap, búsqueda y limpieza
+├── tarifas.py            # Matriz y cálculo de tarifas por piso
+├── reportes.py           # Programación funcional (map, filter, reduce, lambda)
+├── validaciones.py       # Expresiones regulares y validación de entradas
 │
-├── datos/
-│   └── hotel_data.json   # Archivo de persistencia de datos del hotel
-│
-├── test_hotel.py         # Suite de 10 pruebas unitarias con unittest estándar
-└── README.md             # Documentación integral del proyecto
+├── test_hotel.py         # Suite de 10 pruebas unitarias automatizadas
+└── README.md             # Documentación del proyecto
 ```
 
 ---
 
 ## 🧪 Pruebas Unitarias Automatizadas
 
-El proyecto incluye 10 pruebas unitarias automatizadas en [test_hotel.py](test_hotel.py) que validan:
-1. Inicialización de matriz y estados `[L]`.
-2. Biyección matemática y coordenadas inmutables en tuplas.
-3. Expresiones regulares de validación (DNI, Nombres, Números).
-4. Estructuras de datos: Tuplas inmutables y Conjuntos (`set`) para búsquedas $O(1)$.
-5. Ciclo de mantenimiento y recuperación de habitaciones.
-6. Cálculo de subtotal con bonificación funcional (10% en > 7 noches).
-7. Consumos adicionales y liquidación de extras.
-8. Recaudación total proyectada mediante `map` y `functools.reduce`.
-9. Prevención de bucles infinitos ante hotel 100% completo.
-10. Persistencia JSON: serialización, deserialización y restauración de tuplas inmutables.
+El archivo [test_hotel.py](test_hotel.py) implementa una suite de 10 pruebas con el módulo estándar `unittest` de Python, asegurando el correcto funcionamiento de cada componente:
 
-Para ejecutar la suite de pruebas:
+1. **`test_01_inicializacion_matriz_hotel`**: Inicialización con dimensiones y estado `[L]`.
+2. **`test_02_conversion_coordenadas_comerciales`**: Biyección matemática entre índices de matriz y números comerciales.
+3. **`test_03_validaciones_expresiones_regulares`**: Regex de DNI, texto, números enteros y días.
+4. **`test_04_obtener_tarifa_habitacion`**: Obtención correcta de precios por noche por piso.
+5. **`test_05_registro_huesped_formato`**: Estructura de sublista `[nombre, dni, dias, piso, hab, num]`.
+6. **`test_06_calculo_subtotal_estadia_corta`**: Liquidación a tarifa plena (estadias $\le 7$ noches).
+7. **`test_07_calculo_subtotal_con_descuento_larga_estadia`**: Bonificación del 10% con lambda ($> 7$ noches).
+8. **`test_08_recaudacion_total_programacion_funcional`**: Cálculo acumulativo con `map` y `functools.reduce`.
+9. **`test_09_filtrar_huespedes_por_piso`**: Filtrado funcional de huéspedes por piso con `filter` y `lambda`.
+10. **`test_10_restablecer_limpieza_habitacion`**: Transición de estado `[S]` a `[L]`.
+
+Para ejecutar las pruebas:
 ```bash
 python -m unittest test_hotel.py -v
 ```
@@ -88,23 +96,21 @@ python -m unittest test_hotel.py -v
 
 ## 🌿 Flujo de Trabajo en Git
 
-- `main`: Código final testeado y entregable.
-- `develop`: Rama de integración común.
-- `feature/fase2-<nombre>`: Ramas de trabajo del equipo.
+- `main`: Código final y estable.
+- `develop`: Rama común de integración.
+- `feature/<modulo>`: Ramas específicas de trabajo de cada integrante.
 
 ```bash
-# 1. Asegurarse de traer todos los cambios de develop
+# 1. Traer la última versión de develop
 git checkout develop
 git pull origin develop
 
-# 2. Cambiarse a tu rama asignada
-git checkout feature/fase2-tu-rama
-git pull origin feature/fase2-tu-rama
+# 2. Cambiar a la rama de trabajo
+git checkout feature/tu-rama
+git merge develop
 
-# 3. Trabajar en tu módulo, guardar cambios y subir a GitHub
+# 3. Subir avances
 git add .
-git commit -m "feat(fase2): descripcion del avance"
-git push origin feature/fase2-tu-rama
-
-# 4. Crear Pull Request hacia 'develop' para revisión y aprobación
+git commit -m "feat: descripcion del cambio"
+git push origin feature/tu-rama
 ```

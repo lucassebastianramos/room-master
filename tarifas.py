@@ -99,42 +99,20 @@ def mostrar_resumen_tarifas(matriz_tarifas, piso_lujo_desde=None):
 
 def obtener_tarifa_habitacion(piso, matriz_tarifas):
     """
-    Retorna el precio base por noche según el piso del hotel (1-indexed).
+    Retorna el precio base por noche según el piso del hotel.
+    matriz_tarifas tiene pares: [piso, precio_base] (piso 1-indexed: 1, 2, 3...)
     """
-    if not matriz_tarifas:
-        return 0.0
-
     for i in range(len(matriz_tarifas)):
         if matriz_tarifas[i][0] == piso:
             return matriz_tarifas[i][1]
 
+    # Soporte por si se pasa piso en formato índice de matriz (0 para Piso 1)
     if piso == 0 and len(matriz_tarifas) > 0:
         return matriz_tarifas[0][1]
 
+    # Fallback al último piso si excede el rango
     if len(matriz_tarifas) > 0:
         return matriz_tarifas[-1][1]
 
     return 0.0
 
-
-def menu_configuracion_tarifas(matriz_tarifas, total_pisos):
-    """
-    Panel interactivo para ver y reconfigurar tarifas del hotel.
-    """
-    print("\n" + "=" * 50)
-    print("           GESTIÓN DE TARIFAS DEL HOTEL           ")
-    print("=" * 50)
-    print("1. Ver esquema de tarifas vigentes")
-    print("2. Reconfigurar tarifas por piso y suites")
-    print("0. Volver al menú principal")
-    print("=" * 50)
-
-    opcion = input("Seleccione una opción: ").strip()
-    if opcion == "1":
-        mostrar_resumen_tarifas(matriz_tarifas)
-    elif opcion == "2":
-        nuevas = configurar_tarifas_hotel(total_pisos)
-        matriz_tarifas.clear()
-        for fila in nuevas:
-            matriz_tarifas.append(fila)
-        print("\n[Éxito] Tarifas actualizadas correctamente.")
