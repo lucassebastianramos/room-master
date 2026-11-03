@@ -22,9 +22,15 @@ from hotel import (
 )
 from tarifas import obtener_tarifa_habitacion
 
+
 def hotel_vacio(lista_huespedes):
     """
     Devuelve True si no hay huéspedes alojados.
+
+    >>> hotel_vacio([])
+    True
+    >>> hotel_vacio([{"identidad": ("111", "Ana"), "dias": 2, "ubicacion": [0, 0, 101]}])
+    False
     """
     if len(lista_huespedes) == 0:
         return True
@@ -34,6 +40,12 @@ def hotel_vacio(lista_huespedes):
 def obtener_huesped_por_habitacion(lista_huespedes, numero_habitacion):
     """
     Devuelve el huésped alojado en esa habitación, o -1 si no hay ninguno.
+
+    >>> lista = [{"identidad": ("111", "Ana"), "dias": 2, "ubicacion": [0, 0, 101]}]
+    >>> obtener_huesped_por_habitacion(lista, 101)["identidad"]
+    ('111', 'Ana')
+    >>> obtener_huesped_por_habitacion(lista, 999)
+    -1
     """
     for huesped in lista_huespedes:
         if huesped["ubicacion"][2] == numero_habitacion:
@@ -41,25 +53,36 @@ def obtener_huesped_por_habitacion(lista_huespedes, numero_habitacion):
     return -1
 
 
-def validar_dni(dni_nuevo, lista_huespedes):
+def dni_ya_registrado(dni, lista_huespedes):
     """
-    Verifica que el DNI no esté repetido en la lista de diccionarios.
-    El DNI en el diccionario se accede como el primer elemento de la tupla: huesped["dni"][0]
+    Verifica si un DNI ya existe en el conjunto (set) de huéspedes registrados.
+
+    >>> lista = [{"identidad": ("111", "Ana"), "dias": 2, "ubicacion": [0, 0, 101]}]
+    >>> dni_ya_registrado("111", lista)
+    True
+    >>> dni_ya_registrado("999", lista)
+    False
     """
-    # Uso de conjunto (set) para verificar duplicados y busqueda O(1)
     dnis_registrados = set()
     for huesped in lista_huespedes:
         dnis_registrados.add(huesped["identidad"][0])
+    return str(dni).strip() in dnis_registrados
 
-    while dni_nuevo in dnis_registrados:
+
+def validar_dni(dni_nuevo, lista_huespedes):
+    """
+    Verifica que el DNI no esté repetido en la lista de diccionarios.
+    Si el DNI no está registrado, lo retorna de inmediato sin pedir reingreso.
+
+    >>> lista = [{"identidad": ("111", "Ana"), "dias": 2, "ubicacion": [0, 0, 101]}]
+    >>> validar_dni("999", lista)
+    '999'
+    """
+    while dni_ya_registrado(dni_nuevo, lista_huespedes):
         print(f"Error, el DNI {dni_nuevo} ya está registrado.")
         dni_nuevo = validar_generico("Ingrese el DNI del huésped (-1 para cancelar): ", PATRON_DNI_VALIDO, ERROR_DNI)
         if dni_nuevo == "-1":
             return "-1"
-
-        dnis_registrados = set()
-        for huesped in lista_huespedes:
-            dnis_registrados.add(huesped["identidad"][0])
 
     return dni_nuevo
 
@@ -145,6 +168,13 @@ def buscar_huespedes_por_nombre(lista_huespedes, texto_busqueda):
     """
     Busca huéspedes cuyo nombre contenga el texto ingresado (sin importar mayúsculas).
     Usa filter y lambda.
+
+    >>> h1 = {"identidad": ("11111111", "Juan Perez"), "dias": 2, "ubicacion": [0, 0, 101]}
+    >>> h2 = {"identidad": ("22222222", "Carlos Lopez"), "dias": 3, "ubicacion": [0, 0, 102]}
+    >>> h3 = {"identidad": ("33333333", "Juana Garcia"), "dias": 1, "ubicacion": [1, 0, 201]}
+    >>> resultados = buscar_huespedes_por_nombre([h1, h2, h3], "juan")
+    >>> [h["identidad"][1] for h in resultados]
+    ['Juan Perez', 'Juana Garcia']
     """
     return list(filter(
         lambda huesped: texto_busqueda.lower() in huesped["identidad"][1].lower(),
@@ -156,6 +186,12 @@ def buscar_huesped_por_habitacion(lista_huespedes, numero_habitacion):
     """
     Busca huéspedes alojados en la habitación indicada.
     Usa filter y lambda.
+
+    >>> h1 = {"identidad": ("11111111", "Juan Perez"), "dias": 2, "ubicacion": [0, 0, 101]}
+    >>> len(buscar_huesped_por_habitacion([h1], 101))
+    1
+    >>> len(buscar_huesped_por_habitacion([h1], 999))
+    0
     """
     return list(filter(
         lambda huesped: huesped["ubicacion"][2] == numero_habitacion,
@@ -286,6 +322,16 @@ def pedir_habitacion_destino(matriz_hotel):
 def mover_huesped(matriz_hotel, huesped, destino):
     """
     Actualiza la matriz y la ubicación del huésped.
+
+    >>> matriz = [['O', 'L'], ['L', 'L']]
+    >>> huesped = {"identidad": ("111", "Ana"), "dias": 2, "ubicacion": [0, 0, 101]}
+    >>> mover_huesped(matriz, huesped, (0, 1, 102))
+    >>> matriz[0][0]
+    'L'
+    >>> matriz[0][1]
+    'O'
+    >>> huesped["ubicacion"]
+    [0, 1, 102]
     """
     nuevo_piso, nueva_habitacion, nuevo_numero = destino
     piso_actual = huesped["ubicacion"][0]
@@ -346,3 +392,8 @@ def restablecer_limpieza(matriz_hotel):
 
     matriz_hotel[piso][habitacion] = "L"
     print("Habitación restablecida con éxito!")
+
+
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod(verbose=True)
