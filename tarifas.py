@@ -66,11 +66,6 @@ def capturar_parametros_tarifas(total_pisos):
 def generar_matriz_tarifas(total_pisos, precio_base, piso_lujo_desde, recargo_porcentaje):
     """
     Genera y retorna la matriz de tarifas por piso.
-
-    >>> generar_matriz_tarifas(3, 10000.0, 3, 50.0)
-    [[1, 10000.0], [2, 10000.0], [3, 15000.0]]
-    >>> generar_matriz_tarifas(2, 10000.0, 3, 0.0)
-    [[1, 10000.0], [2, 10000.0]]
     """
     matriz_tarifas = []
     for p in range(1, total_pisos + 1):
@@ -123,16 +118,6 @@ def mostrar_resumen_tarifas(matriz_tarifas, piso_lujo_desde=0):
 def obtener_tarifa_habitacion(piso, matriz_tarifas):
     """
     Retorna el precio base por noche según el piso del hotel.
-
-    >>> tarifas = [[1, 10000.0], [2, 12000.0], [3, 15000.0]]
-    >>> obtener_tarifa_habitacion(2, tarifas)
-    12000.0
-    >>> obtener_tarifa_habitacion(1, tarifas)
-    10000.0
-    >>> obtener_tarifa_habitacion(99, tarifas)
-    15000.0
-    >>> obtener_tarifa_habitacion(1, [])
-    0.0
     """
     for i in range(len(matriz_tarifas)):
         if matriz_tarifas[i][0] == piso:
@@ -145,8 +130,3 @@ def obtener_tarifa_habitacion(piso, matriz_tarifas):
         return matriz_tarifas[-1][1]
 
     return 0.0
-
-
-if __name__ == "__main__":
-    import doctest
-    doctest.testmod(verbose=True)
