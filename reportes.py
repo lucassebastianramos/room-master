@@ -7,35 +7,37 @@ from tarifas import obtener_tarifa_habitacion
 
 
 def generar_reporte_ocupacion(matriz_hotel):
-    """ Genera un reporte que muestra el total de habitaciones,
-    las que se encuentran ocupadas y el porcentaje de ocupación del hotel.
     """
-    # Total de habitaciones acumulando el largo de cada fila mediante reduce
+    Genera un reporte mostrando el total de habitaciones, ocupadas y
+    el porcentaje global de ocupación del hotel.
+    """
+    # Acumula el total de habitaciones sumando la longitud de cada fila
     total_habitaciones = functools.reduce(
         lambda acumulado, fila: acumulado + len(fila),
         matriz_hotel,
         0
     )
 
-    # Cuenta las habitaciones ocupadas en cada fila usando reduce
+    # Cuenta las habitaciones ocupadas ("O") por fila
     ocupadas_por_fila = map(
         lambda fila: functools.reduce(
-            lambda acum, hab: acum + (1 if hab == "O" else 0),
+            lambda acumulado_ocupadas, habitacion: acumulado_ocupadas + (1 if habitacion == "O" else 0),
             fila,
             0
         ),
         matriz_hotel
     )
 
-    # Acumula los subtotales de cada fila para obtener el total ocupado
+    # Suma las ocupadas de cada fila para el total general
     habitaciones_ocupadas = functools.reduce(
-        lambda acumulado, cant: acumulado + cant,
+        lambda acumulado, cantidad: acumulado + cantidad,
         ocupadas_por_fila,
         0
     )
 
+    # Cálculo del porcentaje
     if total_habitaciones > 0:
-        porcentaje_ocupacion = habitaciones_ocupadas * 100 / total_habitaciones
+        porcentaje_ocupacion = (habitaciones_ocupadas * 100) / total_habitaciones
     else:
         porcentaje_ocupacion = 0.0
 
@@ -44,22 +46,23 @@ def generar_reporte_ocupacion(matriz_hotel):
     print("\n=== REPORTE DE OCUPACIÓN ===")
     print("Total de habitaciones: ", total_habitaciones)
     print("Habitaciones ocupadas: ", habitaciones_ocupadas)
-    print("Porcentaje de ocupación: ", porcentaje_ocupacion, "%")
+    print("Porcentaje de ocupación:", porcentaje_ocupacion, "%")
 
 
 def calcular_subtotal(huesped, matriz_tarifas):
     """
-    Calcula el subtotal a cobrar por un huésped específico y aplica un descuento del 10% si su estadía es mayor a 7 noches.
-    Devuelve el subtotal para calcular la recaudación total del hotel.
+    Calcula el subtotal a cobrar por un huésped accediendo a las claves de su diccionario.
+    Aplica una bonificación del 10% si la estadía es mayor a 7 noches.
     """
-    dias = int(huesped[2])
-    piso = int(huesped[3])
+    dias = int(huesped["dias"])
+    piso = int(huesped["ubicacion"][0])
     piso_comercial = piso + 1
 
     precio_noche = float(obtener_tarifa_habitacion(piso_comercial, matriz_tarifas))
     subtotal = precio_noche * dias
 
-    aplicar_descuento = lambda d, s: s * 0.9 if d > 7 else s
+    # Expresión lambda para descuento por estadía larga
+    aplicar_descuento = lambda dias_estadia, subtotal_actual: subtotal_actual * 0.9 if dias_estadia > 7 else subtotal_actual
     subtotal = aplicar_descuento(dias, subtotal)
 
     return subtotal
@@ -67,15 +70,51 @@ def calcular_subtotal(huesped, matriz_tarifas):
 
 def calcular_recaudacion_total(lista_huespedes, matriz_tarifas):
     """
-    Calcula la recaudación total del hotel sumando los subtotales de todos los huéspedes. 
+    Calcula la recaudación total proyectada del hotel sumando los subtotales de todos
+    los huéspedes mediante map y reduce sobre la lista de diccionarios.
     """
-    # Transformación con map para convertir cada huésped en su monto subtotal
-    subtotales = list(map(lambda huesped: calcular_subtotal(huesped, matriz_tarifas), lista_huespedes))
+    # map transforma la lista de diccionarios en una lista de montos (subtotales)
+    subtotales = list(map(lambda huesped_actual: calcular_subtotal(huesped_actual, matriz_tarifas), lista_huespedes))
 
-    # Acumulación con reduce de los subtotales generados
+    # reduce acumula la suma de todos los subtotales
     recaudacion_total = functools.reduce(lambda acumulado, subtotal: acumulado + subtotal, subtotales, 0.0)
 
     print("\n=== RECAUDACIÓN TOTAL ===")
-    print("Recaudación total: $", recaudacion_total)
+    print(f"Recaudación total proyectada: ${recaudacion_total:,.2f}")
     return recaudacion_total
 
+
+def reporte_habitaciones_libres(matriz_hotel, lista_huespedes):
+    """
+    Reporte de habitaciones libres usando operaciones de conjuntos.
+    - todas: set con todos los numeros de habitacion del hotel.
+    - ocupadas: set con los numeros de habitacion ocupadas.
+    - libres = todas - ocupadas   (diferencia)
+    - comunes = todas & ocupadas   (interseccion)
+    """
+    # Todas las habitaciones del hotel
+    todas = set()
+    for piso in range(len(matriz_hotel)):
+        for hab in range(len(matriz_hotel[piso])):
+            num = (piso + 1) * 100 + (hab + 1)
+            todas.add(num)
+
+    # Habitaciones ocupadas
+    ocupadas = set()
+    for huesped in lista_huespedes:
+        ocupadas.add(huesped["ubicacion"][2])
+
+    # Diferencia: libres = todas - ocupadas
+    libres = todas - ocupadas
+
+    # Interseccion: ocupadas que existen en el hotel
+    comunes = todas & ocupadas
+
+    print("\n=== REPORTE DE HABITACIONES LIBRES ===")
+    print("Total de habitaciones:", len(todas))
+    print("Habitaciones ocupadas:", comunes)
+    if len(libres) == 0:
+        print("Habitaciones libres: ninguna (hotel completo)")
+    else:
+        print("Habitaciones libres:", libres)
+    return libres
