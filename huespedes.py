@@ -22,6 +22,8 @@ from hotel import (
 )
 from tarifas import obtener_tarifa_habitacion
 
+from reportes import calcular_subtotal
+
 def hotel_vacio(lista_huespedes):
     """
     Devuelve True si no hay huéspedes alojados.
@@ -196,8 +198,8 @@ def realizar_checkout(matriz_hotel, lista_huespedes, matriz_tarifas):
             matriz_hotel[piso][habitacion] = "S"
             piso_comercial = piso + 1
             tarifa = float(obtener_tarifa_habitacion(piso_comercial, matriz_tarifas))
-            monto_total = tarifa * int(dias)
-
+            monto_total = calcular_subtotal(huesped, matriz_tarifas)
+            
             lista_huespedes.remove(huesped)
 
             print("\n================ CHECK-OUT EXITOSO ================")
