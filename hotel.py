@@ -61,34 +61,76 @@ def renderizar_hotel(matriz):
 
         print("\n")
 
-
 def reiniciar_matriz():
-    """
-    Solicita las dimensiones validadas e instancia una nueva matriz limpia ('L').
-    """
-    print("--- Inicializar matriz ---\n")
-    pisos = solicitar_dimension_valida("Ingrese la cantidad de pisos del hotel (1 a 99): ", 1, 99)
-    habitaciones = solicitar_dimension_valida("Ingrese la cantidad de habitaciones por piso (1 a 99): ", 1, 99)
+    """Inicialización de la matriz del hotel al arrancar el programa."""
+    print("\n--- INICIALIZACIÓN DEL SISTEMA ROOM MASTER ---")
+    pisos = solicitar_dimension_valida("Ingrese la cantidad de pisos del hotel (1 a 99): ", 1, 99, permitir_cancelar=False)
+    habitaciones = solicitar_dimension_valida("Ingrese la cantidad de habitaciones por piso (1 a 99): ", 1, 99, permitir_cancelar=False)
+    
     return inicializar_hotel(pisos, habitaciones)
+
+
+def redimensionar_hotel():
+    """Opción 7: Reinicia el hotel perdiendo los datos. Permite cancelar."""
+    print("\n" + "!" * 55)
+    print(" ADVERTENCIA: REDIMENSIONAMIENTO DEL HOTEL")
+    print(" Esta acción borrará a todos los huéspedes alojados")
+    print(" y reiniciará el estado de todas las habitaciones.")
+    print(" Úselo SOLAMENTE si ha cambiado la estructura edilicia.")
+    print("!" * 55)
+
+    pisos = solicitar_dimension_valida("\nNueva cantidad de pisos (-1 para cancelar): ", 1, 99, permitir_cancelar=True)
+    if pisos == -1:
+        return -1
+        
+    habitaciones = solicitar_dimension_valida("Nueva cantidad de habitaciones por piso (-1 para cancelar): ", 1, 99, permitir_cancelar=True)
+    if habitaciones == -1:
+        return -1
+        
+    return inicializar_hotel(pisos, habitaciones)
+
+
+def hay_habitaciones_libres(matriz):
+    """
+    Devuelve True si hay al menos una habitación en estado Libre ('L').
+    """
+    for fila in matriz:
+        for estado in fila:
+            if estado == "L":
+                return True
+    return False
+
+
+def habitacion_existe(matriz, piso, habitacion):
+    """
+    Devuelve True si el piso y la habitación existen dentro de la matriz.
+    """
+    if piso < 0 or piso >= len(matriz):
+        return False
+    if habitacion < 0 or habitacion >= len(matriz[0]):
+        return False
+    return True
 
 
 def solicitar_habitacion_libre(matriz):
     """Pide y valida una habitación libre."""
-    hay_libres = any("L" in fila for fila in matriz)
-    if not hay_libres:
+    if hay_habitaciones_libres(matriz) == False:
         print("\n[Aviso] El hotel se encuentra completo. No hay habitaciones libres disponibles.")
-        return None, None
+        return -1, -1
 
     es_valida = False
     piso_final = 0
     hab_final = 0
 
-    while not es_valida:
-        num_comercial = int(validar_generico("\nIngrese el número de habitación (ej: 101): ", PATRON_NUMERO_VALIDO, ERROR_NUMERO))
-        piso, hab = obtener_indices_matriz(num_comercial)
+    while es_valida == False:
+        dato = validar_generico("\nIngrese el número de habitación (ej: 101) (-1 para cancelar): ", PATRON_NUMERO_VALIDO, ERROR_NUMERO)
+        if dato == "-1":
+            return -1, -1
 
-        if piso < 0 or piso >= len(matriz) or hab < 0 or hab >= len(matriz[0]):
-            print("Error: El piso o la habitación ingresada no existen en el hotel.")
+        piso, hab = obtener_indices_matriz(int(dato))
+
+        if habitacion_existe(matriz, piso, hab) == False:
+            print("Error: La habitación ingresada no existe en el hotel.")
         elif matriz[piso][hab] != "L":
             print("Error: La habitación no está libre.")
         else:
