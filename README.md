@@ -36,17 +36,19 @@ Para la Fase 2, el sistema ha sido reorganizado respetando la lógica acordada p
 
 4. **`huespedes.py`**:
    - **Check-in (`realizar_checkin`):** Registro de nuevo huésped y ocupación de habitación (`[O]`).
-   - **Estructura del registro:** Sublista `[nombre, dni, dias, piso, habitacion, num_comercial]`.
+   - **Estructura del registro:** Diccionario con tupla inmutable para identidad `{"identidad": (dni, nombre), "dias": n, "ubicacion": [p, h, num]}`.
+   - **Validación DNI y unicidad (`validar_dni`):** Búsqueda y validación de duplicados con conjuntos (`set`).
    - **Búsqueda (`buscar_huesped_por_dni`):** Búsqueda secuencial exhaustiva por DNI.
-   - **Filtro funcional (`filtrar_huespedes_por_piso`):** Uso de `filter` y `lambda` para aislar huéspedes alojados en un piso determinado.
+   - **Búsqueda funcional (`buscar_huespedes_por_nombre`):** Uso de `filter` y `lambda` para aislar huéspedes por coincidencia parcial de nombre.
    - **Check-out (`realizar_checkout`):** Liberación de habitación, pase a estado Sucio (`[S]`) para limpieza y cálculo de liquidación.
-   - **Reubicación / Swap (`reubicar_huesped_swap`):** Traslado de un huésped a una habitación libre o intercambio de habitaciones entre huéspedes.
+   - **Reubicación / Swap (`reubicar_huesped_swap`):** Traslado de un huésped a una habitación libre y actualización de coordenadas.
    - **Restablecer limpieza (`restablecer_limpieza`):** Transición de habitación de estado Sucio (`[S]`) a Libre (`[L]`).
 
 5. **`reportes.py`**:
    - **Reporte de ocupación (`generar_reporte_ocupacion`):** Conteo de habitaciones ocupadas y porcentaje global de ocupación utilizando `functools.reduce`.
    - **Cálculo de subtotal (`calcular_subtotal`):** Cálculo del costo de estadía con bonificación del 10% mediante función `lambda` para estadías superiores a 7 noches.
    - **Recaudación total (`calcular_recaudacion_total`):** Programación funcional pura mediante `map` y `functools.reduce` para proyectar los ingresos totales.
+   - **Disponibilidad (`reporte_habitaciones_libres`):** Cálculo de habitaciones disponibles mediante operaciones de conjuntos (`set`).
 
 6. **`main.py`**:
    - Punto de entrada principal con menú interactivo por consola (Opciones 1 a 8 y 0 para salir).
@@ -66,7 +68,7 @@ room-master/
 ├── reportes.py           # Programación funcional (map, filter, reduce, lambda)
 ├── validaciones.py       # Expresiones regulares y validación de entradas
 │
-├── test_hotel.py         # Suite de 10 pruebas unitarias automatizadas
+├── tests.py              # Suite de 10 pruebas unitarias automatizadas (compatible con PyTest)
 └── README.md             # Documentación del proyecto
 ```
 
@@ -74,22 +76,42 @@ room-master/
 
 ## 🧪 Pruebas Unitarias Automatizadas
 
-El archivo [test_hotel.py](test_hotel.py) implementa una suite de 10 pruebas con el módulo estándar `unittest` de Python, asegurando el correcto funcionamiento de cada componente:
+El archivo [tests.py](tests.py) implementa la suite oficial de 10 pruebas unitarias exigidas para la Fase 2, estructuradas con funciones puras `def` y aserciones nativas (`assert`) **sin utilizar clases**, distribuidas en 4 categorías:
 
-1. **`test_01_inicializacion_matriz_hotel`**: Inicialización con dimensiones y estado `[L]`.
-2. **`test_02_conversion_coordenadas_comerciales`**: Biyección matemática entre índices de matriz y números comerciales.
-3. **`test_03_validaciones_expresiones_regulares`**: Regex de DNI, texto, números enteros y días.
-4. **`test_04_obtener_tarifa_habitacion`**: Obtención correcta de precios por noche por piso.
-5. **`test_05_registro_huesped_formato`**: Estructura de sublista `[nombre, dni, dias, piso, hab, num]`.
-6. **`test_06_calculo_subtotal_estadia_corta`**: Liquidación a tarifa plena (estadias $\le 7$ noches).
-7. **`test_07_calculo_subtotal_con_descuento_larga_estadia`**: Bonificación del 10% con lambda ($> 7$ noches).
-8. **`test_08_recaudacion_total_programacion_funcional`**: Cálculo acumulativo con `map` y `functools.reduce`.
-9. **`test_09_filtrar_huespedes_por_piso`**: Filtrado funcional de huéspedes por piso con `filter` y `lambda`.
-10. **`test_10_restablecer_limpieza_habitacion`**: Transición de estado `[S]` a `[L]`.
+### 1. Casos Válidos (4 pruebas)
+* **`test_01_inicializacion_matriz_valida`**: Inicialización correcta de la matriz con estado Libre (`[L]`).
+* **`test_02_obtener_tarifa_piso_existente`**: Consulta exitosa de la tarifa configurada para un piso.
+* **`test_03_calcular_subtotal_estadia_corta`**: Liquidación a tarifa plena para estadías cortas ($\le 7$ noches).
+* **`test_04_calcular_subtotal_estadia_larga_con_descuento`**: Aplicación de la bonificación del 10% mediante función lambda ($> 7$ noches).
 
-Para ejecutar las pruebas:
+### 2. Casos Inválidos (3 pruebas)
+* **`test_05_deteccion_dni_duplicado_con_conjunto`**: Detección de DNI repetido mediante conjuntos (`set`).
+* **`test_06_habitacion_inexistente_fuera_de_rango`**: Validación de habitación en coordenadas fuera de rango en la matriz.
+* **`test_07_busqueda_huesped_habitacion_vacia`**: Búsqueda en una habitación donde no hay ningún huésped alojado.
+
+### 3. Casos Límite (2 pruebas)
+* **`test_08_calcular_subtotal_limite_exacto_7_noches`**: Límite exacto de 7 noches (frontera donde aún no corresponde descuento).
+* **`test_09_inicializacion_matriz_dimension_minima`**: Creación de matriz con dimensiones mínimas permitidas (hotel 1x1).
+
+### 4. Caso Adicional Relevante (1 prueba)
+* **`test_10_busqueda_parcial_nombre_filter_lambda`**: Búsqueda parcial de huéspedes por nombre con `filter` y `lambda`.
+
+---
+
+### 💻 Formas de Ejecución de las Pruebas
+
+El archivo soporta **ejecución dual**:
+
+#### Opción 1: Ejecución directa con Python estándar (Sin instalar nada)
+Ejecuta la suite y muestra en consola el informe detallado con los 5 puntos exigidos en la Sección 9 (Función, Datos, Esperado, Obtenido y Veredicto):
 ```bash
-python -m unittest test_hotel.py -v
+python tests.py
+```
+
+#### Opción 2: Ejecución mediante PyTest
+Aprovecha el autodescubrimiento y reportes de PyTest:
+```bash
+python -m pytest tests.py -v
 ```
 
 ---
