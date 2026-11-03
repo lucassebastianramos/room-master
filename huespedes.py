@@ -21,6 +21,7 @@ from hotel import (
     habitacion_existe
 )
 from tarifas import obtener_tarifa_habitacion
+from reportes import calcular_subtotal
 
 def hotel_vacio(lista_huespedes):
     """
@@ -165,7 +166,7 @@ def buscar_huesped_por_habitacion(lista_huespedes, numero_habitacion):
 
 def realizar_checkout(matriz_hotel, lista_huespedes, matriz_tarifas):
     """
-    Libera la habitación, pasa a estado 'S' y genera la liquidación.
+    Libera la habitación, pasa a estado 'S' y genera la liquidación calculando el monto final con descuento.
     """
     print("\n--- CHECK-OUT ---")
 
@@ -188,16 +189,14 @@ def realizar_checkout(matriz_hotel, lista_huespedes, matriz_tarifas):
 
         if str(dni_actual) == str(dni_checkout):
             nombre = huesped["identidad"][1]
-            dias = huesped["dias"]
             piso = huesped["ubicacion"][0]
             habitacion = huesped["ubicacion"][1]
             num_comercial = huesped["ubicacion"][2]
 
-            matriz_hotel[piso][habitacion] = "S"
-            piso_comercial = piso + 1
-            tarifa = float(obtener_tarifa_habitacion(piso_comercial, matriz_tarifas))
-            monto_total = tarifa * int(dias)
+            # Reutilizamos la función que aplica la lambda de descuento si días > 7
+            monto_total = calcular_subtotal(huesped, matriz_tarifas)
 
+            matriz_hotel[piso][habitacion] = "S"
             lista_huespedes.remove(huesped)
 
             print("\n================ CHECK-OUT EXITOSO ================")
@@ -208,7 +207,6 @@ def realizar_checkout(matriz_hotel, lista_huespedes, matriz_tarifas):
             return
 
     print(f"No se encontró al huésped con DNI: {dni_checkout}")
-
 
 def puede_reubicar(matriz_hotel, lista_huespedes):
     """
