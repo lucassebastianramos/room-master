@@ -3,11 +3,11 @@
 # =============================================================================
 # Materia: Algoritmos y Estructura de Datos 1 / Programación 1
 # Cátedra: Lic. Gustavo E. Escandell
-# Integrantes:
-#   - Menendez Mojana, Tiara
-#   - Ramos, Lucas Sebastián
-#   - Iglesias, Luca
-#   - Rueda, Leandro Nicolás
+# Integrantes y Legajos:
+#   - Menendez Mojana, Tiara (Legajo: 1226578)
+#   - Ramos, Lucas Sebastián (Legajo: 1235407)
+#   - Iglesias, Luca (Legajo: 1226578)
+#   - Rueda, Leandro Nicolás (Legajo: 1231246)
 # =============================================================================
 
 from hotel import (

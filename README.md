@@ -513,12 +513,12 @@ git push origin feature/mi-rama                    # y abrir un Pull Request a d
 
 <div align="center">
 
-| Integrante | Rol |
-| :--- | :--- |
-| **Menendez Mojana, Tiara** | Referente del grupo |
-| **Ramos, Lucas Sebastián** | Desarrollo |
-| **Iglesias, Luca** | Desarrollo |
-| **Rueda, Leandro Nicolás** | Desarrollo |
+| Integrante | Legajo | Rol |
+| :--- | :---: | :--- |
+| **Menendez Mojana, Tiara** | 1226578 | Referente del grupo |
+| **Ramos, Lucas Sebastián** | 1235407 | Desarrollo |
+| **Iglesias, Luca** | 1226578 | Desarrollo |
+| **Rueda, Leandro Nicolás** | 1231246 | Desarrollo |
 
 **Universidad Argentina de la Empresa (UADE)** · Algoritmos y Estructura de Datos 1 / Programación 1
 Docente: **Lic. Gustavo E. Escandell** · 2.º cuatrimestre 2026

@@ -6,11 +6,11 @@
 **Institución:** Universidad Argentina de la Empresa (UADE) — Año: 2026  
 **Docente Titular:** Lic. Gustavo E. Escandell  
 **Fecha de Entrega:** 05/11/2026  
-**Integrantes:**
-* Menendez Mojana, Tiara (Referente)
-* Ramos, Lucas Sebastián
-* Iglesias, Luca
-* Rueda, Leandro Nicolás
+**Integrantes y Legajos:**
+* **Menendez Mojana, Tiara** (Referente) — Legajo: 1226578
+* **Ramos, Lucas Sebastián** — Legajo: 1235407
+* **Iglesias, Luca** — Legajo: 1226578
+* **Rueda, Leandro Nicolás** — Legajo: 1231246
 
 ---
 
