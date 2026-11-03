@@ -11,6 +11,7 @@
 # =============================================================================
 
 from hotel import (
+    inicializar_hotel,  # Se agrega la importación para reconstruir la matriz
     reiniciar_matriz,
     redimensionar_hotel,
     renderizar_hotel
@@ -41,6 +42,9 @@ from validaciones import (
     PATRON_NUMERO_VALIDO,
     ERROR_NUMERO
 )
+from archivos import cargar_datos_hotel, guardar_datos_hotel
+
+NOMBRE_ARCHIVO_JSON = "hotel_data.json"
 
 
 def menu_busquedas(lista_huespedes):
@@ -52,7 +56,6 @@ def menu_busquedas(lista_huespedes):
         print("2. Buscar huésped por nombre")
         print("3. Buscar huésped por habitación")
         print("0. Volver al menú principal")
-
         print("==============================")
 
         opcion = input("Seleccione una opción: ")
@@ -95,13 +98,27 @@ def menu_busquedas(lista_huespedes):
 
 
 def menu_principal():
-    hotel = reiniciar_matriz()
+    # Carga de datos al inicio (Deserialización)
+    datos_cargados = cargar_datos_hotel(NOMBRE_ARCHIVO_JSON)
 
-    # Matriz de tarifas dinámica: [ [Piso, Precio por noche], ... ]
-    tarifas = configurar_tarifas_hotel(len(hotel))
+    if datos_cargados is not None and datos_cargados["pisos"] != -1:
+        print(f"¡Datos cargados con éxito! Hotel de {datos_cargados['pisos']} pisos x {datos_cargados['habitaciones']} habs.")
+        pisos = datos_cargados["pisos"]
+        habitaciones = datos_cargados["habitaciones"]
+        huespedes = datos_cargados["huespedes"]
+        tarifas = datos_cargados["tarifas"]
 
-    # Registro de huéspedes (Formato: [nombre, dni, dias, piso, habitacion, num_comercial])
-    huespedes = []
+        hotel = inicializar_hotel(pisos, habitaciones)
+        for h in huespedes:
+            hotel[h["ubicacion"][0]][h["ubicacion"][1]] = "O"
+    else:
+        print("No se encontraron datos previos. Se procederá a la inicialización manual.")
+        hotel = reiniciar_matriz()
+        pisos = len(hotel)
+        habitaciones = len(hotel[0])
+        tarifas = configurar_tarifas_hotel(pisos)
+        huespedes = []
+        guardar_datos_hotel(NOMBRE_ARCHIVO_JSON, pisos, habitaciones, huespedes, tarifas)
 
     ejecutando = True
 
@@ -114,7 +131,7 @@ def menu_principal():
         print("5. Búsquedas")
         print("6. Reportes y Facturación")
         print("7. Redimensionar hotel")
-        print("8. Restablecer habitacion")
+        print("8. Restablecer habitación")
         print("0. Salir")
         print("==============================")
 
@@ -122,41 +139,55 @@ def menu_principal():
 
         if opcion == "1":
             renderizar_hotel(hotel)
+
         elif opcion == "2":
             renderizar_hotel(hotel)
             hotel = realizar_checkin(hotel, huespedes)
+            guardar_datos_hotel(NOMBRE_ARCHIVO_JSON, pisos, habitaciones, huespedes, tarifas)
+
         elif opcion == "3":
             realizar_checkout(hotel, huespedes, tarifas)
+            guardar_datos_hotel(NOMBRE_ARCHIVO_JSON, pisos, habitaciones, huespedes, tarifas)
+
         elif opcion == "4":
             reubicar_huesped_swap(hotel, huespedes)
+            guardar_datos_hotel(NOMBRE_ARCHIVO_JSON, pisos, habitaciones, huespedes, tarifas)
+
         elif opcion == "5":
             menu_busquedas(huespedes)
+
         elif opcion == "6":
             generar_reporte_ocupacion(hotel)
             reporte_habitaciones_libres(hotel, huespedes)
             calcular_recaudacion_total(huespedes, tarifas)
+
         elif opcion == "7":
             nuevo_hotel = redimensionar_hotel()
-            
             if nuevo_hotel == -1:
                 print("Redimensionamiento cancelado. Se mantienen los datos actuales.")
             else:
-                # Si aceptó cambiar la matriz, DEBE configurar las tarifas para el nuevo tamaño
                 print("\nDebe configurar las nuevas tarifas para el hotel redimensionado.")
                 hotel = nuevo_hotel
-                tarifas = configurar_tarifas_hotel(len(hotel))
+                pisos = len(hotel)
+                habitaciones = len(hotel[0])
+                tarifas = configurar_tarifas_hotel(pisos)
                 huespedes.clear()
+                guardar_datos_hotel(NOMBRE_ARCHIVO_JSON, pisos, habitaciones, huespedes, tarifas)
                 print("Hotel redimensionado y configurado con éxito.")
+
         elif opcion == "8":
-            print("\n--- RESTABLECER HABITACIÓN A LIBRE [L] ---")
+            print("\n--- RESTABLECER HABITACIÓN A LIBRE [L] LUEGO DE LA LIMPIEZA ---")
             restablecer_limpieza(hotel)
+            guardar_datos_hotel(NOMBRE_ARCHIVO_JSON, pisos, habitaciones, huespedes, tarifas)
+
         elif opcion == "0":
-            print("Saliendo del sistema Room Master...")
-            ejecutando = False  # Sale del bucle
+            print("Guardando datos y saliendo del sistema Room Master...")
+            guardar_datos_hotel(NOMBRE_ARCHIVO_JSON, pisos, habitaciones, huespedes, tarifas)
+            ejecutando = False
+
         else:
             print("Opción inválida. Intente nuevamente.")
 
-        # Muestra el resultado del menu de opciones hasta accion del usuario
         if opcion != "0":
             input("\nPresione [Enter] para continuar...")
 
@@ -164,5 +195,3 @@ def menu_principal():
 # Ejecución
 if __name__ == "__main__":
     menu_principal()
-
-
