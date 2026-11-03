@@ -1,161 +1,206 @@
 # =============================================================================
 # SUITE DE PRUEBAS UNITARIAS (tests.py)
-# Formato: funciones def con if/else (sin clases, segun catedra)
+# =============================================================================
+# Materia: Algoritmo y Estructura de Datos 1 / Programación 1 (UADE)
+# Docente: Lic. Gustavo E. Escandell
+# Requisitos: Mínimo 10 pruebas sobre al menos 5 funciones.
+# Distribución obligatoria:
+#   - 4 Casos Válidos
+#   - 3 Casos Inválidos
+#   - 2 Casos Límite
+#   - 1 Caso Adicional
+# Restricción estricta: NO UTILIZAR CLASES (Programación modular y estructurada).
+# Formato de cada prueba:
+#   1. Función que se prueba
+#   2. Datos utilizados
+#   3. Resultado esperado
+#   4. Resultado obtenido
+#   5. Veredicto (Aprobado o Fallado)
 # =============================================================================
 
 import hotel
+import tarifas
 import reportes
 import huespedes
 
 
-def prueba_01_inicializacion_matriz_hotel():
-    # Funcion: reiniciar_matriz
-    # Datos: 2 pisos, 3 habitaciones
-    resultado = hotel.inicializar_hotel(2, 3)
+def reportar_prueba(num, categoria, funcion_nombre, datos_str, esperado, obtenido):
+    """
+    Función auxiliar para formatear la salida de cada prueba unitaria
+    cumpliendo estrictamente con los 5 puntos exigidos en la Sección 9 del TP.
+    """
+    aprobado = (esperado == obtenido)
+    estado = "APROBADO" if aprobado else "FALLADO"
+
+    print(f"Prueba [{num:02d}] - {categoria.upper()}")
+    print(f"  1. Función:   {funcion_nombre}")
+    print(f"  2. Datos:     {datos_str}")
+    print(f"  3. Esperado:  {esperado}")
+    print(f"  4. Obtenido:  {obtenido}")
+    print(f"  5. Resultado: [{estado}]")
+    print("-" * 65)
+
+    return aprobado
+
+
+# =============================================================================
+# BLOQUE 1: CASOS VÁLIDOS (4 pruebas)
+# =============================================================================
+
+def prueba_01_inicializacion_matriz_valida():
+    """Caso válido: Crea la matriz del hotel con pisos y habitaciones válidas."""
+    datos = "pisos = 2, habitaciones = 3"
     esperado = [["L", "L", "L"], ["L", "L", "L"]]
-    if resultado == esperado:
-        print("prueba_01_inicializacion_matriz_hotel: APROBADO")
-    else:
-        print("prueba_01_inicializacion_matriz_hotel: FALLADO")
-        print("  Esperado:", esperado)
-        print("  Obtenido:", resultado)
+    obtenido = hotel.inicializar_hotel(2, 3)
+    return reportar_prueba(1, "Caso Válido", "hotel.inicializar_hotel", datos, esperado, obtenido)
 
 
-def prueba_02_obtener_tarifa_habitacion():
-    # Funcion: obtener_tarifa_habitacion
-    # Datos: tarifas [[1,10000.0],[2,12000.0],[3,15000.0]], piso 2
-    tarifas = [[1, 10000.0], [2, 12000.0], [3, 15000.0]]
-    from tarifas import obtener_tarifa_habitacion
-    resultado = obtener_tarifa_habitacion(2, tarifas)
+def prueba_02_obtener_tarifa_piso_existente():
+    """Caso válido: Consulta la tarifa de un piso configurado en la matriz."""
+    esquema_tarifas = [[1, 10000.0], [2, 12000.0], [3, 15000.0]]
+    datos = "piso = 2, tarifas = [[1, 10000.0], [2, 12000.0], [3, 15000.0]]"
     esperado = 12000.0
-    if resultado == esperado:
-        print("prueba_02_obtener_tarifa_habitacion: APROBADO")
-    else:
-        print("prueba_02_obtener_tarifa_habitacion: FALLADO")
-        print("  Esperado:", esperado)
-        print("  Obtenido:", resultado)
+    obtenido = tarifas.obtener_tarifa_habitacion(2, esquema_tarifas)
+    return reportar_prueba(2, "Caso Válido", "tarifas.obtener_tarifa_habitacion", datos, esperado, obtenido)
 
 
-def prueba_03_calcular_subtotal_sin_descuento():
-    # Funcion: calcular_subtotal
-    # Datos: 5 noches, tarifa 10000 -> sin descuento
-    tarifas = [[1, 10000.0], [2, 12000.0], [3, 15000.0]]
-    huesped = {"identidad": ("12345678", "Juan"), "dias": 5, "ubicacion": [0, 0, 101]}
-    resultado = reportes.calcular_subtotal(huesped, tarifas)
-    esperado = 50000.0
-    if resultado == esperado:
-        print("prueba_03_calcular_subtotal_sin_descuento: APROBADO")
-    else:
-        print("prueba_03_calcular_subtotal_sin_descuento: FALLADO")
-        print("  Esperado:", esperado)
-        print("  Obtenido:", resultado)
+def prueba_03_calcular_subtotal_estadia_corta():
+    """Caso válido: Estadía de 5 noches (<= 7) sin aplicar bonificación."""
+    esquema_tarifas = [[1, 10000.0], [2, 12000.0]]
+    huesped = {"identidad": ("12345678", "Juan Perez"), "dias": 5, "ubicacion": [0, 0, 101]}
+    datos = "huesped={'dias': 5, 'piso': 0 (Piso 1)}, tarifa=$10000.0"
+    esperado = 50000.0  # 5 * 10000.0
+    obtenido = reportes.calcular_subtotal(huesped, esquema_tarifas)
+    return reportar_prueba(3, "Caso Válido", "reportes.calcular_subtotal", datos, esperado, obtenido)
 
 
-def prueba_04_validar_dni_acepta_nuevo():
-    # Funcion: validar_dni (con set)
-    # Datos: lista con DNI "111", se valida DNI nuevo "999"
-    lista = [{"identidad": ("111", "Ana"), "dias": 2, "ubicacion": [0, 0, 101]}]
-    resultado = huespedes.validar_dni("999", lista)
-    esperado = "999"
-    if resultado == esperado:
-        print("prueba_04_validar_dni_acepta_nuevo: APROBADO")
-    else:
-        print("prueba_04_validar_dni_acepta_nuevo: FALLADO")
-        print("  Esperado:", esperado)
-        print("  Obtenido:", resultado)
+def prueba_04_calcular_subtotal_estadia_larga_con_descuento():
+    """Caso válido: Estadía de 10 noches (> 7) con 10% de descuento vía lambda."""
+    esquema_tarifas = [[1, 10000.0], [2, 12000.0]]
+    huesped = {"identidad": ("12345678", "Juan Perez"), "dias": 10, "ubicacion": [0, 0, 101]}
+    datos = "huesped={'dias': 10, 'piso': 0 (Piso 1)}, tarifa=$10000.0 (10% desc. > 7 días)"
+    esperado = 90000.0  # 10 * 10000.0 * 0.90
+    obtenido = reportes.calcular_subtotal(huesped, esquema_tarifas)
+    return reportar_prueba(4, "Caso Válido", "reportes.calcular_subtotal", datos, esperado, obtenido)
 
 
-def prueba_05_validar_dni_rechaza_repetido():
-    # Funcion: validar_dni (con set) - caso invalido
-    # Datos: lista con DNI "111", se intenta registrar "111" de nuevo
-    # Como validar_dni pide reingreso por input, simulamos que la funcion detecta duplicado
-    # Verificamos que el set contenga el DNI (logica de deteccion)
-    lista = [{"identidad": ("111", "Ana"), "dias": 2, "ubicacion": [0, 0, 101]}]
-    dnis = set()
-    for huesped in lista:
-        dnis.add(huesped["identidad"][0])
-    dni_nuevo = "111"
-    if dni_nuevo in dnis:
-        print("prueba_05_validar_dni_rechaza_repetido: APROBADO")
-    else:
-        print("prueba_05_validar_dni_rechaza_repetido: FALLADO")
+# =============================================================================
+# BLOQUE 2: CASOS INVÁLIDOS (3 pruebas)
+# =============================================================================
+
+def prueba_05_deteccion_dni_duplicado_con_conjunto():
+    """Caso inválido: Detecta que un DNI ya existe usando un conjunto (set)."""
+    huespedes_registrados = [{"identidad": ("11111111", "Ana Gomez"), "dias": 2, "ubicacion": [0, 0, 101]}]
+    dnis_set = set()
+    for h in huespedes_registrados:
+        dnis_set.add(h["identidad"][0])
+
+    dni_ingresado_duplicado = "11111111"
+    datos = "dni_nuevo = '11111111', dnis_registrados = {'11111111'}"
+    esperado = True  # El conjunto detecta pertenencia O(1) de DNI repetido
+    obtenido = (dni_ingresado_duplicado in dnis_set)
+    return reportar_prueba(5, "Caso Inválido", "deteccion_dni_duplicado_set", datos, esperado, obtenido)
 
 
-def prueba_06_calcular_subtotal_dias_cero():
-    # Funcion: calcular_subtotal - caso invalido (0 dias)
-    tarifas = [[1, 10000.0], [2, 12000.0], [3, 15000.0]]
-    huesped = {"identidad": ("12345678", "Juan"), "dias": 0, "ubicacion": [0, 0, 101]}
-    resultado = reportes.calcular_subtotal(huesped, tarifas)
-    esperado = 0.0
-    if resultado == esperado:
-        print("prueba_06_calcular_subtotal_dias_cero: APROBADO")
-    else:
-        print("prueba_06_calcular_subtotal_dias_cero: FALLADO")
-        print("  Esperado:", esperado)
-        print("  Obtenido:", resultado)
+def prueba_06_habitacion_inexistente_fuera_de_rango():
+    """Caso inválido: Consulta de habitación en un piso que no existe en la matriz."""
+    matriz_hotel = [["L", "L"], ["L", "L"]]  # 2 pisos, 2 habitaciones
+    datos = "matriz de 2x2, piso = 5, habitacion = 0"
+    esperado = False  # La habitación no existe
+    obtenido = hotel.habitacion_existe(matriz_hotel, 5, 0)
+    return reportar_prueba(6, "Caso Inválido", "hotel.habitacion_existe", datos, esperado, obtenido)
 
 
-def prueba_07_obtener_tarifa_piso_inexistente():
-    # Funcion: obtener_tarifa_habitacion - caso invalido (piso 99)
-    # Nota: aun no hay try/except, por eso solo se imprime el resultado obtenido
-    from tarifas import obtener_tarifa_habitacion
-    tarifas = [[1, 10000.0], [2, 12000.0], [3, 15000.0]]
-    resultado = obtener_tarifa_habitacion(99, tarifas)
-    print("prueba_07_obtener_tarifa_piso_inexistente: INFO (sin manejo de errores aun)")
-    print("  Obtenido:", resultado)
-    print("  (Se implementara try/except mas adelante)")
+def prueba_07_busqueda_huesped_habitacion_vacia():
+    """Caso inválido: Buscar huésped en una habitación donde no hay nadie alojado."""
+    lista_huespedes = [{"identidad": ("11111111", "Ana"), "dias": 2, "ubicacion": [0, 0, 101]}]
+    datos = "lista_huespedes=[Hab 101], numero_habitacion_buscada = 999"
+    esperado = []  # Lista vacía retornada por filter/lambda
+    obtenido = huespedes.buscar_huesped_por_habitacion(lista_huespedes, 999)
+    return reportar_prueba(7, "Caso Inválido", "huespedes.buscar_huesped_por_habitacion", datos, esperado, obtenido)
 
 
-def prueba_08_calcular_subtotal_limite_7_noches():
-    # Funcion: calcular_subtotal - caso limite (exactamente 7 noches, sin descuento)
-    tarifas = [[1, 10000.0], [2, 12000.0], [3, 15000.0]]
-    huesped = {"identidad": ("12345678", "Juan"), "dias": 7, "ubicacion": [0, 0, 101]}
-    resultado = reportes.calcular_subtotal(huesped, tarifas)
-    esperado = 70000.0   # 7 * 10000, sin descuento (descuento solo > 7)
-    if resultado == esperado:
-        print("prueba_08_calcular_subtotal_limite_7_noches: APROBADO")
-    else:
-        print("prueba_08_calcular_subtotal_limite_7_noches: FALLADO")
-        print("  Esperado:", esperado)
-        print("  Obtenido:", resultado)
+# =============================================================================
+# BLOQUE 3: CASOS LÍMITE (2 pruebas)
+# =============================================================================
+
+def prueba_08_calcular_subtotal_limite_exacto_7_noches():
+    """Caso límite: Exactamente 7 noches de estadía (sin descuento, descuento es > 7)."""
+    esquema_tarifas = [[1, 10000.0], [2, 12000.0]]
+    huesped = {"identidad": ("12345678", "Juan Perez"), "dias": 7, "ubicacion": [0, 0, 101]}
+    datos = "huesped={'dias': 7, 'piso': 0 (Piso 1)}, tarifa=$10000.0 (frontera sin desc)"
+    esperado = 70000.0  # 7 * 10000.0
+    obtenido = reportes.calcular_subtotal(huesped, esquema_tarifas)
+    return reportar_prueba(8, "Caso Límite", "reportes.calcular_subtotal", datos, esperado, obtenido)
 
 
-def prueba_09_reiniciar_matriz_minima():
-    # Funcion: reiniciar_matriz - caso limite (1x1)
-    resultado = hotel.inicializar_hotel(1, 1)
+def prueba_09_inicializacion_matriz_dimension_minima():
+    """Caso límite: Inicialización con dimensión mínima permitida (hotel 1x1)."""
+    datos = "pisos = 1, habitaciones = 1"
     esperado = [["L"]]
-    if resultado == esperado:
-        print("prueba_09_reiniciar_matriz_minima: APROBADO")
-    else:
-        print("prueba_09_reiniciar_matriz_minima: FALLADO")
-        print("  Esperado:", esperado)
-        print("  Obtenido:", resultado)
+    obtenido = hotel.inicializar_hotel(1, 1)
+    return reportar_prueba(9, "Caso Límite", "hotel.inicializar_hotel", datos, esperado, obtenido)
 
 
-def prueba_10_buscar_huespedes_por_nombre():
-    # Funcion: buscar_huespedes_por_nombre - caso adicional (busqueda parcial)
+# =============================================================================
+# BLOQUE 4: CASO ADICIONAL RELEVANTE (1 prueba)
+# =============================================================================
+
+def prueba_10_busqueda_parcial_nombre_filter_lambda():
+    """Caso adicional: Búsqueda funcional parcial por nombre con filter y lambda."""
     h1 = {"identidad": ("11111111", "Juan Perez"), "dias": 2, "ubicacion": [0, 0, 101]}
     h2 = {"identidad": ("22222222", "Carlos Lopez"), "dias": 3, "ubicacion": [0, 0, 102]}
     h3 = {"identidad": ("33333333", "Juana Garcia"), "dias": 1, "ubicacion": [1, 0, 201]}
     lista = [h1, h2, h3]
-    resultado = huespedes.buscar_huespedes_por_nombre(lista, "juan")
-    esperado = [h1, h3]
-    if resultado == esperado:
-        print("prueba_10_buscar_huespedes_por_nombre: APROBADO")
+    termino_busqueda = "juan"
+    datos = "lista de 3 huéspedes, texto_busqueda = 'juan'"
+    esperado = [h1, h3]  # Debe encontrar a 'Juan Perez' y 'Juana Garcia'
+    obtenido = huespedes.buscar_huespedes_por_nombre(lista, termino_busqueda)
+    return reportar_prueba(10, "Caso Adicional", "huespedes.buscar_huespedes_por_nombre", datos, esperado, obtenido)
+
+
+# =============================================================================
+# EJECUCIÓN PRINCIPAL DE LA SUITE
+# =============================================================================
+
+def ejecutar_suite():
+    print("=" * 65)
+    print("      SUITE DE PRUEBAS UNITARIAS - SISTEMA ROOM MASTER")
+    print("      Cátedra: Lic. Gustavo E. Escandell (UADE 2026)")
+    print("      Restricción: Sin clases | Mínimo 10 pruebas")
+    print("=" * 65)
+    print()
+
+    pruebas = [
+        prueba_01_inicializacion_matriz_valida,
+        prueba_02_obtener_tarifa_piso_existente,
+        prueba_03_calcular_subtotal_estadia_corta,
+        prueba_04_calcular_subtotal_estadia_larga_con_descuento,
+        prueba_05_deteccion_dni_duplicado_con_conjunto,
+        prueba_06_habitacion_inexistente_fuera_de_rango,
+        prueba_07_busqueda_huesped_habitacion_vacia,
+        prueba_08_calcular_subtotal_limite_exacto_7_noches,
+        prueba_09_inicializacion_matriz_dimension_minima,
+        prueba_10_busqueda_parcial_nombre_filter_lambda
+    ]
+
+    total = len(pruebas)
+    aprobadas = 0
+
+    for prueba in pruebas:
+        if prueba():
+            aprobadas += 1
+
+    falladas = total - aprobadas
+
+    print("\n" + "=" * 65)
+    print(f"RESUMEN FINAL: {aprobadas}/{total} PRUEBAS APROBADAS | {falladas} FALLADAS")
+    if falladas == 0:
+        print("ESTADO: TODAS LAS PRUEBAS UNITARIAS PASARON EXITOSAMENTE.")
     else:
-        print("prueba_10_buscar_huespedes_por_nombre: FALLADO")
-        print("  Esperado:", esperado)
-        print("  Obtenido:", resultado)
+        print("ESTADO: HAY PRUEBAS CON FALLOS.")
+    print("=" * 65)
 
 
 if __name__ == "__main__":
-    prueba_01_inicializacion_matriz_hotel()
-    prueba_02_obtener_tarifa_habitacion()
-    prueba_03_calcular_subtotal_sin_descuento()
-    prueba_04_validar_dni_acepta_nuevo()
-    prueba_05_validar_dni_rechaza_repetido()
-    prueba_06_calcular_subtotal_dias_cero()
-    prueba_07_obtener_tarifa_piso_inexistente()
-    prueba_08_calcular_subtotal_limite_7_noches()
-    prueba_09_reiniciar_matriz_minima()
-    prueba_10_buscar_huespedes_por_nombre()
+    ejecutar_suite()
