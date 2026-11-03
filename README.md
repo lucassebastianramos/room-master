@@ -5,7 +5,8 @@
 ### Sistema de Gestión Hotelera por Consola en Python
 
 *Habitaciones en matriz, huéspedes en diccionarios, identidad en tuplas, unicidad con conjuntos,*
-*reportes con programación funcional y persistencia en archivos. Sin clases. Sin bases de datos.*
+*reportes con programación funcional y triple persistencia en archivos (JSON, TXT y CSV).*
+*Sin clases. Sin bases de datos.*
 
 <br>
 
@@ -36,7 +37,7 @@
 7. [Modelo de datos](#-modelo-de-datos)
 8. [Ciclo de vida de una habitación](#-ciclo-de-vida-de-una-habitación)
 9. [Reglas de negocio](#-reglas-de-negocio)
-10. [Persistencia](#-persistencia)
+10. [Triple persistencia](#-triple-persistencia)
 11. [Manejo de excepciones](#️-manejo-de-excepciones)
 12. [Pruebas unitarias](#-pruebas-unitarias)
 13. [Conceptos de la cátedra y dónde encontrarlos](#-conceptos-de-la-cátedra-y-dónde-encontrarlos)
@@ -51,12 +52,12 @@
 
 **Room Master** es el Trabajo Práctico Integrador de **Algoritmos y Estructura de Datos 1 / Programación 1** (UADE, 2.º cuatrimestre 2026, cátedra del **Lic. Gustavo E. Escandell**).
 
-Resuelve el día a día de la recepción de un hotel: saber qué habitaciones están libres, ocupadas o en limpieza; registrar el ingreso y la salida de huéspedes; mover a un huésped de habitación; cobrar según el piso y la duración de la estadía; y ver indicadores de ocupación y recaudación. Todo queda guardado entre ejecuciones.
+Resuelve el día a día de la recepción de un hotel: saber qué habitaciones están libres, ocupadas o en limpieza; registrar el ingreso y la salida de huéspedes; mover a un huésped de habitación; cobrar según el piso y la duración de la estadía; auditar cobros en tiempo real; exportar reportes contables y ver indicadores de ocupación y recaudación. Todo queda guardado entre ejecuciones.
 
 | Métrica | Valor |
 | :--- | :--- |
 | Módulos del sistema | **7** (`main`, `hotel`, `huespedes`, `tarifas`, `reportes`, `validaciones`, `archivos`) |
-| Funciones del sistema | **41** (más 12 en `tests.py`) |
+| Funciones del sistema | **45** (más 12 en `tests.py`) |
 | Pruebas unitarias | **10 / 10 aprobadas** (4 válidas · 3 inválidas · 2 límite · 1 adicional) |
 | Clases (`class`) | **0** |
 | Dependencias externas para ejecutar | **0** (`pytest` es opcional y solo para correr las pruebas) |
@@ -73,9 +74,11 @@ ROOM MASTER - MENÚ PRINCIPAL
 3. Check-out (Liberar habitación)
 4. Reubicar huésped (Swap)
 5. Búsquedas
-6. Reportes y Facturación
-7. Redimensionar hotel
-8. Restablecer habitación
+6. Reportes y Facturación proyectada
+7. Auditoría histórica de facturación (Desde archivo .TXT)
+8. Exportar facturación a formato CSV (Archivo .CSV)
+9. Redimensionar hotel
+10. Restablecer habitación en limpieza
 0. Salir
 ==============================
 Seleccione una opción: 1
@@ -99,9 +102,10 @@ Huésped:             Juan Perez
 Habitación liberada: 201
 TOTAL A COBRAR:      $108,000.00
 ===================================================
+[Info] Factura registrada en el historial de facturación (.txt)
 ```
 
-> Piso 2 configurado como *suite* con +20 % sobre una base de \$10.000 → \$12.000 por noche. 10 noches = \$120.000, menos 10 % por estadía larga = **\$108.000**.
+> Piso 2 configurado como *suite* con +20 % sobre una base de \$10.000 → \$12.000 por noche. 10 noches = \$120.000, menos 10 % por estadía larga = **\$108.000**. Comprobante añadido automáticamente a `facturacion.txt` en modo append `"a"`.
 
 ---
 
@@ -114,7 +118,7 @@ TOTAL A COBRAR:      $108,000.00
 **🛏️ Operación diaria**
 - Grilla visual del hotel por piso con numeración comercial (`101`, `102`, …).
 - **Check-in** con validación de habitación, nombre, DNI y días.
-- **Check-out** con liquidación automática y pase a estado *Sucia*.
+- **Check-out** con liquidación automática, pase a estado *Sucia* y guardado en bitácora TXT.
 - **Reubicación (Swap)** de un huésped a otra habitación libre.
 - **Restablecer habitación** de *Sucia* a *Libre* después de la limpieza.
 - **Redimensionar** el hotel (con advertencia y opción de cancelar).
@@ -122,11 +126,13 @@ TOTAL A COBRAR:      $108,000.00
 </td>
 <td width="50%" valign="top">
 
-**🔎 Búsquedas y reportes**
+**🔎 Búsquedas, reportes y auditoría**
 - Por **DNI** (secuencial), por **nombre parcial** y por **habitación** (`filter` + `lambda`).
 - **Ocupación**: total, ocupadas y porcentaje (`map` + `reduce`).
 - **Habitaciones libres** por diferencia de conjuntos (`todas - ocupadas`).
 - **Recaudación proyectada** (`map` + `reduce` sobre los huéspedes).
+- **Auditoría histórica** desde `facturacion.txt` con acumulador contable.
+- **Exportación CSV** estructurada con `csv.writer` para Excel o Google Sheets.
 
 </td>
 </tr>
@@ -141,11 +147,12 @@ TOTAL A COBRAR:      $108,000.00
 </td>
 <td valign="top">
 
-**🛡️ Robustez**
+**🛡️ Robustez y persistencia**
 - Validación con expresiones regulares en todas las entradas.
 - Cancelación con `-1` en cualquier operación.
-- DNI duplicado bloqueado con un `set`.
-- Guardado automático en JSON después de cada operación.
+- DNI duplicado bloqueado con un `set` en tiempo constante $O(1)$.
+- Triple persistencia desacoplada: JSON (estado), TXT (bitácora `"a"`), CSV (reportes).
+- Manejo de excepciones en archivos con `try / except / else / finally`.
 
 </td>
 </tr>
@@ -194,15 +201,17 @@ En los arranques siguientes, el hotel se **reconstruye solo** a partir del archi
 
 | Opción | Acción | Qué hace |
 | :---: | :--- | :--- |
-| `1` | Visualizar estado | Muestra la grilla del piso más alto al más bajo. Hace un salto de línea cada 10 habitaciones. |
+| `1` | Visualizar estado | Muestra la grilla del piso más alto al más bajo. Salto de línea cada 10 habitaciones. |
 | `2` | Check-in | Pide habitación libre, nombre, DNI (no repetido) y días. Marca la habitación `O`. |
-| `3` | Check-out | Busca por DNI, calcula el total, marca la habitación `S` y elimina el registro. |
+| `3` | Check-out | Busca por DNI, liquida monto, marca la habitación `S`, registra el cobro en `facturacion.txt` y libera el huésped. |
 | `4` | Reubicar (Swap) | Mueve al huésped de una habitación a otra libre: origen `L`, destino `O`. |
-| `5` | Búsquedas | Submenú: por DNI, por nombre parcial o por número de habitación. |
-| `6` | Reportes | Ocupación, habitaciones ocupadas/libres y recaudación proyectada. |
-| `7` | Redimensionar | Crea un hotel nuevo. ⚠️ Borra a los huéspedes y pide tarifas nuevas. |
-| `8` | Restablecer | Pasa una habitación de `S` (limpieza) a `L` (libre). |
-| `0` | Salir | Guarda los datos y termina. |
+| `5` | Búsquedas | Submenú interactivo: por DNI, por nombre parcial (`filter`+`lambda`) o por habitación. |
+| `6` | Reportes proyectados | Ocupación global, habitaciones libres/ocupadas (conjuntos) y recaudación proyectada (`map`+`reduce`). |
+| `7` | Auditoría histórica (.TXT) | Lee y procesa `facturacion.txt` secuencialmente mostrando cada comprobante y calculando el total histórico. |
+| `8` | Exportar a CSV (.CSV) | Lee `facturacion.txt` y genera `facturacion.csv` mediante `csv.writer` para Microsoft Excel o Google Sheets. |
+| `9` | Redimensionar hotel | Crea un hotel nuevo. ⚠️ Borra a los huéspedes y pide tarifas nuevas (con opción de cancelar). |
+| `10` | Restablecer habitación | Pasa una habitación desocupada de `S` (limpieza) a `L` (libre). |
+| `0` | Salir | Guarda los datos estructurales en JSON y finaliza la ejecución. |
 
 > [!NOTE]
 > **Cancelación universal:** en cualquier pedido de datos podés ingresar `-1` para volver atrás sin modificar el estado del hotel.
@@ -215,14 +224,14 @@ El programa principal **solo coordina**: muestra el menú, llama a las funciones
 
 ```mermaid
 flowchart TD
-    MAIN["main.py<br/>Menú y coordinación"]
+    MAIN["main.py<br/>Menú y coordinación general"]
 
     HUE["huespedes.py<br/>Check-in · Check-out · Swap · Búsquedas"]
     REP["reportes.py<br/>map · filter · reduce · lambda · set"]
-    ARC["archivos.py<br/>Persistencia JSON + excepciones"]
-    HOT["hotel.py<br/>Matriz de habitaciones"]
-    TAR["tarifas.py<br/>Precios por piso"]
-    VAL["validaciones.py<br/>Regex y rangos"]
+    ARC["archivos.py<br/>Persistencia JSON · Bitácora TXT · Exportación CSV"]
+    HOT["hotel.py<br/>Matriz de habitaciones y coordenadas"]
+    TAR["tarifas.py<br/>Precios y recargos por piso"]
+    VAL["validaciones.py<br/>Regex, límites y control con -1"]
 
     MAIN --> HUE
     MAIN --> REP
@@ -235,6 +244,7 @@ flowchart TD
     HUE --> TAR
     HUE --> REP
     HUE --> VAL
+    HUE --> ARC
     REP --> TAR
     HOT --> VAL
     TAR --> VAL
@@ -242,35 +252,35 @@ flowchart TD
 
 | Módulo | Responsabilidad | Funciones | Biblioteca estándar |
 | :--- | :--- | :---: | :--- |
-| [`main.py`](main.py) | Menú principal, submenú de búsquedas, carga inicial y guardado | 2 | — |
+| [`main.py`](main.py) | Menú principal (10 opciones), submenú de búsquedas, carga inicial y persistencia | 2 | — |
 | [`hotel.py`](hotel.py) | Crear la matriz, convertir índices ↔ número comercial, mostrar la grilla, verificar disponibilidad | 9 | — |
-| [`huespedes.py`](huespedes.py) | Check-in, check-out, swap, búsquedas, unicidad de DNI, limpieza | 14 | — |
-| [`tarifas.py`](tarifas.py) | Configurar y consultar el precio por piso | 7 | — |
-| [`reportes.py`](reportes.py) | Ocupación, subtotal con descuento, recaudación, habitaciones libres | 4 | `functools` |
-| [`validaciones.py`](validaciones.py) | Patrones regex, validación genérica, rangos, confirmación s/n | 3 | `re` |
-| [`archivos.py`](archivos.py) | Leer y escribir `hotel_data.json` con manejo de excepciones | 2 | `json` |
-| [`tests.py`](tests.py) | 10 pruebas unitarias (PyTest y Python puro) | 12 | — |
+| [`huespedes.py`](huespedes.py) | Check-in, check-out con facturación, swap, búsquedas funcionales, unicidad de DNI, limpieza | 14 | — |
+| [`tarifas.py`](tarifas.py) | Configurar y consultar el precio por piso y recargos de lujo | 7 | — |
+| [`reportes.py`](reportes.py) | Ocupación, subtotal con descuento, recaudación proyectada, habitaciones libres | 4 | `functools` |
+| [`validaciones.py`](validaciones.py) | Patrones regex, validación genérica, rangos, confirmación s/n y cancelación `-1` | 3 | `re` |
+| [`archivos.py`](archivos.py) | Persistencia JSON, auditoría TXT en modo `"a"` y exportación CSV con `csv.writer` | 6 | `json`, `csv` |
+| [`tests.py`](tests.py) | 10 pruebas unitarias (PyTest y Python puro sin clases) | 12 | — |
 
 <details>
 <summary><b>📁 Estructura del repositorio</b></summary>
 
 ```text
 room-master/
-├── main.py                    # Punto de entrada: menú y coordinación
+├── main.py                    # Punto de entrada: menú y coordinación (10 opciones)
 ├── hotel.py                   # Matriz de habitaciones y numeración comercial
-├── huespedes.py               # Operaciones sobre huéspedes
+├── huespedes.py               # Operaciones sobre huéspedes y enlace con facturación
 ├── tarifas.py                 # Esquema de precios por piso
 ├── reportes.py                # Reportes con programación funcional y conjuntos
 ├── validaciones.py            # Validaciones con expresiones regulares
-├── archivos.py                # Persistencia JSON con manejo de excepciones
-├── tests.py                   # Suite de 10 pruebas unitarias
-├── Documentacion_Fase2.pdf    # Documento explicativo oficial (Sección 15)
-├── DOCUMENTACION_FASE2.md     # Mismo documento, legible en GitHub
-├── documentacion_fase2.html   # Fuente imprimible del PDF
+├── archivos.py                # Persistencia JSON, auditoría TXT y exportación CSV
+├── tests.py                   # Suite de 10 pruebas unitarias oficiales
+├── Documentacion_Fase2.pdf    # Documento explicativo formal en PDF (Sección 15)
+├── DOCUMENTACION_FASE2.md     # Mismo documento técnico, legible en GitHub
+├── documentacion_fase2.html   # Fuente imprimible del PDF institucional
 └── README.md
 ```
 
-`hotel_data.json` se genera al ejecutar el sistema y está en `.gitignore`.
+`hotel_data.json`, `facturacion.txt` y `facturacion.csv` se generan durante la ejecución del sistema y están protegidos en `.gitignore`.
 
 </details>
 
@@ -281,25 +291,25 @@ room-master/
 Cada estructura se eligió por lo que tiene que hacer el dato, no para cumplir un requisito:
 
 ```python
-# MATRIZ DEL HOTEL: lista de listas. hotel[piso][habitacion] da el estado en tiempo constante.
+# MATRIZ DEL HOTEL: lista de listas. hotel[piso][habitacion] da el estado en tiempo constante O(1).
 hotel = [
     ["L", "O", "L", "L"],   # piso 1 → habitaciones 101..104
     ["O", "S", "L", "O"],   # piso 2 → habitaciones 201..204
 ]
 
-# HUÉSPED: diccionario (acceso por nombre de campo) que combina una tupla y una lista.
+# HUÉSPED: diccionario (acceso semántico por clave) que combina tupla inmutable y lista mutable.
 huesped = {
-    "identidad": ("40123456", "Juan Perez"),   # tupla: DNI y nombre no cambian nunca
+    "identidad": ("40123456", "Juan Perez"),   # tupla: DNI y nombre no cambian nunca durante la estadía
     "dias": 10,                                # entero positivo
-    "ubicacion": [1, 0, 201],                  # lista: cambia en el Swap [piso, hab, número]
+    "ubicacion": [1, 0, 201],                  # lista: cambia en el Swap [piso, hab, número comercial]
 }
 
 # TARIFAS: matriz [piso_comercial, precio_por_noche]
 tarifas = [[1, 10000.0], [2, 12000.0]]
 
-# CONJUNTOS: se arman en el momento para resolver preguntas concretas
-dnis_registrados = {"40123456", "38999111"}       # ¿el DNI ya existe? → O(1) promedio
-libres = todas - ocupadas                         # ¿qué habitaciones quedan? → diferencia
+# CONJUNTOS: se arman dinámicamente para resolver consultas críticas
+dnis_registrados = {"40123456", "38999111"}       # ¿el DNI ya existe? → O(1) promedio por hashing
+libres = todas - ocupadas                         # ¿qué habitaciones quedan? → diferencia de conjuntos
 ```
 
 ---
@@ -312,11 +322,11 @@ stateDiagram-v2
     [*] --> Libre : inicializar_hotel()
     Libre --> Ocupada : Check-in / Swap (destino)
     Ocupada --> Libre : Swap (origen)
-    Ocupada --> Sucia : Check-out
-    Sucia --> Libre : Restablecer (opción 8)
+    Ocupada --> Sucia : Check-out (registra en facturacion.txt)
+    Sucia --> Libre : Restablecer habitación (opción 10)
 ```
 
-El estado **Sucia (`S`)** impide volver a alquilar una habitación recién liberada hasta que alguien confirma que se limpió.
+El estado **Sucia (`S`)** impide volver a alquilar una habitación recién liberada hasta que el personal confirma el proceso sanitario de limpieza.
 
 ---
 
@@ -328,24 +338,24 @@ El estado **Sucia (`S`)** impide volver a alquilar una habitación recién liber
 | Número → índices | `piso = n // 100 - 1`, `habitacion = n % 100 - 1` | `hotel.obtener_indices_matriz` |
 | Precio de un piso de lujo | `base × (1 + recargo / 100)`, redondeado a 2 decimales | `tarifas.generar_matriz_tarifas` |
 | Subtotal de estadía | `precio_noche × días` | `reportes.calcular_subtotal` |
-| Descuento por estadía larga | `días > 7` → `subtotal × 0.9` (con `lambda`) | `reportes.calcular_subtotal` |
+| Descuento por estadía larga | `días > 7` → `subtotal × 0.9` (bonificación 10% con `lambda`) | `reportes.calcular_subtotal` |
 | Dimensiones válidas | 1 a 99 pisos y 1 a 99 habitaciones por piso | `hotel.reiniciar_matriz` |
-| DNI válido | 7 u 8 dígitos (`^\d{7,8}$`) y no repetido | `validaciones` + `huespedes.validar_dni` |
-| Nombre válido | solo letras (con tildes y ñ) y espacios | `validaciones.PATRON_TEXTO_VALIDO` |
+| DNI válido y único | 7 u 8 dígitos numéricos (`^\d{7,8}$`) y no registrado previamente | `validaciones` + `huespedes.validar_dni` |
+| Nombre válido | solo letras (con tildes y eñes) y espacios | `validaciones.PATRON_TEXTO_VALIDO` |
 
 ---
 
-## 💾 Persistencia
+## 💾 Triple persistencia
+
+El sistema implementa tres niveles de persistencia independientes sin requerir bases de datos:
 
 | Archivo | Formato | Qué guarda | Cuándo | Estado |
 | :--- | :--- | :--- | :--- | :---: |
-| `hotel_data.json` | JSON | Dimensiones, tarifas y lista de huéspedes alojados | Al configurar, después de cada operación y al salir | ✅ Implementado |
-| `facturacion.txt` | Texto plano | Una línea por check-out (bitácora de caja), modo `"a"` | En cada check-out | 🚧 En desarrollo |
-| `facturacion.csv` | CSV | Historial de facturación en columnas para Excel / Google Sheets (`csv.writer`) | A pedido, leyendo el `.txt` | 🚧 En desarrollo |
+| `hotel_data.json` | JSON | Dimensiones, tarifas y lista de huéspedes alojados | Al configurar, tras cada operación y al salir | ✅ Implementado |
+| `facturacion.txt` | Texto plano | Una línea por check-out (`dni;nombre;monto`), apertura en modo `"a"` | En cada check-out | ✅ Implementado |
+| `facturacion.csv` | CSV | Historial de facturación con encabezados (`DNI,Huesped,Monto_Cobrado`) para Excel / Sheets (`csv.writer`) | A pedido (opción 8), leyendo el `.txt` | ✅ Implementado |
 
-<details>
-<summary><b>Ejemplo de <code>hotel_data.json</code></b></summary>
-
+### 1. Estado estructural en JSON (`hotel_data.json`)
 ```json
 {
     "pisos": 2,
@@ -360,46 +370,55 @@ El estado **Sucia (`S`)** impide volver a alquilar una habitación recién liber
     "tarifas": [[1, 10000.0], [2, 12000.0]]
 }
 ```
+* **Recuperación:** al iniciar, `cargar_datos_hotel()` lee el JSON. Si existen registros, `main.py` reconstruye la matriz edilicia con `inicializar_hotel()` y asigna `"O"` a las coordenadas de cada huésped. Si no existe, lanza la configuración inicial sin errores.
 
-JSON no tiene tuplas: `json.dump` guarda la tupla `identidad` como arreglo y `json.load` la devuelve como lista. El sistema accede por índice (`[0]` DNI, `[1]` nombre), así que funciona igual.
+### 2. Bitácora transaccional en Texto Plano (`facturacion.txt`)
+* Cada Check-out invoca `registrar_factura_txt(dni, nombre, monto)` con modo agregado (`"a"`).
+* Permite acumular comprobantes de forma permanente e inmediata sin necesidad de reescribir ni cargar todo el archivo en memoria.
+* La opción 7 del menú (`leer_y_procesar_facturacion_txt`) procesa secuencialmente cada línea (`linea.split(";")`) y acumula la recaudación histórica real.
 
-</details>
-
-**Recuperación:** al iniciar, `cargar_datos_hotel()` lee el JSON. Si hay datos, `main.py` crea la matriz vacía con `inicializar_hotel()` y marca `O` en la ubicación de cada huésped guardado. Si el archivo no existe, se inicia la configuración guiada.
+### 3. Exportación a Planillas de Cálculo (`facturacion.csv`)
+* La opción 8 del menú (`exportar_facturacion_a_csv`) lee el archivo de texto y escribe un documento CSV con la librería estándar `csv` (`csv.writer`).
+* Formato estandarizado:
+```csv
+DNI,Huesped,Monto_Cobrado
+40123456,Juan Perez,108000.00
+```
+* Compatible con Microsoft Excel y Google Sheets para balances contables, tablas dinámicas y gráficos gerenciales.
 
 ---
 
 ## 🛡️ Manejo de excepciones
 
-`try / except` se usa solo donde el error **no depende del programa** sino del entorno (el archivo). Los datos que ingresa el usuario se validan **antes** con expresiones regulares, así que conversiones como `int(dato)` no pueden fallar.
+`try / except / else / finally` se utiliza con criterio técnico en situaciones donde el fallo **depende del entorno de archivos** y no del código. Las entradas de usuario se filtran **antes** con expresiones regulares:
 
 | Situación | Excepción | Respuesta del sistema |
 | :--- | :--- | :--- |
-| Primera ejecución, no hay archivo | `FileNotFoundError` | Avisa y arranca la configuración inicial |
-| Sin permisos sobre el archivo | `PermissionError` | Informa el problema sin cerrar el programa |
-| JSON dañado o con formato inválido | `ValueError` (incluye `json.JSONDecodeError`) / `IndexError` | Informa "registros incorrectos" |
-| Datos que no se pueden serializar | `TypeError` / `ValueError` | Informa y devuelve `guardado = False` |
-| Otro error de disco o sistema | `OSError` | Muestra el detalle del error |
-| Siempre al escribir | bloque `finally` | Cierra el archivo aunque haya fallado la escritura |
+| Primera ejecución, no hay archivo | `FileNotFoundError` | Avisa cordialmente e inicia la configuración inicial |
+| Sin permisos sobre el archivo | `PermissionError` | Informa la falta de permisos sin interrumpir el programa |
+| JSON dañado o registros truncados | `ValueError` / `IndexError` | Informa que el archivo contiene registros incorrectos |
+| Datos con tipos incompatibles con JSON | `TypeError` / `ValueError` | Informa el fallo de serialización y devuelve `guardado = False` |
+| Error de E/S o disco lleno | `OSError` | Muestra el detalle del error del sistema operativo |
+| Bloque de cierre de descriptores | `finally` | Ejecuta `archivo.close()` garantizando la liberación del recurso |
 
 ---
 
 ## 🧪 Pruebas unitarias
 
-[`tests.py`](tests.py) cumple la distribución de la **Sección 9**: 10 pruebas sobre **6 funciones distintas**. Se pueden ejecutar sin abrir el programa principal.
+[`tests.py`](tests.py) cumple estrictamente con la distribución exigida por la **Sección 9**: 10 pruebas sobre **6 funciones distintas** de 4 módulos. Pueden ejecutarse sin abrir el programa principal.
 
-| # | Tipo | Función probada | Situación | Esperado |
+| # | Tipo | Función probada | Situación evaluada | Esperado |
 | :---: | :--- | :--- | :--- | :--- |
 | 01 | ✅ Válido | `hotel.inicializar_hotel` | Hotel de 2 pisos × 3 habitaciones | Matriz 2×3 con `"L"` |
-| 02 | ✅ Válido | `tarifas.obtener_tarifa_habitacion` | Precio del piso 2 | `12000.0` |
-| 03 | ✅ Válido | `reportes.calcular_subtotal` | 5 noches a \$10.000 | `50000.0` |
-| 04 | ✅ Válido | `reportes.calcular_subtotal` | 10 noches a \$10.000 (con descuento) | `90000.0` |
-| 05 | ❌ Inválido | Detección con `set` (lógica de `validar_dni`) | DNI que ya está registrado | `True` (duplicado) |
-| 06 | ❌ Inválido | `hotel.habitacion_existe` | Piso 5 en un hotel de 2×2 | `False` |
-| 07 | ❌ Inválido | `huespedes.buscar_huesped_por_habitacion` | Habitación 999 (no existe) | `[]` |
-| 08 | ⚠️ Límite | `reportes.calcular_subtotal` | Exactamente 7 noches (sin descuento) | `70000.0` |
-| 09 | ⚠️ Límite | `hotel.inicializar_hotel` | Hotel mínimo 1×1 | `[["L"]]` |
-| 10 | ⭐ Adicional | `huespedes.buscar_huespedes_por_nombre` | Buscar `"juan"` entre 3 huéspedes | Juan Perez y Juana Garcia |
+| 02 | ✅ Válido | `tarifas.obtener_tarifa_habitacion` | Precio del piso 2 configurado | `12000.0` |
+| 03 | ✅ Válido | `reportes.calcular_subtotal` | 5 noches a \$10.000 (estadía corta) | `50000.0` |
+| 04 | ✅ Válido | `reportes.calcular_subtotal` | 10 noches a \$10.000 (10% descuento con `lambda`) | `90000.0` |
+| 05 | ❌ Inválido | Detección con `set` (lógica de `validar_dni`) | DNI que ya está en el conjunto registrado | `True` (duplicado) |
+| 06 | ❌ Inválido | `hotel.habitacion_existe` | Consulta de piso 5 en hotel de 2×2 | `False` |
+| 07 | ❌ Inválido | `huespedes.buscar_huesped_por_habitacion` | Habitación 999 sin huéspedes alojados | `[]` |
+| 08 | ⚠️ Límite | `reportes.calcular_subtotal` | Exactamente 7 noches (frontera estricta sin descuento) | `70000.0` |
+| 09 | ⚠️ Límite | `hotel.inicializar_hotel` | Hotel en dimensión mínima permitida ($1 \times 1$) | `[["L"]]` |
+| 10 | ⭐ Adicional | `huespedes.buscar_huespedes_por_nombre` | Búsqueda parcial insensible a mayúsculas (`"juan"`) | `[Juan Perez, Juana Garcia]` |
 
 ```text
 $ python -m pytest tests.py -v
@@ -409,7 +428,7 @@ tests.py::test_10_busqueda_parcial_nombre_filter_lambda PASSED           [100%]
 ============================= 10 passed in 0.08s ==============================
 ```
 
-Con `python tests.py`, cada prueba muestra los **5 datos que pide la consigna**: función, datos, resultado esperado, resultado obtenido y veredicto.
+Con `python tests.py`, cada prueba imprime en consola los **5 puntos formales exigidos**: función, datos, resultado esperado, resultado obtenido y veredicto.
 
 ```text
 Prueba [04] - CASO VÁLIDO
@@ -424,24 +443,25 @@ Prueba [04] - CASO VÁLIDO
 
 ## 🎓 Conceptos de la cátedra y dónde encontrarlos
 
-Pensado para la **defensa oral**: cada concepto, dónde está y para qué sirve en el sistema.
+Guía completa para la **defensa oral presencial**:
 
-| Concepto | Dónde | Para qué se usa |
+| Concepto | Dónde | Para qué se usa en el sistema |
 | :--- | :--- | :--- |
-| **Matrices** (listas anidadas) | `hotel.inicializar_hotel` | Representar pisos × habitaciones con acceso directo `hotel[p][h]` |
-| **Diccionarios** | `huespedes.realizar_checkin`, `archivos.guardar_datos_hotel` | Registro de cada huésped y estructura del archivo JSON |
-| **Tuplas** | `"identidad": (dni, nombre)`, `return piso, habitacion` | Datos que no deben cambiar y retornos múltiples |
-| **Conjuntos** | `huespedes.validar_dni`, `reportes.reporte_habitaciones_libres` | Detectar DNI duplicados; calcular libres (`-`) y ocupadas (`&`) |
-| **`lambda`** | `reportes.calcular_subtotal` | Regla de descuento por estadía larga |
-| **`filter`** | `huespedes.buscar_huespedes_por_nombre` / `_por_habitacion` | Búsquedas sobre la lista de huéspedes |
-| **`map`** | `reportes.calcular_recaudacion_total`, `generar_reporte_ocupacion` | Transformar huéspedes en montos y filas en cantidades |
-| **`reduce`** | `reportes` (3 usos) | Acumular habitaciones, ocupadas y recaudación |
-| **Expresiones regulares** | `validaciones.py` | Validar DNI, nombres, números y días |
-| **Excepciones** | `archivos.py` | Errores de lectura y escritura de archivos |
-| **Archivos JSON** | `archivos.py` + `main.py` | Guardar y recuperar el estado entre ejecuciones |
-| **Archivos de texto** | 🚧 `facturacion.txt` | Bitácora de check-outs (en desarrollo) |
-| **Pruebas unitarias** | `tests.py` | Verificar 6 funciones con 10 casos |
-| **Modularización** | 7 módulos | Una responsabilidad por módulo, sin variables globales |
+| **Matrices** (listas anidadas) | `hotel.inicializar_hotel` | Representar la estructura física de pisos × habitaciones con acceso directo $O(1)$ |
+| **Diccionarios** | `huespedes.realizar_checkin`, `archivos.guardar_datos_hotel` | Registro semántico de cada huésped y estructura raíz del archivo JSON |
+| **Tuplas** | `"identidad": (dni, nombre)`, retornos de coordenadas | Datos inmutables de identificación legal y retornos múltiples empaquetados |
+| **Conjuntos** | `huespedes.validar_dni`, `reportes.reporte_habitaciones_libres` | Control de unicidad de DNI en $O(1)$; cálculo algebraico de libres (`-`) y ocupadas (`&`) |
+| **`lambda`** | `reportes.calcular_subtotal` | Regla concisa de descuento por estadía larga ($> 7$ noches) |
+| **`filter`** | `huespedes.buscar_huespedes_por_nombre` / `_por_habitacion` | Búsquedas funcionales sin bucles explícitos sobre la lista de huéspedes |
+| **`map`** | `reportes.calcular_recaudacion_total`, `generar_reporte_ocupacion` | Transformar huéspedes en montos y pisos en cantidades ocupadas |
+| **`reduce`** | `reportes` (3 usos) | Acumular total de habitaciones, cantidad ocupada y recaudación proyectada |
+| **Expresiones regulares** | `validaciones.py` | Validar formato estricto de DNI (`^\d{7,8}$`), nombres, números y días |
+| **Excepciones** | `archivos.py` (6 funciones) | Control estructurado con `try / except / else / finally` en JSON, TXT y CSV |
+| **Archivos JSON** | `archivos.py` + `main.py` | Guardar y recuperar el estado integral del hotel entre sesiones |
+| **Archivos de texto (.txt)** | `archivos.py` (`facturacion.txt`) | Bitácora de auditoría en modo append `"a"`, lectura secuencial y acumulador |
+| **Archivos CSV (.csv)** | `archivos.py` (`facturacion.csv`) | Exportación tabular con `csv.writer` para Microsoft Excel o Google Sheets |
+| **Pruebas unitarias** | `tests.py` | Suite automatizada de 10 pruebas sobre 6 funciones sin utilizar clases |
+| **Modularización** | 7 módulos | Separación rigurosa de responsabilidades; paso de parámetros sin variables globales |
 
 ---
 
@@ -449,29 +469,24 @@ Pensado para la **defensa oral**: cada concepto, dónde está y para qué sirve 
 
 | Restricción (Sección 12) | Cumplimiento |
 | :--- | :--- |
-| 12.1 · Sin clases | ✅ No hay `class`, objetos propios, herencia ni constructores. |
-| 12.2 · Sin bases de datos | ✅ La persistencia es solo con archivos (`.json`; `.txt` y `.csv` en desarrollo). |
-| 12.3 · Solo librerías vistas en clase | ✅ `re`, `json`, `functools` (y `csv` para la exportación). `pytest` autorizado por la cátedra para las pruebas. |
-| 12.4 · Código explicable | ✅ Sin decoradores, generadores ni construcciones avanzadas fuera del programa. |
+| 12.1 · Sin clases | ✅ No hay `class`, objetos propios, herencia, métodos de clase ni constructores. |
+| 12.2 · Sin bases de datos | ✅ La persistencia se realiza exclusivamente mediante archivos (`.json`, `.txt` y `.csv`). |
+| 12.3 · Solo librerías vistas en clase | ✅ `re`, `json`, `functools`, `csv` (estándar de Python). `pytest` autorizado por la cátedra para testing. |
+| 12.4 · Código explicable | ✅ Sin decoradores, generadores, list comprehensions anidadas ni trucos fuera del programa. |
 
 ---
 
 ## 🗺️ Hoja de ruta
 
-- [x] Modularización en 7 archivos
-- [x] Huésped como diccionario con tupla de identidad
-- [x] Conjuntos para unicidad de DNI y habitaciones libres
-- [x] Persistencia y recuperación en JSON
-- [x] Manejo de excepciones en archivos
-- [x] 10 pruebas unitarias compatibles con PyTest
-- [ ] Bitácora de check-outs en `facturacion.txt` (escritura en modo `"a"`, lectura y uso posterior)
-- [ ] Exportación de facturación a `facturacion.csv` con `csv.writer`
-
-**Mejoras identificadas para próximas versiones:**
-
-- Guardar también el estado `S` de las habitaciones: hoy la matriz se reconstruye solo a partir de los huéspedes, así que las habitaciones en limpieza vuelven como `L` al reiniciar.
-- Convertir `identidad` de nuevo a tupla al cargar el JSON (`tuple(h["identidad"])`) para mantener la inmutabilidad después de reiniciar.
-- Si el JSON está dañado, avisar antes de volver a configurar el hotel, para no sobrescribir el archivo original.
+- [x] Modularización desacoplada en 7 módulos especializados
+- [x] Huésped modelado como diccionario asociativo con tupla inmutable de identidad
+- [x] Conjuntos hash para unicidad de DNI en $O(1)$ y álgebra de habitaciones libres
+- [x] Persistencia y recuperación estructural en JSON (`hotel_data.json`)
+- [x] Bitácora de auditoría continua en texto plano con modo append `"a"` (`facturacion.txt`)
+- [x] Exportación formal a planillas de cálculo con `csv.writer` (`facturacion.csv`)
+- [x] Manejo estructurado de excepciones con `try / except / else / finally` en todos los archivos
+- [x] Suite de 10 pruebas unitarias con compatibilidad dual (Python nativo y PyTest)
+- [x] Control universal de cancelación mediante `-1` y validaciones con Regex
 
 ---
 
@@ -490,7 +505,7 @@ git add . && git commit -m "feat: descripción del cambio"
 git push origin feature/mi-rama                    # y abrir un Pull Request a develop
 ```
 
-`main` está protegida: solo recibe cambios mediante Pull Request.
+`main` está protegida: solo recibe cambios aprobados mediante Pull Request.
 
 ---
 

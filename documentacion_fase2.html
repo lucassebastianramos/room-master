@@ -313,8 +313,7 @@
       <tr><td><span class="pill p-new">NUEVA</span></td><td>Funcionalidad que no existía en la Parte 1.</td></tr>
       <tr><td><span class="pill p-imp">MEJORADA</span></td><td>Funcionalidad de la Parte 1 que se reescribió o amplió.</td></tr>
       <tr><td><span class="pill p-fix">CORREGIDA</span></td><td>Error o comportamiento indebido detectado en la Parte 1 y solucionado.</td></tr>
-      <tr><td><span class="pill p-ok">IMPLEMENTADO</span></td><td>Disponible en la rama <code>develop</code> y cubierto por la documentación.</td></tr>
-      <tr><td><span class="pill p-wip">EN INTEGRACIÓN</span></td><td>Diseño definido, implementación en curso por el equipo al momento de redactar.</td></tr>
+      <tr><td><span class="pill p-ok">IMPLEMENTADO</span></td><td>Disponible en el sistema y cubierto por la documentación.</td></tr>
     </tbody>
   </table>
 </section>
@@ -334,7 +333,7 @@
 
   <div class="grid4" style="margin:12px 0 14px">
     <div class="stat"><b>7</b><span>módulos</span></div>
-    <div class="stat"><b>41</b><span>funciones del sistema</span></div>
+    <div class="stat"><b>45</b><span>funciones del sistema</span></div>
     <div class="stat"><b>10/10</b><span>pruebas aprobadas</span></div>
     <div class="stat"><b>0</b><span>clases · bases de datos</span></div>
   </div>
@@ -353,7 +352,7 @@
       <tr><td>Diccionarios</td><td>Registro de huésped y estructura del archivo JSON.</td><td><code>realizar_checkin</code>, <code>guardar_datos_hotel</code></td><td class="c"><span class="pill p-ok">CUMPLE</span></td></tr>
       <tr><td>Excepciones</td><td><code>try / except / else / finally</code> en lectura y escritura de archivos.</td><td><code>archivos.py</code></td><td class="c"><span class="pill p-ok">CUMPLE</span></td></tr>
       <tr><td>Archivos JSON</td><td>Guardado después de cada operación y recuperación al iniciar.</td><td><code>archivos.py</code>, <code>main.py</code></td><td class="c"><span class="pill p-ok">CUMPLE</span></td></tr>
-      <tr><td>Archivos de texto</td><td>Bitácora de check-outs (escritura <code>"a"</code>, lectura y exportación CSV).</td><td><code>facturacion.txt</code></td><td class="c"><span class="pill p-wip">EN INTEGRACIÓN</span></td></tr>
+      <tr><td>Archivos de texto</td><td>Bitácora de check-outs (escritura <code>"a"</code>, lectura y exportación CSV).</td><td><code>facturacion.txt</code></td><td class="c"><span class="pill p-ok">CUMPLE</span></td></tr>
       <tr><td>Pruebas unitarias</td><td>10 pruebas sobre 6 funciones, con la distribución 4 / 3 / 2 / 1.</td><td><code>tests.py</code></td><td class="c"><span class="pill p-ok">CUMPLE</span></td></tr>
       <tr><td>Validaciones</td><td>Regex, rangos, estado del sistema y reintento ante error.</td><td><code>validaciones.py</code></td><td class="c"><span class="pill p-ok">CUMPLE</span></td></tr>
       <tr><td>Modularización</td><td>7 módulos; <code>main.py</code> solo coordina; sin variables globales.</td><td>Anexo A</td><td class="c"><span class="pill p-ok">CUMPLE</span></td></tr>
@@ -581,21 +580,20 @@ comunes  = todas &amp; ocupadas   <span class="c"># intersección</span></code><
   </div>
   <p class="small">Si el archivo no existe (primera ejecución), <code>cargar_datos_hotel</code> devuelve una estructura con <code>pisos = -1</code> y <code>main.py</code> inicia la configuración guiada, que termina guardando el primer JSON. Así se cumple el ciclo pedido en la Sección 8: generar → guardar → cerrar → volver a ejecutar → recuperar.</p>
 
-  <h2>4.4 Archivo de texto · <code>facturacion.txt</code> <span class="pill p-wip">EN INTEGRACIÓN</span></h2>
-  <div class="box warn">
-    <span class="t">Estado al momento de redactar</span>
-    El diseño está definido y los nombres de archivo ya figuran en <code>.gitignore</code>. La
-    implementación está a cargo del equipo y se integrará en <code>archivos.py</code> antes de la entrega.
-    Este apartado debe revisarse cuando quede integrada.
+  <h2>4.4 Archivo de texto · <code>facturacion.txt</code> <span class="pill p-ok">IMPLEMENTADO</span></h2>
+  <div class="box ok">
+    <span class="t">Implementación completa e integrada</span>
+    La bitácora transaccional se gestiona mediante el módulo <code>archivos.py</code> (funciones <code>inicializar_archivo_txt</code>, <code>registrar_factura_txt</code> y <code>leer_y_procesar_facturacion_txt</code>). Cada Check-out registra el cobro automáticamente y la opción 7 del menú permite realizar auditorías históricas acumulando la facturación total.
   </div>
   <table>
-    <thead><tr><th style="width:20%">Operación</th><th>Diseño</th></tr></thead>
+    <thead><tr><th style="width:20%">Operación</th><th>Implementación técnica</th></tr></thead>
     <tbody>
-      <tr><td><b>Escritura</b></td><td>En cada check-out se agrega una línea con <code>open("facturacion.txt", "a")</code>. El modo <i>append</i> escribe al final sin leer ni reescribir lo anterior: cada cobro queda registrado aunque el programa se cierre inesperadamente después.</td></tr>
-      <tr><td><b>Formato</b></td><td>Una línea por operación, campos separados por <code>;</code>:<br><code>2026-11-05 10:42;40123456;Juan Perez;201;10;108000.00</code></td></tr>
-      <tr><td><b>Lectura</b></td><td>Se recorre línea por línea con <code>for linea in archivo</code> y <code>linea.strip().split(";")</code>.</td></tr>
-      <tr><td><b>Uso posterior</b></td><td>(1) Mostrar el historial de facturación desde el menú. (2) Exportar a <code>facturacion.csv</code> con <code>csv.writer</code> para que la administración lo abra en Excel o Google Sheets y haga filtros, gráficos o balances.</td></tr>
-      <tr><td><b>Excepciones</b></td><td><code>FileNotFoundError</code> al leer si todavía no hubo check-outs (se informa "sin movimientos"); <code>PermissionError</code> / <code>OSError</code> al escribir.</td></tr>
+      <tr><td><b>Inicialización</b></td><td><code>inicializar_archivo_txt()</code> asegura la existencia física de <code>facturacion.txt</code> al arrancar el sistema con modo <code>"a"</code> y codificación UTF-8.</td></tr>
+      <tr><td><b>Escritura</b></td><td>En cada Check-out, <code>huespedes.py</code> invoca <code>registrar_factura_txt(dni, nombre, monto)</code> en modo agregado (<code>"a"</code>). Escribe de inmediato sin leer ni reescribir lo anterior, asentando el comprobante en disco.</td></tr>
+      <tr><td><b>Formato</b></td><td>Campos delimitados por <code>;</code>:<br><code>40123456;Juan Perez;108000.00</code></td></tr>
+      <tr><td><b>Lectura y auditoría</b></td><td>La opción 7 invoca <code>leer_y_procesar_facturacion_txt()</code>, recorriendo el archivo línea a línea con <code>split(";")</code>, mostrando cada comprobante y acumulando la recaudación histórica real.</td></tr>
+      <tr><td><b>Exportación CSV</b></td><td>La opción 8 invoca <code>exportar_facturacion_a_csv()</code>, que procesa el archivo de texto y escribe <code>facturacion.csv</code> mediante la librería estándar <code>csv</code> (<code>csv.writer</code>) con encabezados <code>["DNI", "Huesped", "Monto_Cobrado"]</code> para Microsoft Excel o Google Sheets.</td></tr>
+      <tr><td><b>Excepciones</b></td><td>Manejo completo con <code>try / except / else / finally</code> capturando <code>FileNotFoundError</code>, <code>PermissionError</code>, <code>(ValueError, IndexError)</code> y <code>OSError</code>.</td></tr>
     </tbody>
   </table>
   <p class="small"><b>Por qué texto y no JSON para el historial:</b> el JSON se reescribe completo en cada guardado; un historial que solo crece se maneja mejor agregando líneas, sin cargar todo en memoria. Además, una bitácora en texto se puede leer directamente con cualquier editor como respaldo de auditoría.</p>
@@ -759,7 +757,8 @@ test_10_busqueda_parcial_nombre_...   PASSED
       <tr><td><b>Unicidad de DNI</b></td><td>No se controlaba.</td><td>Conjunto en <code>validar_dni</code>.</td></tr>
       <tr><td><b>Habitaciones libres</b></td><td>Solo se veían en la grilla.</td><td>Reporte por diferencia de conjuntos.</td></tr>
       <tr><td><b>Búsquedas</b></td><td>Por DNI (menú) y filtro por piso.</td><td>Submenú: DNI, nombre parcial y habitación.</td></tr>
-      <tr><td><b>Persistencia</b></td><td>Ninguna: los datos se perdían al salir.</td><td>JSON con recuperación automática; bitácora de texto en integración.</td></tr>
+      <tr><td><b>Persistencia</b></td><td>Ninguna: los datos se perdían al salir.</td><td>Triple persistencia: JSON (estado), TXT (bitácora continua en modo append) y CSV (exportación tabular).</td></tr>
+      <tr><td><b>Opciones de menú</b></td><td>8 opciones básicas.</td><td>10 opciones estructuradas con auditoría histórica y exportación a planillas.</td></tr>
       <tr><td><b>Errores</b></td><td>Solo validaciones con regex.</td><td>Regex más <code>try / except / else / finally</code> en archivos.</td></tr>
       <tr><td><b>Cancelación</b></td><td>No existía.</td><td><code>-1</code> en todas las entradas.</td></tr>
       <tr><td><b>Hotel completo</b></td><td>El check-in quedaba pidiendo habitación sin fin.</td><td>Se detecta y se avisa.</td></tr>
@@ -882,7 +881,7 @@ test_10_busqueda_parcial_nombre_...   PASSED
       <g>
         <rect x="500" y="110" width="150" height="46" rx="7" fill="#fff" stroke="#13315c" stroke-width="1.6"/>
         <text x="575" y="131" text-anchor="middle" fill="#0b2545" font-size="12.5" font-weight="700">archivos.py</text>
-        <text x="575" y="147" text-anchor="middle" fill="#0f766e" font-size="9.5">usa json</text>
+        <text x="575" y="147" text-anchor="middle" fill="#0f766e" font-size="9.5">usa json, csv</text>
       </g>
       <g>
         <rect x="110" y="205" width="150" height="46" rx="7" fill="#fff" stroke="#13315c" stroke-width="1.6"/>
@@ -912,7 +911,7 @@ test_10_busqueda_parcial_nombre_...   PASSED
       <tr><td><code>tarifas.py</code></td><td class="c">7</td><td>Configurar, mostrar y consultar precios.</td><td><code>configurar_tarifas_hotel</code>, <code>obtener_tarifa_habitacion</code></td></tr>
       <tr><td><code>reportes.py</code></td><td class="c">4</td><td>Cálculos e indicadores con programación funcional y conjuntos.</td><td><code>calcular_subtotal</code>, <code>calcular_recaudacion_total</code></td></tr>
       <tr><td><code>validaciones.py</code></td><td class="c">3</td><td>Patrones, mensajes de error y pedido de datos con reintento.</td><td><code>validar_generico</code>, <code>solicitar_dimension_valida</code></td></tr>
-      <tr><td><code>archivos.py</code></td><td class="c">2</td><td>Lectura y escritura del JSON con excepciones.</td><td><code>cargar_datos_hotel</code>, <code>guardar_datos_hotel</code></td></tr>
+      <tr><td><code>archivos.py</code></td><td class="c">6</td><td>Persistencia JSON, auditoría TXT y exportación CSV con excepciones.</td><td><code>cargar_datos_hotel</code>, <code>guardar_datos_hotel</code>, <code>registrar_factura_txt</code>, <code>leer_y_procesar_facturacion_txt</code>, <code>exportar_facturacion_a_csv</code></td></tr>
       <tr><td><code>tests.py</code></td><td class="c">12</td><td>10 pruebas, formateador de salida y ejecutor.</td><td><code>test_01</code> … <code>test_10</code>, <code>ejecutar_suite</code></td></tr>
     </tbody>
   </table>
@@ -953,10 +952,10 @@ test_10_busqueda_parcial_nombre_...   PASSED
       <text x="219" y="128" text-anchor="middle" font-size="10" fill="#1f2937">Swap (origen)</text>
 
       <line x1="400" y1="99" x2="518" y2="99" stroke="#13315c" stroke-width="1.6" marker-end="url(#sa)"/>
-      <text x="459" y="91" text-anchor="middle" font-size="10" fill="#1f2937">Check-out</text>
+      <text x="459" y="91" text-anchor="middle" font-size="9" fill="#1f2937">Check-out (bitácora TXT)</text>
 
       <path d="M580,128 Q340,232 100,130" fill="none" stroke="#13315c" stroke-width="1.6" marker-end="url(#sa)"/>
-      <text x="340" y="196" text-anchor="middle" font-size="10" fill="#1f2937">Restablecer habitación (opción 8)</text>
+      <text x="340" y="196" text-anchor="middle" font-size="10" fill="#1f2937">Restablecer habitación (opción 10)</text>
 
       <!-- start -->
       <circle cx="100" cy="24" r="6" fill="#0b2545"/>
@@ -1033,7 +1032,10 @@ python -m pytest tests.py -v</code></pre>
     <li>Opción 2: registrar dos huéspedes. Intentar repetir un DNI para ver la validación con conjuntos.</li>
     <li>Opción 6: ver ocupación, habitaciones libres y recaudación proyectada.</li>
     <li>Opción 0: salir. Volver a ejecutar <code>python main.py</code> y verificar con la opción 1 que el hotel se recuperó.</li>
-    <li>Opción 3: hacer check-out; la habitación queda en <code>S</code>. Opción 8: restablecerla a <code>L</code>.</li>
+    <li>Opción 3: hacer check-out (se calcula el total y se asienta en <code>facturacion.txt</code>); la habitación queda en <code>S</code>.</li>
+    <li>Opción 7: auditar el historial de facturación acumulado desde el archivo TXT.</li>
+    <li>Opción 8: exportar el historial a <code>facturacion.csv</code> para abrirlo en Excel.</li>
+    <li>Opción 10: restablecer la habitación en limpieza a <code>L</code>.</li>
   </ol>
 
   <div style="margin-top:28px; padding-top:10px; border-top:1px solid var(--line); text-align:center" class="small muted">
