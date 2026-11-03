@@ -14,6 +14,11 @@ def inicializar_hotel(pisos, habitaciones):
     """
     Crea y retorna la matriz del hotel.
     Estados: 'L' (Libre), 'O' (Ocupada), 'S' (Sucia/Limpieza).
+
+    >>> inicializar_hotel(2, 3)
+    [['L', 'L', 'L'], ['L', 'L', 'L']]
+    >>> inicializar_hotel(1, 1)
+    [['L']]
     """
     matriz = []
     for f in range(pisos):
@@ -27,6 +32,11 @@ def inicializar_hotel(pisos, habitaciones):
 def obtener_numero_comercial(piso, habitacion):
     """
     Convierte índices de matriz (0, 0) a número comercial visible (101).
+
+    >>> obtener_numero_comercial(0, 0)
+    101
+    >>> obtener_numero_comercial(2, 4)
+    305
     """
     n_habitacion = (piso + 1) * 100 + (habitacion + 1)
     return n_habitacion
@@ -35,6 +45,11 @@ def obtener_numero_comercial(piso, habitacion):
 def obtener_indices_matriz(numero_comercial):
     """
     Convierte el número comercial visible (101) a índices de matriz (0, 0).
+
+    >>> obtener_indices_matriz(101)
+    (0, 0)
+    >>> obtener_indices_matriz(305)
+    (2, 4)
     """
     piso = (numero_comercial // 100) - 1
     habitacion = (numero_comercial % 100) - 1
@@ -60,6 +75,7 @@ def renderizar_hotel(matriz):
                 print()
 
         print("\n")
+
 
 def reiniciar_matriz():
     """Inicialización de la matriz del hotel al arrancar el programa."""
@@ -93,6 +109,11 @@ def redimensionar_hotel():
 def hay_habitaciones_libres(matriz):
     """
     Devuelve True si hay al menos una habitación en estado Libre ('L').
+
+    >>> hay_habitaciones_libres([['L', 'O'], ['O', 'O']])
+    True
+    >>> hay_habitaciones_libres([['O', 'O'], ['S', 'O']])
+    False
     """
     for fila in matriz:
         for estado in fila:
@@ -104,6 +125,14 @@ def hay_habitaciones_libres(matriz):
 def habitacion_existe(matriz, piso, habitacion):
     """
     Devuelve True si el piso y la habitación existen dentro de la matriz.
+
+    >>> matriz = [['L', 'L'], ['L', 'L']]
+    >>> habitacion_existe(matriz, 0, 1)
+    True
+    >>> habitacion_existe(matriz, 2, 0)
+    False
+    >>> habitacion_existe(matriz, -1, 0)
+    False
     """
     if piso < 0 or piso >= len(matriz):
         return False
@@ -139,3 +168,8 @@ def solicitar_habitacion_libre(matriz):
             hab_final = hab
 
     return piso_final, hab_final
+
+
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod(verbose=True)
