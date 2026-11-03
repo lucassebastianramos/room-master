@@ -16,9 +16,29 @@ from validaciones import (
 from hotel import (
     obtener_numero_comercial,
     obtener_indices_matriz,
-    solicitar_habitacion_libre
+    solicitar_habitacion_libre,
+    hay_habitaciones_libres,
+    habitacion_existe
 )
 from tarifas import obtener_tarifa_habitacion
+
+def hotel_vacio(lista_huespedes):
+    """
+    Devuelve True si no hay huéspedes alojados.
+    """
+    if len(lista_huespedes) == 0:
+        return True
+    return False
+
+
+def obtener_huesped_por_habitacion(lista_huespedes, numero_habitacion):
+    """
+    Devuelve el huésped alojado en esa habitación, o -1 si no hay ninguno.
+    """
+    for huesped in lista_huespedes:
+        if huesped["ubicacion"][2] == numero_habitacion:
+            return huesped
+    return -1
 
 
 def validar_dni(dni_nuevo, lista_huespedes):
@@ -33,10 +53,14 @@ def validar_dni(dni_nuevo, lista_huespedes):
 
     while dni_nuevo in dnis_registrados:
         print(f"Error, el DNI {dni_nuevo} ya está registrado.")
-        dni_nuevo = validar_generico("Ingrese el DNI del huésped: ", PATRON_DNI_VALIDO, ERROR_DNI)
+        dni_nuevo = validar_generico("Ingrese el DNI del huésped (-1 para cancelar): ", PATRON_DNI_VALIDO, ERROR_DNI)
+        if dni_nuevo == "-1":
+            return "-1"
+
         dnis_registrados = set()
         for huesped in lista_huespedes:
             dnis_registrados.add(huesped["identidad"][0])
+
     return dni_nuevo
 
 
@@ -46,14 +70,26 @@ def realizar_checkin(matriz, lista_huespedes):
     y almacenando el DNI como una TUPLA INMUTABLE según lineamientos de la cátedra.
     """
     piso, habitacion = solicitar_habitacion_libre(matriz)
-    if piso is None:
+    if piso == -1:
         return matriz
 
-    nombre = validar_generico("Ingrese el nombre del huésped: ", PATRON_TEXTO_VALIDO, ERROR_TEXTO)
-    dni = validar_generico("Ingrese el DNI del huésped: ", PATRON_DNI_VALIDO, ERROR_DNI)
-    dni = validar_dni(dni, lista_huespedes)
-    dias = int(validar_generico("Cantidad de días de estadía: ", PATRON_DIAS_VALIDO, ERROR_DIAS))
+    nombre = validar_generico("Ingrese el nombre del huésped (-1 para cancelar): ", PATRON_TEXTO_VALIDO, ERROR_TEXTO)
+    if nombre == "-1":
+        return matriz
 
+    dni = validar_generico("Ingrese el DNI del huésped (-1 para cancelar): ", PATRON_DNI_VALIDO, ERROR_DNI)
+    if dni == "-1":
+        return matriz
+
+    dni = validar_dni(dni, lista_huespedes)
+    if dni == "-1":
+        return matriz
+
+    dias = validar_generico("Cantidad de días de estadía (-1 para cancelar): ", PATRON_DIAS_VALIDO, ERROR_DIAS)
+    if dias == "-1":
+        return matriz
+
+    dias = int(dias)
     num_comercial = obtener_numero_comercial(piso, habitacion)
 
     # identidad: tupla inmutable (DNI, Nombre) -> no cambia nunca
@@ -76,8 +112,8 @@ def buscar_huesped_por_dni(lista_huespedes, dni_busqueda):
     """
     Realiza una búsqueda secuencial en la lista de diccionarios consultando la tupla de DNI.
     """
-    if len(lista_huespedes) == 0:
-        print("\n[Aviso] No hay huéspedes alojados en el hotel.")
+    if hotel_vacio(lista_huespedes):
+        print("No hay huéspedes alojados actualmente en el hotel.")
         return
 
     encontrado = False
@@ -132,7 +168,20 @@ def realizar_checkout(matriz_hotel, lista_huespedes, matriz_tarifas):
     Libera la habitación, pasa a estado 'S' y genera la liquidación.
     """
     print("\n--- CHECK-OUT ---")
-    dni_checkout = validar_generico("Ingrese el DNI del huésped para check-out: ", PATRON_DNI_VALIDO, ERROR_DNI)
+
+    if hotel_vacio(lista_huespedes):
+        print("No hay huéspedes alojados actualmente en el hotel.")
+        return
+
+    dni_checkout = validar_generico(
+        "Ingrese el DNI del huésped para check-out (-1 para cancelar): ",
+        PATRON_DNI_VALIDO,
+        ERROR_DNI
+    )
+
+    if dni_checkout == "-1":
+        print("Check-out cancelado.")
+        return
 
     for huesped in lista_huespedes:
         dni_actual = huesped["identidad"][0]
@@ -161,75 +210,139 @@ def realizar_checkout(matriz_hotel, lista_huespedes, matriz_tarifas):
     print(f"No se encontró al huésped con DNI: {dni_checkout}")
 
 
+def puede_reubicar(matriz_hotel, lista_huespedes):
+    """
+    Devuelve True si hay huéspedes y habitaciones libres para reubicar.
+    """
+    if hotel_vacio(lista_huespedes):
+        print("No hay huéspedes alojados actualmente en el hotel.")
+        return False
+
+    if hay_habitaciones_libres(matriz_hotel) == False:
+        print("El hotel está completo. No hay habitaciones libres para reubicar.")
+        return False
+
+    return True
+
+
+def pedir_huesped_a_reubicar(lista_huespedes):
+    """
+    Pide una habitación y devuelve el huésped que la ocupa.
+    Devuelve -1 si se cancela o si no hay huésped en esa habitación.
+    """
+    entrada = validar_generico(
+        "Ingrese el número de habitación a reubicar (-1 para cancelar): ",
+        PATRON_NUMERO_VALIDO,
+        ERROR_NUMERO
+    )
+
+    if entrada == "-1":
+        print("Reubicación cancelada.")
+        return -1
+
+    numero = int(entrada)
+    huesped = obtener_huesped_por_habitacion(lista_huespedes, numero)
+
+    if huesped == -1:
+        print(f"No se encontró ningún huésped alojado en la habitación {numero}.")
+
+    return huesped
+
+
+def pedir_habitacion_destino(matriz_hotel):
+    """
+    Pide una habitación destino hasta que exista y esté libre.
+    Devuelve (piso, habitacion, numero) o (-1, -1, -1) si se cancela.
+    """
+    destino_elegido = False
+    nuevo_piso = 0
+    nueva_habitacion = 0
+    nuevo_numero = 0
+
+    while destino_elegido == False:
+        entrada = validar_generico(
+            "Ingrese el nuevo número de habitación (-1 para cancelar): ",
+            PATRON_NUMERO_VALIDO,
+            ERROR_NUMERO
+        )
+
+        if entrada == "-1":
+            print("Reubicación cancelada.")
+            return -1, -1, -1
+
+        nuevo_numero = int(entrada)
+        nuevo_piso, nueva_habitacion = obtener_indices_matriz(nuevo_numero)
+
+        if habitacion_existe(matriz_hotel, nuevo_piso, nueva_habitacion) == False:
+            print(f"Error: La habitación {nuevo_numero} no existe en el hotel.")
+        elif matriz_hotel[nuevo_piso][nueva_habitacion] != "L":
+            print(f"Error: La habitación {nuevo_numero} no está libre.")
+        else:
+            destino_elegido = True
+
+    return nuevo_piso, nueva_habitacion, nuevo_numero
+
+
+def mover_huesped(matriz_hotel, huesped, destino):
+    """
+    Actualiza la matriz y la ubicación del huésped.
+    """
+    nuevo_piso, nueva_habitacion, nuevo_numero = destino
+    piso_actual = huesped["ubicacion"][0]
+    habitacion_actual = huesped["ubicacion"][1]
+
+    matriz_hotel[piso_actual][habitacion_actual] = "L"
+    matriz_hotel[nuevo_piso][nueva_habitacion] = "O"
+
+    huesped["ubicacion"][0] = nuevo_piso
+    huesped["ubicacion"][1] = nueva_habitacion
+    huesped["ubicacion"][2] = nuevo_numero
+
+
 def reubicar_huesped_swap(matriz_hotel, lista_huespedes):
     """
-    Traslada un huésped a una habitación libre actualizando su diccionario.
+    Coordina la reubicación de un huésped a otra habitación libre.
     """
     print("\n--- REUBICACIÓN DE HUÉSPED (SWAP) ---")
-    if len(lista_huespedes) == 0:
-        print("No hay huéspedes alojados actualmente en el hotel.")
+
+    if puede_reubicar(matriz_hotel, lista_huespedes) == False:
         return
 
-    habitacion_swap = int(validar_generico("Ingrese el número de habitación a reubicar: ", PATRON_NUMERO_VALIDO, ERROR_NUMERO))
+    huesped = pedir_huesped_a_reubicar(lista_huespedes)
+    if huesped == -1:
+        return
 
-    for huesped in lista_huespedes:
-        if huesped["ubicacion"][2] == habitacion_swap:
-            piso = huesped["ubicacion"][0]
-            habitacion = huesped["ubicacion"][1]
+    destino = pedir_habitacion_destino(matriz_hotel)
+    if destino == (-1, -1, -1):
+        return
 
-            # Verificar si hay alguna habitación libre antes de pedir
-            hay_libre = False
-            for fila in matriz_hotel:
-                for habitacion_libre in fila:
-                    if habitacion_libre == "L":
-                        hay_libre = True
-
-            if not hay_libre:
-                print("Error: No hay habitaciones libres en el hotel. No se puede reubicar.")
-                return
-
-            habitacion_valida = False
-            nuevo_piso = 0
-            nueva_habitacion = 0
-            nuevo_num_comercial = 0
-
-            while not habitacion_valida:
-                nuevo_num_comercial = int(validar_generico("Ingrese el nuevo número de habitación: ", PATRON_NUMERO_VALIDO, ERROR_NUMERO))
-                nuevo_piso, nueva_habitacion = obtener_indices_matriz(nuevo_num_comercial)
-
-                if nuevo_piso < 0 or nuevo_piso >= len(matriz_hotel) or nueva_habitacion < 0 or nueva_habitacion >= len(matriz_hotel[0]):
-                    print(f"Error: La habitación {nuevo_num_comercial} no existe en el hotel.")
-                elif matriz_hotel[nuevo_piso][nueva_habitacion] != "L":
-                    print(f"Error: La habitación {nuevo_num_comercial} no está libre (estado actual: [{matriz_hotel[nuevo_piso][nueva_habitacion]}]).")
-                else:
-                    habitacion_valida = True
-
-            # Actualizar matriz y diccionario
-            matriz_hotel[piso][habitacion] = "L"
-            matriz_hotel[nuevo_piso][nueva_habitacion] = "O"
-
-            # Mutacion de la lista ubicacion (demostrando que es mutable)
-            huesped["ubicacion"][0] = nuevo_piso
-            huesped["ubicacion"][1] = nueva_habitacion
-            huesped["ubicacion"][2] = nuevo_num_comercial
-
-            print(f"Huésped {huesped['identidad'][1]} reubicado a habitación {nuevo_num_comercial} con éxito.")
-            return
-
-    print(f"No se encontró ningún huésped alojado en la habitación {habitacion_swap}.")
+    mover_huesped(matriz_hotel, huesped, destino)
+    print(f"Huésped {huesped['identidad'][1]} reubicado a habitación {destino[2]} con éxito.")
 
 
 def restablecer_limpieza(matriz_hotel):
     """
     Restaura una habitación con estado Sucio [S] a estado Libre [L].
     """
-    num_hab = int(validar_generico("Ingrese el número de habitación en limpieza: ", PATRON_NUMERO_VALIDO, ERROR_NUMERO))
-    piso, habitacion = obtener_indices_matriz(num_hab)
-    if 0 <= piso < len(matriz_hotel) and 0 <= habitacion < len(matriz_hotel[0]):
-        if matriz_hotel[piso][habitacion] == "S":
-            matriz_hotel[piso][habitacion] = "L"
-            print("Habitación restablecida con éxito!")
-        else:
-            print("Error: La habitación no está en limpieza.")
-    else:
+    entrada = validar_generico(
+        "Ingrese el número de habitación en limpieza (-1 para cancelar): ",
+        PATRON_NUMERO_VALIDO,
+        ERROR_NUMERO
+    )
+
+    if entrada == "-1":
+        print("Operación cancelada.")
+        return
+
+    piso, habitacion = obtener_indices_matriz(int(entrada))
+
+    if habitacion_existe(matriz_hotel, piso, habitacion) == False:
         print("Error: La habitación ingresada no existe en el hotel.")
+        return
+
+    if matriz_hotel[piso][habitacion] != "S":
+        print("Error: La habitación no está en limpieza.")
+        return
+
+    matriz_hotel[piso][habitacion] = "L"
+    print("Habitación restablecida con éxito!")

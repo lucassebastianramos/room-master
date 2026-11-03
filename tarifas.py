@@ -12,18 +12,19 @@ from validaciones import (
 
 
 def solicitar_precio_base():
-    """
-    Solicita y valida el precio base por noche del hotel.
-    """
     precio_base_valido = False
     precio_base = 0.0
 
     while not precio_base_valido:
-        precio_base = float(validar_generico(
-            "Ingrese el precio base por noche del hotel ($): ",
-            PATRON_NUMERO_VALIDO,
-            ERROR_NUMERO
-        ))
+        # Obligamos a que ingrese un dato válido sin poder cancelar
+        dato = validar_generico(
+            "Ingrese el precio base por noche del hotel ($): ", 
+            PATRON_NUMERO_VALIDO, 
+            ERROR_NUMERO, 
+            permitir_cancelar=False
+        )
+        
+        precio_base = float(dato)
         if precio_base > 0:
             precio_base_valido = True
         else:
@@ -31,33 +32,27 @@ def solicitar_precio_base():
 
     return precio_base
 
-
 def solicitar_configuracion_lujo(total_pisos):
-    """
-    Solicita al usuario el tipo de segmentación que desea tener en los pisos lujosos.
-    Retorna una tupla: (piso_lujo_desde, recargo_porcentaje)
-    """
     piso_lujo_desde = total_pisos + 1
     recargo_porcentaje = 0.0
 
     if total_pisos > 1:
         quiere_lujo = solicitar_confirmacion(
-            "¿Desea segmentar pisos como lujosos/suites con tarifa diferenciada? (s/n): "
+            "¿Desea segmentar pisos como lujosos/suites con tarifa diferenciada? (s/n): ",
+            permitir_cancelar=False  # <-- Bloqueas la cancelación en la inicialización
         )
         if quiere_lujo:
             piso_lujo_desde = solicitar_dimension_valida(
                 f"¿A partir de qué piso se consideran de lujo? (2 a {total_pisos}): ",
-                2,
-                total_pisos
+                2, total_pisos, permitir_cancelar=False
             )
-            recargo_porcentaje = float(validar_generico(
-                "¿Qué porcentaje más caras serán las habitaciones de lujo? (ej: 30 o 50): ",
-                PATRON_NUMERO_VALIDO,
-                ERROR_NUMERO
-            ))
+            recargo = validar_generico(
+                "¿Qué porcentaje más caras serán? (ej: 30 o 50): ",
+                PATRON_NUMERO_VALIDO, ERROR_NUMERO, permitir_cancelar=False
+            )
+            recargo_porcentaje = float(recargo)
 
     return piso_lujo_desde, recargo_porcentaje
-
 
 def capturar_parametros_tarifas(total_pisos):
     """
