@@ -36,19 +36,17 @@ Para la Fase 2, el sistema ha sido reorganizado respetando la lógica acordada p
 
 4. **`huespedes.py`**:
    - **Check-in (`realizar_checkin`):** Registro de nuevo huésped y ocupación de habitación (`[O]`).
-   - **Estructura del registro:** Diccionario con tupla inmutable para identidad `{"identidad": (dni, nombre), "dias": n, "ubicacion": [p, h, num]}`.
-   - **Validación DNI y unicidad (`validar_dni`, `dni_ya_registrado`):** Búsqueda y validación $O(1)$ con conjuntos (`set`).
+   - **Estructura del registro:** Sublista `[nombre, dni, dias, piso, habitacion, num_comercial]`.
    - **Búsqueda (`buscar_huesped_por_dni`):** Búsqueda secuencial exhaustiva por DNI.
-   - **Búsqueda funcional (`buscar_huespedes_por_nombre`):** Uso de `filter` y `lambda` para aislar huéspedes por coincidencia parcial de nombre.
+   - **Filtro funcional (`filtrar_huespedes_por_piso`):** Uso de `filter` y `lambda` para aislar huéspedes alojados en un piso determinado.
    - **Check-out (`realizar_checkout`):** Liberación de habitación, pase a estado Sucio (`[S]`) para limpieza y cálculo de liquidación.
-   - **Reubicación / Swap (`reubicar_huesped_swap`):** Traslado de un huésped a una habitación libre y actualización de coordenadas.
+   - **Reubicación / Swap (`reubicar_huesped_swap`):** Traslado de un huésped a una habitación libre o intercambio de habitaciones entre huéspedes.
    - **Restablecer limpieza (`restablecer_limpieza`):** Transición de habitación de estado Sucio (`[S]`) a Libre (`[L]`).
 
 5. **`reportes.py`**:
    - **Reporte de ocupación (`generar_reporte_ocupacion`):** Conteo de habitaciones ocupadas y porcentaje global de ocupación utilizando `functools.reduce`.
    - **Cálculo de subtotal (`calcular_subtotal`):** Cálculo del costo de estadía con bonificación del 10% mediante función `lambda` para estadías superiores a 7 noches.
    - **Recaudación total (`calcular_recaudacion_total`):** Programación funcional pura mediante `map` y `functools.reduce` para proyectar los ingresos totales.
-   - **Disponibilidad (`reporte_habitaciones_libres`):** Cálculo de habitaciones disponibles mediante operaciones de conjuntos (`set`).
 
 6. **`main.py`**:
    - Punto de entrada principal con menú interactivo por consola (Opciones 1 a 8 y 0 para salir).
@@ -68,40 +66,30 @@ room-master/
 ├── reportes.py           # Programación funcional (map, filter, reduce, lambda)
 ├── validaciones.py       # Expresiones regulares y validación de entradas
 │
-├── tests.py              # Suite de pruebas unitarias con doctest (sin clases)
+├── test_hotel.py         # Suite de 10 pruebas unitarias automatizadas
 └── README.md             # Documentación del proyecto
 ```
 
 ---
 
-## 🧪 Pruebas Unitarias Automatizadas (doctest - Sin Clases)
+## 🧪 Pruebas Unitarias Automatizadas
 
-El archivo [tests.py](tests.py) y los módulos del proyecto implementan pruebas unitarias usando **`doctest`**, la biblioteca integrada en el estándar de Python, cumpliendo la restricción estricta de **no utilizar clases**:
+El archivo [test_hotel.py](test_hotel.py) implementa una suite de 10 pruebas con el módulo estándar `unittest` de Python, asegurando el correcto funcionamiento de cada componente:
 
-1. **`prueba_01_inicializacion_matriz_hotel`**: Inicialización con dimensiones y estado `[L]`.
-2. **`prueba_02_conversion_coordenadas_comerciales`**: Biyección matemática entre índices de matriz y números comerciales.
-3. **`prueba_03_obtener_tarifa_habitacion`**: Obtención correcta de precios por noche según el piso.
-4. **`prueba_04_calcular_subtotal_sin_descuento`**: Liquidación a tarifa plena (estadías $\le 7$ noches).
-5. **`prueba_05_calcular_subtotal_con_descuento_larga_estadia`**: Bonificación del 10% con lambda ($> 7$ noches).
-6. **`prueba_06_calcular_subtotal_casos_limites`**: Límite de 7 noches (sin descuento) y estadía de 0 noches.
-7. **`prueba_07_validar_dni_con_conjunto_set`**: Validación de DNI único y detección de repetidos mediante conjuntos (`set`).
-8. **`prueba_08_recaudacion_total_programacion_funcional`**: Cálculo acumulativo con `map` y `functools.reduce`.
-9. **`prueba_09_buscar_huespedes_por_nombre_filter_lambda`**: Búsqueda funcional con `filter` y `lambda`.
-10. **`prueba_10_mover_huesped_swap`**: Reubicación de huésped (Swap) y actualización de estados en la matriz.
+1. **`test_01_inicializacion_matriz_hotel`**: Inicialización con dimensiones y estado `[L]`.
+2. **`test_02_conversion_coordenadas_comerciales`**: Biyección matemática entre índices de matriz y números comerciales.
+3. **`test_03_validaciones_expresiones_regulares`**: Regex de DNI, texto, números enteros y días.
+4. **`test_04_obtener_tarifa_habitacion`**: Obtención correcta de precios por noche por piso.
+5. **`test_05_registro_huesped_formato`**: Estructura de sublista `[nombre, dni, dias, piso, hab, num]`.
+6. **`test_06_calculo_subtotal_estadia_corta`**: Liquidación a tarifa plena (estadias $\le 7$ noches).
+7. **`test_07_calculo_subtotal_con_descuento_larga_estadia`**: Bonificación del 10% con lambda ($> 7$ noches).
+8. **`test_08_recaudacion_total_programacion_funcional`**: Cálculo acumulativo con `map` y `functools.reduce`.
+9. **`test_09_filtrar_huespedes_por_piso`**: Filtrado funcional de huéspedes por piso con `filter` y `lambda`.
+10. **`test_10_restablecer_limpieza_habitacion`**: Transición de estado `[S]` a `[L]`.
 
-### Para ejecutar las pruebas:
-
+Para ejecutar las pruebas:
 ```bash
-python tests.py
-```
-
-O para verificar cualquier módulo individual:
-
-```bash
-python hotel.py
-python tarifas.py
-python reportes.py
-python huespedes.py
+python -m unittest test_hotel.py -v
 ```
 
 ---
