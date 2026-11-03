@@ -5,34 +5,42 @@
 import json
 
 def cargar_datos_hotel(nombre_archivo="hotel_data.json"):
-    """
-    Carga el estado del hotel (dimensiones, huéspedes y tarifas) desde el archivo JSON.
-    Si el archivo no existe, retorna una estructura por defecto con centinelas (-1).
-    """
+    datos = None
     try:
         with open(nombre_archivo, "r", encoding="UTF-8") as archivo:
-            datos = json.load(archivo)  # Convierte el archivo JSON a diccionario Python.
+            datos = json.load(archivo)
+
     except FileNotFoundError:
-        # Si es la primera vez que se ejecuta y no existe el archivo
+        print("ERROR. El archivo no existe.")
         datos = {
             "pisos": -1,
             "habitaciones": -1,
             "huespedes": [],
             "tarifas": []
         }
-    except (OSError, json.JSONDecodeError) as error:
-        # Captura de errores vista en clase
-        print("ERROR. No fue posible leer los datos del hotel:", error)
-        datos = None
+
+    except PermissionError:
+        print("ERROR. No tiene permisos para acceder al archivo.")
+
+    except (ValueError, IndexError):
+        print("ERROR. El archivo contiene registros incorrectos.")
+
+    except OSError as error:
+        print("ERROR al trabajar con el archivo:", error)
+
+    else:
+        print("\nLectura finalizada correctamente.")
 
     return datos
 
 
 def guardar_datos_hotel(nombre_archivo, pisos, habitaciones, lista_huespedes, matriz_tarifas):
     """
-    Guarda la configuración del hotel, lista de huéspedes y matriz de tarifas en un archivo JSON.
-    Usa ensure_ascii=False e indent=4 según los estándares vistos en clase.
+    Guarda la configuración del hotel en el archivo JSON con manejo de excepciones.
     """
+    archivo = None
+    guardado = False
+
     datos = {
         "pisos": pisos,
         "habitaciones": habitaciones,
@@ -40,12 +48,25 @@ def guardar_datos_hotel(nombre_archivo, pisos, habitaciones, lista_huespedes, ma
         "tarifas": matriz_tarifas
     }
 
-    guardado = False
     try:
-        with open(nombre_archivo, "w", encoding="UTF-8") as archivo:
-            json.dump(datos, archivo, ensure_ascii=False, indent=4)  # Serializa a JSON
+        archivo = open(nombre_archivo, "w", encoding="UTF-8")
+        json.dump(datos, archivo, ensure_ascii=False, indent=4)
         guardado = True
+
+    except PermissionError:
+        print("ERROR. No tiene permisos para acceder al archivo.")
+
+    except (ValueError, TypeError):
+        print("ERROR. El archivo contiene registros incorrectos.")
+
     except OSError as error:
-        print("ERROR. No fue posible guardar los datos del hotel:", error)
+        print("ERROR al trabajar con el archivo:", error)
+
+    else:
+        print("\nEscritura finalizada correctamente.")
+
+    finally:
+        if archivo != None:
+            archivo.close()
 
     return guardado
