@@ -85,7 +85,9 @@ def calcular_subtotal(huesped, matriz_tarifas):
 
     # Expresión lambda para descuento por estadía larga
     aplicar_descuento = lambda dias_estadia, subtotal_actual: subtotal_actual * 0.9 if dias_estadia > 7 else subtotal_actual
+    
     subtotal = aplicar_descuento(dias, subtotal)
+    
 
     return subtotal
 
@@ -107,7 +109,6 @@ def calcular_recaudacion_total(lista_huespedes, matriz_tarifas):
     """
     # map transforma la lista de diccionarios en una lista de montos (subtotales)
     subtotales = list(map(lambda huesped_actual: calcular_subtotal(huesped_actual, matriz_tarifas), lista_huespedes))
-
     # reduce acumula la suma de todos los subtotales
     recaudacion_total = functools.reduce(lambda acumulado, subtotal: acumulado + subtotal, subtotales, 0.0)
 
