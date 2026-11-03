@@ -45,7 +45,7 @@ def generar_reporte_ocupacion(matriz_hotel):
 
     print("\n=== REPORTE DE OCUPACIÓN ===")
     print("Total de habitaciones: ", total_habitaciones)
-    print("Habitaciones ocupadas: ", habitaciones_ocupadas)
+    print("Cant. habitaciones ocupadas: ", habitaciones_ocupadas)
     print("Porcentaje de ocupación:", porcentaje_ocupacion, "%")
 
 
@@ -106,15 +106,16 @@ def reporte_habitaciones_libres(matriz_hotel, lista_huespedes):
 
     # Diferencia: libres = todas - ocupadas
     libres = todas - ocupadas
-
     # Interseccion: ocupadas que existen en el hotel
     comunes = todas & ocupadas
+    if len(comunes) == 0:
+        print("Habitaciones ocupadas: ninguna")
+    else:
+        print("Habitaciones ocupadas:", sorted(list(comunes)))
 
-    print("\n=== REPORTE DE HABITACIONES LIBRES ===")
-    print("Total de habitaciones:", len(todas))
-    print("Habitaciones ocupadas:", comunes)
     if len(libres) == 0:
         print("Habitaciones libres: ninguna (hotel completo)")
     else:
-        print("Habitaciones libres:", libres)
+        print("Habitaciones libres:", sorted(list(libres)))
+
     return libres

@@ -21,6 +21,8 @@ from hotel import (
     habitacion_existe
 )
 from tarifas import obtener_tarifa_habitacion
+from reportes import calcular_subtotal
+from archivos import registrar_factura_txt
 
 def hotel_vacio(lista_huespedes):
     """
@@ -166,12 +168,13 @@ def buscar_huesped_por_habitacion(lista_huespedes, numero_habitacion):
 def realizar_checkout(matriz_hotel, lista_huespedes, matriz_tarifas):
     """
     Libera la habitación, pasa a estado 'S' y genera la liquidación.
+    Retorna True si el check-out se completó con éxito, False en caso contrario.
     """
     print("\n--- CHECK-OUT ---")
 
     if hotel_vacio(lista_huespedes):
         print("No hay huéspedes alojados actualmente en el hotel.")
-        return
+        return False  # <-- Retorna False
 
     dni_checkout = validar_generico(
         "Ingrese el DNI del huésped para check-out (-1 para cancelar): ",
@@ -181,23 +184,20 @@ def realizar_checkout(matriz_hotel, lista_huespedes, matriz_tarifas):
 
     if dni_checkout == "-1":
         print("Check-out cancelado.")
-        return
+        return False  # <-- Retorna False
 
     for huesped in lista_huespedes:
         dni_actual = huesped["identidad"][0]
 
         if str(dni_actual) == str(dni_checkout):
             nombre = huesped["identidad"][1]
-            dias = huesped["dias"]
             piso = huesped["ubicacion"][0]
             habitacion = huesped["ubicacion"][1]
             num_comercial = huesped["ubicacion"][2]
 
-            matriz_hotel[piso][habitacion] = "S"
-            piso_comercial = piso + 1
-            tarifa = float(obtener_tarifa_habitacion(piso_comercial, matriz_tarifas))
-            monto_total = tarifa * int(dias)
+            monto_total = calcular_subtotal(huesped, matriz_tarifas)
 
+            matriz_hotel[piso][habitacion] = "S"
             lista_huespedes.remove(huesped)
 
             print("\n================ CHECK-OUT EXITOSO ================")
@@ -205,10 +205,14 @@ def realizar_checkout(matriz_hotel, lista_huespedes, matriz_tarifas):
             print(f"Habitación liberada: {num_comercial}")
             print(f"TOTAL A COBRAR:      ${monto_total:,.2f}")
             print("===================================================")
-            return
+
+            # Registro en el archivo TXT
+            registrar_factura_txt(dni_checkout, nombre, monto_total)
+            print("[Info] Factura registrada en el historial de facturación (.txt)")
+            return True  # <-- Retorna True solo cuando se cobra con éxito
 
     print(f"No se encontró al huésped con DNI: {dni_checkout}")
-
+    return False  # <-- Retorna False si no lo encuentra
 
 def puede_reubicar(matriz_hotel, lista_huespedes):
     """
