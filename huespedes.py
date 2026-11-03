@@ -26,10 +26,17 @@ def validar_dni(dni_nuevo, lista_huespedes):
     Verifica que el DNI no esté repetido en la lista de diccionarios.
     El DNI en el diccionario se accede como el primer elemento de la tupla: huesped["dni"][0]
     """
+    # Uso de conjunto (set) para verificar duplicados y busqueda O(1)
+    dnis_registrados = set()
     for huesped in lista_huespedes:
-        while huesped["dni"][0] == dni_nuevo:
-            print(f"Error, el DNI {dni_nuevo} ya está registrado.")
-            dni_nuevo = validar_generico("Ingrese el DNI del huésped: ", PATRON_DNI_VALIDO, ERROR_DNI)
+        dnis_registrados.add(huesped["identidad"][0])
+
+    while dni_nuevo in dnis_registrados:
+        print(f"Error, el DNI {dni_nuevo} ya está registrado.")
+        dni_nuevo = validar_generico("Ingrese el DNI del huésped: ", PATRON_DNI_VALIDO, ERROR_DNI)
+        dnis_registrados = set()
+        for huesped in lista_huespedes:
+            dnis_registrados.add(huesped["identidad"][0])
     return dni_nuevo
 
 
@@ -43,23 +50,18 @@ def realizar_checkin(matriz, lista_huespedes):
         return matriz
 
     nombre = validar_generico("Ingrese el nombre del huésped: ", PATRON_TEXTO_VALIDO, ERROR_TEXTO)
-    dni_input = validar_generico("Ingrese el DNI del huésped: ", PATRON_DNI_VALIDO, ERROR_DNI)
-    dni_input = validar_dni(dni_input, lista_huespedes)
+    dni = validar_generico("Ingrese el DNI del huésped: ", PATRON_DNI_VALIDO, ERROR_DNI)
+    dni = validar_dni(dni, lista_huespedes)
     dias = int(validar_generico("Cantidad de días de estadía: ", PATRON_DIAS_VALIDO, ERROR_DIAS))
 
     num_comercial = obtener_numero_comercial(piso, habitacion)
 
-    # DNI guardado explícitamente como una Tupla inmutable
-    dni_tupla = (dni_input,)
-
-    # Estructura del huésped como Diccionario
+    # identidad: tupla inmutable (DNI, Nombre) -> no cambia nunca
+    # ubicacion: lista mutable [piso, habitacion, num_comercial] -> se puede modificar (swap)
     datos_huesped = {
-        "nombre": nombre,
-        "dni": dni_tupla,
+        "identidad": (dni, nombre),
         "dias": dias,
-        "piso": piso,
-        "habitacion": habitacion,
-        "num_comercial": num_comercial
+        "ubicacion": [piso, habitacion, num_comercial]
     }
 
     lista_huespedes.append(datos_huesped)
@@ -74,39 +76,55 @@ def buscar_huesped_por_dni(lista_huespedes, dni_busqueda):
     """
     Realiza una búsqueda secuencial en la lista de diccionarios consultando la tupla de DNI.
     """
+    if len(lista_huespedes) == 0:
+        print("\n[Aviso] No hay huéspedes alojados en el hotel.")
+        return
+
     encontrado = False
 
     for huesped in lista_huespedes:
-        dni_actual = huesped["dni"][0]
+        dni_actual = huesped["identidad"][0]
 
         if str(dni_actual).strip() == str(dni_busqueda).strip():
             encontrado = True
-            piso_real = int(huesped["piso"]) + 1
+            piso_real = int(huesped["ubicacion"][0]) + 1
 
-            # Acceso directo al primer elemento de la tupla del DNI
-            dni = huesped["dni"][0]
+            # Acceso a la tupla identidad: [0]=DNI, [1]=Nombre
+            dni = huesped["identidad"][0]
+            nombre = huesped["identidad"][1]
 
             print("\n=== DATOS DEL HUÉSPED ENCONTRADO ===")
-            print(f"{'Nombre:':<17} {huesped['nombre']}")
+            print(f"{'Nombre:':<17} {nombre}")
             print(f"{'DNI:':<17} {dni}")
             print(f"{'Días de estadía:':<17} {huesped['dias']}")
             print(f"{'Piso asignado:':<17} {piso_real}")
-            print(f"{'Habitación:':<17} {huesped['num_comercial']}")
+            print(f"{'Habitación:':<17} {huesped['ubicacion'][2]}")
             print("====================================")
 
     if not encontrado:
         print("\n[Aviso] No se encontró ningún huésped alojado con el DNI:", dni_busqueda)
 
 
-def filtrar_huespedes_por_piso(lista_huespedes, piso_objetivo):
+def buscar_huespedes_por_nombre(lista_huespedes, texto_busqueda):
     """
-    Uso de 'filter' y 'lambda' sobre la lista de diccionarios.
+    Busca huéspedes cuyo nombre contenga el texto ingresado (sin importar mayúsculas).
+    Usa filter y lambda.
     """
-    filtrados = list(filter(
-        lambda huesped: int(huesped["piso"]) == int(piso_objetivo) - 1,
+    return list(filter(
+        lambda huesped: texto_busqueda.lower() in huesped["identidad"][1].lower(),
         lista_huespedes
     ))
-    return filtrados
+
+
+def buscar_huesped_por_habitacion(lista_huespedes, numero_habitacion):
+    """
+    Busca huéspedes alojados en la habitación indicada.
+    Usa filter y lambda.
+    """
+    return list(filter(
+        lambda huesped: huesped["ubicacion"][2] == numero_habitacion,
+        lista_huespedes
+    ))
 
 
 def realizar_checkout(matriz_hotel, lista_huespedes, matriz_tarifas):
@@ -117,14 +135,14 @@ def realizar_checkout(matriz_hotel, lista_huespedes, matriz_tarifas):
     dni_checkout = validar_generico("Ingrese el DNI del huésped para check-out: ", PATRON_DNI_VALIDO, ERROR_DNI)
 
     for huesped in lista_huespedes:
-        dni_actual = huesped["dni"][0]
+        dni_actual = huesped["identidad"][0]
 
         if str(dni_actual) == str(dni_checkout):
-            nombre = huesped["nombre"]
+            nombre = huesped["identidad"][1]
             dias = huesped["dias"]
-            piso = huesped["piso"]
-            habitacion = huesped["habitacion"]
-            num_comercial = huesped["num_comercial"]
+            piso = huesped["ubicacion"][0]
+            habitacion = huesped["ubicacion"][1]
+            num_comercial = huesped["ubicacion"][2]
 
             matriz_hotel[piso][habitacion] = "S"
             piso_comercial = piso + 1
@@ -155,9 +173,20 @@ def reubicar_huesped_swap(matriz_hotel, lista_huespedes):
     habitacion_swap = int(validar_generico("Ingrese el número de habitación a reubicar: ", PATRON_NUMERO_VALIDO, ERROR_NUMERO))
 
     for huesped in lista_huespedes:
-        if huesped["num_comercial"] == habitacion_swap:
-            piso = huesped["piso"]
-            habitacion = huesped["habitacion"]
+        if huesped["ubicacion"][2] == habitacion_swap:
+            piso = huesped["ubicacion"][0]
+            habitacion = huesped["ubicacion"][1]
+
+            # Verificar si hay alguna habitación libre antes de pedir
+            hay_libre = False
+            for fila in matriz_hotel:
+                for habitacion_libre in fila:
+                    if habitacion_libre == "L":
+                        hay_libre = True
+
+            if not hay_libre:
+                print("Error: No hay habitaciones libres en el hotel. No se puede reubicar.")
+                return
 
             habitacion_valida = False
             nuevo_piso = 0
@@ -179,11 +208,12 @@ def reubicar_huesped_swap(matriz_hotel, lista_huespedes):
             matriz_hotel[piso][habitacion] = "L"
             matriz_hotel[nuevo_piso][nueva_habitacion] = "O"
 
-            huesped["piso"] = nuevo_piso
-            huesped["habitacion"] = nueva_habitacion
-            huesped["num_comercial"] = nuevo_num_comercial
+            # Mutacion de la lista ubicacion (demostrando que es mutable)
+            huesped["ubicacion"][0] = nuevo_piso
+            huesped["ubicacion"][1] = nueva_habitacion
+            huesped["ubicacion"][2] = nuevo_num_comercial
 
-            print(f"Huésped {huesped['nombre']} reubicado a habitación {nuevo_num_comercial} con éxito.")
+            print(f"Huésped {huesped['identidad'][1]} reubicado a habitación {nuevo_num_comercial} con éxito.")
             return
 
     print(f"No se encontró ningún huésped alojado en la habitación {habitacion_swap}.")

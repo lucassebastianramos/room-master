@@ -42,3 +42,21 @@ def solicitar_dimension_valida(mensaje, min_val, max_val):
             print(f"Error: El valor debe estar entre {min_val} y {max_val}.")
 
     return valor_num
+
+
+def solicitar_confirmacion(mensaje):
+    """
+    Solicita una respuesta afirmativa o negativa (s/n) al usuario.
+    Retorna True si la respuesta es afirmativa (s/si/sí) y False si es negativa (n/no).
+    """
+    opcion = input(mensaje).strip().lower()
+    while opcion not in ["s", "si", "sí", "n", "no"]:
+        print("Opción inválida. Ingrese 's' o 'n'.")
+        opcion = input(mensaje).strip().lower()
+
+    if opcion in ["s", "si", "sí"]:
+        confirmado = True
+    else:
+        confirmado = False
+
+    return confirmado
