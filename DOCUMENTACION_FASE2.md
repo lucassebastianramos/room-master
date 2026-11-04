@@ -38,7 +38,7 @@ En esta segunda entrega, el sistema **Room Master** evolucionó desde un prototi
   2. `reportes.py` (función `reporte_habitaciones_libres`): Cálculo algebraico de disponibilidad edilicia.
 * **Justificación técnica:**
   * **Control de duplicados en $O(1)$:** En lugar de recorrer linealmente la lista de huéspedes con un bucle $O(n)$, se vuelcan los DNIs en una tabla hash (`set`), verificando la existencia (`dni in dnis`) en tiempo constante promedio.
-  * **Álgebra de conjuntos:** Se modela el total de habitaciones y las habitaciones ocupadas como conjuntos. La disponibilidad se obtiene de forma directa mediante la **diferencia de conjuntos** (`libres = todas - ocupadas`) y la consistencia con la **intersección** (`comunes = todas & ocupadas`), evitando bucles anidados manuales.
+  * **Álgebra de conjuntos:** Se modela el total de habitaciones y las habitaciones ocupadas como conjuntos. La disponibilidad se obtiene de forma directa mediante la **diferencia de conjuntos** (`libres = todas.difference(ocupadas)`) y la consistencia con la **intersección** (`comunes = todas.intersection(ocupadas)`), evitando bucles anidados manuales.
 
 ### 2.2. Tuplas (`tuple`)
 * **Ubicación en el sistema:** 
@@ -132,7 +132,7 @@ La suite implementada en `tests.py` satisface el 100% de los requisitos formales
 | **Entidad Huésped** | Sublistas por posición `[nom, dni, dias, ...]` | Diccionario asociativo `dict` con tupla inmutable de identidad `tuple` |
 | **Tarifas por Piso** | Lista de pares `[piso, precio]` | Diccionario `{piso: precio}` para consulta en $O(1)$ |
 | **Control de Duplicados** | Búsqueda secuencial lineal $O(n)$ | Búsqueda en tiempo constante $O(1)$ mediante conjuntos `set` |
-| **Disponibilidad de Habitaciones** | Recorrido manual con bucles anidados | Álgebra de conjuntos (operación diferencia `todas - ocupadas`) |
+| **Disponibilidad de Habitaciones** | Recorrido manual con bucles anidados | Álgebra de conjuntos (operación diferencia `todas.difference(ocupadas)`) |
 | **Persistencia de Datos** | Inexistente (datos volátiles en memoria RAM) | Triple persistencia: JSON (`hotel_data.json`), TXT (`facturacion.txt`) y CSV (`facturacion.csv`) |
 | **Manejo de Errores** | Validaciones simples por consola | Excepciones estructuradas con bloques `try / except / else / finally` |
 | **Pruebas de Software** | Verificación manual por teclado | Suite automatizada de 10 pruebas unitarias con aserciones nativas |

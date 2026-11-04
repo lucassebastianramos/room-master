@@ -50,7 +50,7 @@ def generar_reporte_ocupacion(matriz_hotel, lista_huespedes=None):
     for huesped in lista_huespedes:
         ocupadas_set.add(huesped["ubicacion"][2])
 
-    libres = todas - ocupadas_set
+    libres = todas.difference(ocupadas_set)
 
     # Cálculo del porcentaje
     if total_habitaciones > 0:

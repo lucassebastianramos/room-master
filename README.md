@@ -129,7 +129,7 @@ TOTAL A COBRAR:      $108,000.00
 **🔎 Búsquedas, reportes y auditoría**
 - Por **DNI** (secuencial), por **nombre parcial** y por **habitación** (`filter` + `lambda`).
 - **Ocupación**: total, ocupadas y porcentaje (`map` + `reduce`).
-- **Habitaciones libres** por diferencia de conjuntos (`todas - ocupadas`).
+- **Habitaciones libres** por diferencia de conjuntos (`todas.difference(ocupadas)`).
 - **Recaudación proyectada** (`map` + `reduce` sobre los huéspedes).
 - **Auditoría histórica** desde `facturacion.txt` con acumulador contable.
 - **Exportación CSV** estructurada con `csv.writer` para Excel o Google Sheets.
@@ -310,7 +310,7 @@ tarifas = {1: 10000.0, 2: 12000.0}
 
 # CONJUNTOS: se arman dinámicamente para resolver consultas críticas
 dnis_registrados = {"40123456", "38999111"}       # ¿el DNI ya existe? → O(1) promedio por hashing
-libres = todas - ocupadas                         # ¿qué habitaciones quedan? → diferencia de conjuntos
+libres = todas.difference(ocupadas)                         # ¿qué habitaciones quedan? → diferencia de conjuntos
 ```
 
 ---

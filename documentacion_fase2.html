@@ -457,8 +457,8 @@ lista_huespedes.append(datos_huesped)                <span class="c"># lista de 
       <p class="small">Se construyen dos conjuntos de números de habitación y se operan:</p>
       <pre><code>todas    = {<span class="n">101</span>, <span class="n">102</span>, <span class="n">103</span>, <span class="n">201</span>, <span class="n">202</span>, <span class="n">203</span>}
 ocupadas = {<span class="n">102</span>, <span class="n">201</span>}
-libres   = todas - ocupadas   <span class="c"># diferencia</span>
-comunes  = todas &amp; ocupadas   <span class="c"># intersección</span></code></pre>
+libres   = todas.difference(ocupadas)   <span class="c"># diferencia</span>
+comunes  = todas.intersection(ocupadas)   <span class="c"># intersección</span></code></pre>
       <p class="small"><b>Por qué:</b> la pregunta "¿qué habitaciones no están ocupadas?" es exactamente una diferencia de conjuntos. La intersección asegura que solo se informen ocupadas que existen en el hotel actual.</p>
     </div>
   </div>
