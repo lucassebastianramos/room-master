@@ -328,7 +328,7 @@
 
   <div class="grid4" style="margin:12px 0 14px">
     <div class="stat"><b>7</b><span>módulos</span></div>
-    <div class="stat"><b>45</b><span>funciones del sistema</span></div>
+    <div class="stat"><b>46</b><span>funciones del sistema</span></div>
     <div class="stat"><b>10/10</b><span>pruebas aprobadas</span></div>
     <div class="stat"><b>0</b><span>clases · bases de datos</span></div>
   </div>
@@ -344,7 +344,7 @@
       <tr><td>Incorporar nuevas funcionalidades</td><td>Búsqueda por nombre y por habitación, reporte de libres, DNI único, guardado y recuperación.</td><td><code>huespedes.py</code>, <code>reportes.py</code>, <code>archivos.py</code></td><td class="c"><span class="pill p-ok">CUMPLE</span></td></tr>
       <tr><td>Conjuntos</td><td>Unicidad de DNI y cálculo de habitaciones libres/ocupadas.</td><td><code>validar_dni</code>, <code>reporte_habitaciones_libres</code></td><td class="c"><span class="pill p-ok">CUMPLE</span></td></tr>
       <tr><td>Tuplas</td><td>Identidad <code>(dni, nombre)</code> y retornos múltiples de coordenadas.</td><td><code>realizar_checkin</code>, <code>hotel.py</code></td><td class="c"><span class="pill p-ok">CUMPLE</span></td></tr>
-      <tr><td>Diccionarios</td><td>Registro de huésped y estructura del archivo JSON.</td><td><code>realizar_checkin</code>, <code>guardar_datos_hotel</code></td><td class="c"><span class="pill p-ok">CUMPLE</span></td></tr>
+      <tr><td>Diccionarios</td><td>Registro de huésped, esquema de tarifas <code>{piso: precio}</code> y archivo JSON.</td><td><code>huespedes.py</code>, <code>tarifas.py</code>, <code>archivos.py</code></td><td class="c"><span class="pill p-ok">CUMPLE</span></td></tr>
       <tr><td>Excepciones</td><td><code>try / except / else / finally</code> en lectura y escritura de archivos.</td><td><code>archivos.py</code></td><td class="c"><span class="pill p-ok">CUMPLE</span></td></tr>
       <tr><td>Archivos JSON</td><td>Guardado después de cada operación y recuperación al iniciar.</td><td><code>archivos.py</code>, <code>main.py</code></td><td class="c"><span class="pill p-ok">CUMPLE</span></td></tr>
       <tr><td>Archivos de texto</td><td>Bitácora de check-outs (escritura <code>"a"</code>, lectura y exportación CSV).</td><td><code>facturacion.txt</code></td><td class="c"><span class="pill p-ok">CUMPLE</span></td></tr>
@@ -484,6 +484,7 @@ comunes  = todas.intersection(ocupadas)   <span class="c"># intersección</span>
     <thead><tr><th style="width:24%">Qué representa</th><th style="width:28%">Dónde se usa</th><th>Por qué un diccionario</th></tr></thead>
     <tbody>
       <tr><td><b>Registro de un huésped</b></td><td><code>realizar_checkin</code> y todas las funciones de <code>huespedes.py</code> y <code>reportes.py</code></td><td>Se accede por nombre de campo (<code>huesped["dias"]</code>) en lugar de por posición (<code>huesped[2]</code>). Agregar un campo nuevo no rompe el código existente, cosa que sí ocurría con las listas posicionales de la Parte 1.</td></tr>
+      <tr><td><b>Esquema de tarifas por piso</b><br><code>{1: 10000.0, 2: 12000.0}</code></td><td><code>tarifas.py</code>, <code>reportes.py</code>, <code>archivos.py</code></td><td>Estructura asociativa clave-valor que mapea de forma directa cada número de piso con su tarifa diaria. Reemplaza la matriz <code>[[piso, precio], ...]</code> de la Parte 1, otorgando acceso e indexación directa en tiempo constante <i>O(1)</i> (<code>matriz_tarifas[piso]</code>).</td></tr>
       <tr><td><b>Estado completo del hotel</b><br><code>{"pisos", "habitaciones", "huespedes", "tarifas"}</code></td><td><code>guardar_datos_hotel</code>, <code>cargar_datos_hotel</code>, <code>menu_principal</code></td><td>Es la forma natural de un objeto JSON: cada clave se convierte en un campo del archivo y al leerlo se recupera por nombre (<code>datos["tarifas"]</code>).</td></tr>
     </tbody>
   </table>
@@ -493,7 +494,7 @@ comunes  = todas.intersection(ocupadas)   <span class="c"># intersección</span>
     <thead><tr><th style="width:24%">Estructura</th><th>Uso y justificación</th></tr></thead>
     <tbody>
       <tr><td><b>Matriz del hotel</b><br>lista de listas</td><td><code>hotel[piso][habitacion]</code> contiene <code>"L"</code>, <code>"O"</code> o <code>"S"</code>. Refleja la forma física del edificio y da acceso directo a cualquier habitación.</td></tr>
-      <tr><td><b>Matriz de tarifas</b><br><code>[[piso, precio], ...]</code></td><td>Una fila por piso con su precio por noche; se genera una vez y se consulta en cada liquidación.</td></tr>
+      <tr><td><b>Diccionario de tarifas</b><br><code>{piso: precio}</code></td><td>Estructura asociativa que mapea cada piso con su tarifa por noche; se genera al inicio en <code>tarifas.py</code> y se consulta en <i>O(1)</i> en cada liquidación de check-out y en el cálculo de recaudación proyectada.</td></tr>
       <tr><td><b>Lista de huéspedes</b><br>lista de diccionarios</td><td>Colección variable que crece en el check-in y se reduce en el check-out; se recorre con <code>for</code>, <code>filter</code> y <code>map</code>.</td></tr>
     </tbody>
   </table>
@@ -515,8 +516,8 @@ comunes  = todas.intersection(ocupadas)   <span class="c"># intersección</span>
     <tbody>
       <tr><td><b>¿Qué información se almacena?</b></td><td>Las dimensiones del hotel, el esquema de tarifas por piso, los huéspedes alojados (identidad, días y ubicación) y el historial de check-outs realizados.</td></tr>
       <tr><td><b>¿En qué archivo?</b></td><td><code>hotel_data.json</code> (estado del hotel), <code>facturacion.txt</code> (bitácora) y <code>facturacion.csv</code> (exportación).</td></tr>
-      <tr><td><b>¿Qué se guarda en JSON?</b></td><td>El estado actual: <code>pisos</code>, <code>habitaciones</code>, <code>huespedes</code> y <code>tarifas</code>. Es información estructurada que se sobrescribe completa en cada guardado.</td></tr>
-      <tr><td><b>¿Qué se guarda en texto?</b></td><td>Una línea por cada check-out (fecha, DNI, nombre, habitación, noches y total cobrado). Es información histórica que solo se agrega al final, nunca se reescribe.</td></tr>
+      <tr><td><b>¿Qué se guarda en JSON?</b></td><td>El estado actual: <code>pisos</code>, <code>habitaciones</code>, <code>huespedes</code> y el diccionario de <code>tarifas</code> (<code>{"1": 10000.0, ...}</code>). Es información estructurada que se sobrescribe completa en cada guardado.</td></tr>
+      <tr><td><b>¿Qué se guarda en texto?</b></td><td>Una línea por cada check-out con 6 campos delimitados por <code>;</code>: DNI, nombre, habitación comercial, piso, noches y total cobrado. Es información histórica en modo agregado (<code>"a"</code>) que nunca se reescribe.</td></tr>
       <tr><td><b>¿Cómo se recupera?</b></td><td>El JSON se lee al iniciar y reconstruye el hotel (ver 4.3). La bitácora se lee para mostrar el historial y para generar el CSV (ver 4.4).</td></tr>
     </tbody>
   </table>
@@ -534,12 +535,16 @@ comunes  = todas.intersection(ocupadas)   <span class="c"># intersección</span>
             <span class="s">"ubicacion"</span>: [<span class="n">1</span>, <span class="n">0</span>, <span class="n">201</span>]
         }
     ],
-    <span class="s">"tarifas"</span>: [[<span class="n">1</span>, <span class="n">10000.0</span>], [<span class="n">2</span>, <span class="n">12000.0</span>]]
+    <span class="s">"tarifas"</span>: {
+        <span class="s">"1"</span>: <span class="n">10000.0</span>,
+        <span class="s">"2"</span>: <span class="n">12000.0</span>
+    }
 }</code></pre>
     </div>
     <div>
       <p class="small"><b>Cuándo se escribe:</b> al terminar la configuración inicial, después de cada check-in, check-out, swap, restablecimiento y redimensionamiento, y al salir con la opción 0.</p>
       <p class="small"><b>Cómo:</b> <code>json.dump(datos, archivo, ensure_ascii=False, indent=4)</code> en modo <code>"w"</code> y codificación UTF-8. <code>ensure_ascii=False</code> conserva tildes y eñes legibles (<i>Muñoz</i>, no <i>Mu\u00f1oz</i>).</p>
+      <p class="small"><b>Claves numéricas en JSON:</b> El formato JSON serializa las claves de los objetos como cadenas (<code>"1"</code>, <code>"2"</code>). Al deserializar con <code>cargar_datos_hotel()</code>, el sistema convierte las claves a enteros (<code>int(piso)</code>) para permitir el acceso nativo numérico <code>matriz_tarifas[piso]</code>.</p>
       <p class="small"><b>Conversión Python ↔ JSON:</b></p>
       <table class="small" style="margin-top:2px">
         <thead><tr><th>Python</th><th>JSON</th><th>Al leer</th></tr></thead>
@@ -578,15 +583,17 @@ comunes  = todas.intersection(ocupadas)   <span class="c"># intersección</span>
   <h2>4.4 Archivo de texto · <code>facturacion.txt</code> <span class="pill p-ok">IMPLEMENTADO</span></h2>
   <div class="box ok">
     <span class="t">Implementación completa e integrada</span>
-    La bitácora transaccional se gestiona mediante el módulo <code>archivos.py</code> (funciones <code>inicializar_archivo_txt</code>, <code>registrar_factura_txt</code> y <code>leer_y_procesar_facturacion_txt</code>). Cada Check-out registra el cobro automáticamente y la opción 7 del menú permite realizar auditorías históricas acumulando la facturación total.
+    La bitácora transaccional se gestiona mediante el módulo <code>archivos.py</code> (funciones <code>inicializar_archivo_txt</code>, <code>registrar_factura_txt</code>, <code>leer_registros_txt</code>, <code>leer_y_procesar_facturacion_txt</code>, <code>historial_huesped</code> y <code>exportar_facturacion_a_csv</code>). Cada Check-out registra el cobro automáticamente con sus 6 campos transaccionales, la opción 7 del menú permite realizar auditorías históricas acumulando la recaudación total, la opción 11 consulta el historial por DNI y la opción 8 genera la exportación a CSV.
   </div>
   <table>
     <thead><tr><th style="width:20%">Operación</th><th>Implementación técnica</th></tr></thead>
     <tbody>
       <tr><td><b>Inicialización</b></td><td><code>inicializar_archivo_txt()</code> asegura la existencia física de <code>facturacion.txt</code> al arrancar el sistema con modo <code>"a"</code> y codificación UTF-8.</td></tr>
-      <tr><td><b>Escritura</b></td><td>En cada Check-out, <code>huespedes.py</code> invoca <code>registrar_factura_txt(dni, nombre, monto)</code> en modo agregado (<code>"a"</code>). Escribe de inmediato sin leer ni reescribir lo anterior, asentando el comprobante en disco.</td></tr>
-      <tr><td><b>Formato</b></td><td>Campos delimitados por <code>;</code>:<br><code>40123456;Juan Perez;108000.00</code></td></tr>
-      <tr><td><b>Lectura y auditoría</b></td><td>La opción 7 invoca <code>leer_y_procesar_facturacion_txt()</code>, recorriendo el archivo línea a línea con <code>split(";")</code>, mostrando cada comprobante y acumulando la recaudación histórica real.</td></tr>
+      <tr><td><b>Escritura</b></td><td>En cada Check-out, <code>huespedes.py</code> invoca <code>registrar_factura_txt(dni, nombre, habitacion, piso, dias, monto)</code> en modo agregado (<code>"a"</code>). Escribe de inmediato sin leer ni reescribir lo anterior, asentando el comprobante en disco con los 6 datos clave.</td></tr>
+      <tr><td><b>Formato (6 campos)</b></td><td>Campos delimitados por <code>;</code>:<br><code>dni;nombre;habitacion;piso;dias;monto</code><br>Ejemplo: <code>40123456;Juan Perez;201;2;10;120000.00</code></td></tr>
+      <tr><td><b>Lectura modular</b></td><td>La función auxiliar <code>leer_registros_txt()</code> centraliza la apertura, lectura secuencial, descarte de líneas vacías y <code>split(";")</code>, retornando los registros como sublistas para evitar duplicación.</td></tr>
+      <tr><td><b>Lectura y auditoría</b></td><td>La opción 7 invoca <code>leer_y_procesar_facturacion_txt()</code>, recorriendo los comprobantes tabulados con DNI, huésped, habitación, piso, días y monto, acumulando la recaudación histórica real.</td></tr>
+      <tr><td><b>Historial por DNI</b></td><td>La opción 11 invoca <code>historial_huesped(dni_buscado)</code>, filtrando sobre <code>facturacion.txt</code> para detallar todas las estadías pasadas y el monto total abonado por un cliente específico.</td></tr>
       <tr><td><b>Exportación CSV</b></td><td>La opción 8 invoca <code>exportar_facturacion_a_csv()</code>, que procesa el archivo de texto y escribe <code>facturacion.csv</code> mediante la librería estándar <code>csv</code> (<code>csv.writer</code>) con encabezados <code>["DNI", "Huesped", "Habitacion", "Piso", "Dias", "Monto_Cobrado"]</code> para Microsoft Excel o Google Sheets.</td></tr>
       <tr><td><b>Excepciones</b></td><td>Manejo completo con <code>try / except / else / finally</code> capturando <code>FileNotFoundError</code>, <code>PermissionError</code>, <code>(ValueError, IndexError)</code> y <code>OSError</code>.</td></tr>
     </tbody>
@@ -675,7 +682,7 @@ comunes  = todas.intersection(ocupadas)   <span class="c"># intersección</span>
     <thead><tr><th class="c" style="width:5%">#</th><th class="c" style="width:11%">Tipo</th><th style="width:30%">Función</th><th>Datos</th><th style="width:16%">Esperado</th></tr></thead>
     <tbody>
       <tr><td class="c">01</td><td class="c"><span class="pill p-val">VÁLIDO</span></td><td><code>hotel.inicializar_hotel</code></td><td>2 pisos, 3 habitaciones</td><td>matriz 2×3 de <code>"L"</code></td></tr>
-      <tr><td class="c">02</td><td class="c"><span class="pill p-val">VÁLIDO</span></td><td><code>tarifas.obtener_tarifa_habitacion</code></td><td>piso 2; tarifas de 3 pisos</td><td><code>12000.0</code></td></tr>
+      <tr><td class="c">02</td><td class="c"><span class="pill p-val">VÁLIDO</span></td><td><code>tarifas.obtener_tarifa_habitacion</code></td><td>piso 2; dict de tarifas {1: 10000, 2: 12000, 3: 15000}</td><td><code>12000.0</code></td></tr>
       <tr><td class="c">03</td><td class="c"><span class="pill p-val">VÁLIDO</span></td><td><code>reportes.calcular_subtotal</code></td><td>5 noches, piso 1 a $10.000</td><td><code>50000.0</code></td></tr>
       <tr><td class="c">04</td><td class="c"><span class="pill p-val">VÁLIDO</span></td><td><code>reportes.calcular_subtotal</code></td><td>10 noches, piso 1 a $10.000</td><td><code>90000.0</code></td></tr>
       <tr><td class="c">05</td><td class="c"><span class="pill p-inv">INVÁLIDO</span></td><td>Detección con <code>set</code> (lógica de <code>validar_dni</code>)</td><td>DNI <code>11111111</code> ya registrado</td><td><code>True</code> (duplicado)</td></tr>
@@ -721,7 +728,7 @@ test_10_busqueda_parcial_nombre_...   PASSED
     <thead><tr><th class="c" style="width:5%">#</th><th style="width:26%">Qué comprueba y por qué se eligió</th><th style="width:22%">Resultado esperado</th><th>Qué pasaría si se modifican los datos</th></tr></thead>
     <tbody>
       <tr><td class="c">01</td><td>Que la matriz tenga tantas filas como pisos y columnas como habitaciones, todas libres. Es la base de todo el sistema.</td><td><code>[["L","L","L"], ["L","L","L"]]</code></td><td>Con <code>(3, 2)</code> la matriz sería 3×2 y la prueba fallaría contra el esperado 2×3: confirma que no se invierten pisos y habitaciones.</td></tr>
-      <tr><td class="c">02</td><td>Que se devuelva el precio del piso pedido y no el de otro. Es el dato que alimenta toda la facturación.</td><td><code>12000.0</code></td><td>Con piso 3 devolvería <code>15000.0</code>. Con un piso inexistente (p. ej. 9) la función devuelve el precio del último piso como respaldo.</td></tr>
+      <tr><td class="c">02</td><td>Que se devuelva el precio del piso pedido y no el de otro a partir del diccionario de tarifas <code>{piso: precio}</code>. Es el dato que alimenta toda la facturación.</td><td><code>12000.0</code></td><td>Con piso 3 devolvería <code>15000.0</code>. Con un piso inexistente (p. ej. 9) la función devuelve el precio del último piso como respaldo.</td></tr>
       <tr><td class="c">03</td><td>El cálculo básico <code>precio × noches</code> sin descuento.</td><td><code>50000.0</code></td><td>Con 6 noches: <code>60000.0</code>. Con el huésped en el piso 2 (<code>ubicacion[0] = 1</code>) se usaría $12.000 → <code>60000.0</code>.</td></tr>
       <tr><td class="c">04</td><td>Que la <code>lambda</code> aplique el 10 % cuando hay más de 7 noches.</td><td><code>90000.0</code> (100.000 − 10 %)</td><td>Si se quitara el descuento del código, el obtenido sería <code>100000.0</code> y la prueba lo detectaría.</td></tr>
       <tr><td class="c">05</td><td>Que un DNI repetido se detecte por pertenencia al conjunto. Es la regla que impide registrar dos veces a la misma persona.</td><td><code>True</code></td><td>Con un DNI nuevo (<code>"22222222"</code>) el resultado sería <code>False</code>, es decir, se permitiría el registro.</td></tr>
@@ -753,7 +760,8 @@ test_10_busqueda_parcial_nombre_...   PASSED
       <tr><td><b>Habitaciones libres</b></td><td>Solo se veían en la grilla.</td><td>Reporte por diferencia de conjuntos.</td></tr>
       <tr><td><b>Búsquedas</b></td><td>Por DNI (menú) y filtro por piso.</td><td>Submenú: DNI, nombre parcial y habitación.</td></tr>
       <tr><td><b>Persistencia</b></td><td>Ninguna: los datos se perdían al salir.</td><td>Triple persistencia: JSON (estado), TXT (bitácora continua en modo append) y CSV (exportación tabular).</td></tr>
-      <tr><td><b>Opciones de menú</b></td><td>8 opciones básicas.</td><td>11 opciones estructuradas con auditoría histórica y exportación a planillas.</td></tr>
+      <tr><td><b>Opciones de menú</b></td><td>8 opciones básicas.</td><td>12 opciones estructuradas (0 a 11) con auditoría histórica en TXT, exportación CSV e historial por DNI.</td></tr>
+      <tr><td><b>Esquema de tarifas</b></td><td>Lista de listas <code>[[piso, precio], ...]</code> con búsqueda secuencial.</td><td>Diccionario asociativo <code>{piso: precio}</code> con acceso directo <i>O(1)</i>.</td></tr>
       <tr><td><b>Errores</b></td><td>Solo validaciones con regex.</td><td>Regex más <code>try / except / else / finally</code> en archivos.</td></tr>
       <tr><td><b>Cancelación</b></td><td>No existía.</td><td><code>-1</code> en todas las entradas.</td></tr>
       <tr><td><b>Hotel completo</b></td><td>El check-in quedaba pidiendo habitación sin fin.</td><td>Se detecta y se avisa.</td></tr>
@@ -787,7 +795,10 @@ test_10_busqueda_parcial_nombre_...   PASSED
         <li><span class="pill p-new">NUEVA</span> Pruebas unitarias.</li>
         <li><span class="pill p-new">NUEVA</span> Cancelación con <code>-1</code> y confirmación s/n.</li>
         <li><span class="pill p-imp">MEJORADA</span> Huésped como diccionario con tupla.</li>
-        <li><span class="pill p-imp">MEJORADA</span> Swap y tarifas divididos en subfunciones.</li>
+        <li><span class="pill p-new">NUEVA</span> Bitácora transaccional continua en TXT con 6 campos y exportación a CSV.</li>
+        <li><span class="pill p-new">NUEVA</span> Historial individual de estadías y facturación por DNI (Opción 11).</li>
+        <li><span class="pill p-imp">MEJORADA</span> Tarifas modeladas como diccionario asociativo <code>{piso: precio}</code> en lugar de matriz.</li>
+        <li><span class="pill p-imp">MEJORADA</span> Swap y tarifas divididos en subfunciones modulares.</li>
         <li><span class="pill p-fix">CORREGIDA</span> Bucle con hotel completo.</li>
         <li><span class="pill p-imp">REEMPLAZADA</span> El filtro por piso se sustituyó por las búsquedas por nombre y habitación.</li>
       </ul>
@@ -904,9 +915,9 @@ test_10_busqueda_parcial_nombre_...   PASSED
       <tr><td><code>hotel.py</code></td><td class="c">9</td><td>Crear y mostrar la matriz; convertir coordenadas; verificar existencia y disponibilidad.</td><td><code>inicializar_hotel</code>, <code>renderizar_hotel</code>, <code>habitacion_existe</code></td></tr>
       <tr><td><code>huespedes.py</code></td><td class="c">14</td><td>Todas las operaciones sobre huéspedes.</td><td><code>realizar_checkin</code>, <code>realizar_checkout</code>, <code>reubicar_huesped_swap</code></td></tr>
       <tr><td><code>tarifas.py</code></td><td class="c">7</td><td>Configurar, mostrar y consultar precios.</td><td><code>configurar_tarifas_hotel</code>, <code>obtener_tarifa_habitacion</code></td></tr>
-      <tr><td><code>reportes.py</code></td><td class="c">4</td><td>Cálculos e indicadores con programación funcional y conjuntos.</td><td><code>calcular_subtotal</code>, <code>calcular_recaudacion_total</code></td></tr>
+      <tr><td><code>reportes.py</code></td><td class="c">3</td><td>Cálculos e indicadores con programación funcional y conjuntos.</td><td><code>calcular_subtotal</code>, <code>calcular_recaudacion_total</code>, <code>generar_reporte_ocupacion</code></td></tr>
       <tr><td><code>validaciones.py</code></td><td class="c">3</td><td>Patrones, mensajes de error y pedido de datos con reintento.</td><td><code>validar_generico</code>, <code>solicitar_dimension_valida</code></td></tr>
-      <tr><td><code>archivos.py</code></td><td class="c">6</td><td>Persistencia JSON, auditoría TXT y exportación CSV con excepciones.</td><td><code>cargar_datos_hotel</code>, <code>guardar_datos_hotel</code>, <code>registrar_factura_txt</code>, <code>leer_y_procesar_facturacion_txt</code>, <code>exportar_facturacion_a_csv</code></td></tr>
+      <tr><td><code>archivos.py</code></td><td class="c">8</td><td>Persistencia JSON, bitácora TXT y exportación CSV con excepciones.</td><td><code>cargar_datos_hotel</code>, <code>guardar_datos_hotel</code>, <code>registrar_factura_txt</code>, <code>historial_huesped</code>, <code>exportar_facturacion_a_csv</code></td></tr>
       <tr><td><code>tests.py</code></td><td class="c">12</td><td>10 pruebas, formateador de salida y ejecutor.</td><td><code>test_01</code> … <code>test_10</code>, <code>ejecutar_suite</code></td></tr>
     </tbody>
   </table>
@@ -1031,6 +1042,7 @@ python -m pytest tests.py -v</code></pre>
     <li>Opción 7: auditar el historial de facturación acumulado desde el archivo TXT.</li>
     <li>Opción 8: exportar el historial a <code>facturacion.csv</code> para abrirlo en Excel.</li>
     <li>Opción 10: restablecer la habitación en limpieza a <code>L</code>.</li>
+    <li>Opción 11: consultar el historial completo de estadías y cobros de un huésped ingresando su DNI.</li>
   </ol>
 
   <div style="margin-top:28px; padding-top:10px; border-top:1px solid var(--line); text-align:center" class="small muted">

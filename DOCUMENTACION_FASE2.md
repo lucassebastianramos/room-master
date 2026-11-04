@@ -137,7 +137,7 @@ La suite implementada en `tests.py` satisface el 100% de los requisitos formales
 | **Manejo de Errores** | Validaciones simples por consola | Excepciones estructuradas con bloques `try / except / else / finally` |
 | **Pruebas de Software** | Verificación manual por teclado | Suite automatizada de 10 pruebas unitarias con aserciones nativas |
 | **Paradigma** | Procedural básico | Programación funcional (`map`, `filter`, `functools.reduce`, `lambda`) sin clases |
-| **Opciones de Menú** | 8 opciones básicas | 11 opciones coordinadas con auditoría TXT, exportación CSV e historial por DNI |
+| **Opciones de Menú** | 8 opciones básicas | 12 opciones coordinadas (0 a 11) con auditoría TXT, exportación CSV e historial por DNI |
 
 ---
 
