@@ -3,15 +3,15 @@
 # =============================================================================
 # Materia: Algoritmos y Estructura de Datos 1 / Programación 1
 # Cátedra: Lic. Gustavo E. Escandell
-# Integrantes:
-#   - Menendez Mojana, Tiara
-#   - Ramos, Lucas Sebastián
-#   - Iglesias, Luca
-#   - Rueda, Leandro Nicolás
+# Integrantes y Legajos:
+#   - Menendez Mojana, Tiara (Legajo: 1226578)
+#   - Ramos, Lucas Sebastián (Legajo: 1235407)
+#   - Iglesias, Luca (Legajo: 1226578)
+#   - Rueda, Leandro Nicolás (Legajo: 1231246)
 # =============================================================================
 
 from hotel import (
-    inicializar_hotel,  # Se agrega la importación para reconstruir la matriz
+    inicializar_hotel,
     reiniciar_matriz,
     redimensionar_hotel,
     renderizar_hotel
@@ -30,8 +30,7 @@ from huespedes import (
 )
 from reportes import (
     generar_reporte_ocupacion,
-    calcular_recaudacion_total,
-    reporte_habitaciones_libres
+    calcular_recaudacion_total
 )
 from validaciones import (
     validar_generico,
@@ -42,7 +41,14 @@ from validaciones import (
     PATRON_NUMERO_VALIDO,
     ERROR_NUMERO
 )
-from archivos import cargar_datos_hotel, guardar_datos_hotel
+from archivos import (
+    cargar_datos_hotel,
+    guardar_datos_hotel,
+    leer_y_procesar_facturacion_txt,
+    historial_huesped,
+    exportar_facturacion_a_csv,
+    inicializar_archivo_txt
+)
 
 NOMBRE_ARCHIVO_JSON = "hotel_data.json"
 
@@ -98,7 +104,9 @@ def menu_busquedas(lista_huespedes):
 
 
 def menu_principal():
-    # Carga de datos al inicio (Deserialización)
+    print("\nIniciando sistema Room Master... verificando archivo JSON...")
+    inicializar_archivo_txt()
+    # Carga de datos al inicio (Deserialización)[cite: 53, 56, 57]
     datos_cargados = cargar_datos_hotel(NOMBRE_ARCHIVO_JSON)
 
     if datos_cargados is not None and datos_cargados["pisos"] != -1:
@@ -129,9 +137,12 @@ def menu_principal():
         print("3. Check-out (Liberar habitación)")
         print("4. Reubicar huésped (Swap)")
         print("5. Búsquedas")
-        print("6. Reportes y Facturación")
-        print("7. Redimensionar hotel")
-        print("8. Restablecer habitación")
+        print("6. Reportes y Facturación proyectada")
+        print("7. Auditoría histórica de facturación (Desde archivo .TXT)")
+        print("8. Exportar facturación a formato CSV (Archivo .CSV)")
+        print("9. Redimensionar hotel")
+        print("10. Restablecer habitación en limpieza")
+        print("11. Historial de huésped (por DNI)")
         print("0. Salir")
         print("==============================")
 
@@ -140,16 +151,17 @@ def menu_principal():
         if opcion == "1":
             renderizar_hotel(hotel)
 
-        elif opcion == "2":
+        elif opcion == "2":  # Check-in
             renderizar_hotel(hotel)
             hotel = realizar_checkin(hotel, huespedes)
             guardar_datos_hotel(NOMBRE_ARCHIVO_JSON, pisos, habitaciones, huespedes, tarifas)
 
         elif opcion == "3":
-            realizar_checkout(hotel, huespedes, tarifas)
-            guardar_datos_hotel(NOMBRE_ARCHIVO_JSON, pisos, habitaciones, huespedes, tarifas)
+            exito = realizar_checkout(hotel, huespedes, tarifas)
+            if exito:
+                guardar_datos_hotel(NOMBRE_ARCHIVO_JSON, pisos, habitaciones, huespedes, tarifas)
 
-        elif opcion == "4":
+        elif opcion == "4":  # Swap
             reubicar_huesped_swap(hotel, huespedes)
             guardar_datos_hotel(NOMBRE_ARCHIVO_JSON, pisos, habitaciones, huespedes, tarifas)
 
@@ -157,11 +169,16 @@ def menu_principal():
             menu_busquedas(huespedes)
 
         elif opcion == "6":
-            generar_reporte_ocupacion(hotel)
-            reporte_habitaciones_libres(hotel, huespedes)
+            generar_reporte_ocupacion(hotel, huespedes)
             calcular_recaudacion_total(huespedes, tarifas)
 
-        elif opcion == "7":
+        elif opcion == "7":  # Auditoría TXT
+            leer_y_procesar_facturacion_txt()
+
+        elif opcion == "8":  # Exportación a CSV
+            exportar_facturacion_a_csv()
+
+        elif opcion == "9":  # Redimensionar hotel
             nuevo_hotel = redimensionar_hotel()
             if nuevo_hotel == -1:
                 print("Redimensionamiento cancelado. Se mantienen los datos actuales.")
@@ -175,10 +192,15 @@ def menu_principal():
                 guardar_datos_hotel(NOMBRE_ARCHIVO_JSON, pisos, habitaciones, huespedes, tarifas)
                 print("Hotel redimensionado y configurado con éxito.")
 
-        elif opcion == "8":
-            print("\n--- RESTABLECER HABITACIÓN A LIBRE [L] LUEGO DE LA LIMPIEZA ---")
+        elif opcion == "10":
+            print("\n--- RESTABLECER HABITACIÓN A LIBRE [L] ---")
             restablecer_limpieza(hotel)
             guardar_datos_hotel(NOMBRE_ARCHIVO_JSON, pisos, habitaciones, huespedes, tarifas)
+
+        elif opcion == "11":
+            dni_hist = validar_generico("Ingrese el DNI del huésped: ", PATRON_DNI_VALIDO, ERROR_DNI)
+            historial_huesped(dni_hist)
+            input("\nPresione [Enter] para continuar...")
 
         elif opcion == "0":
             print("Guardando datos y saliendo del sistema Room Master...")
@@ -192,6 +214,5 @@ def menu_principal():
             input("\nPresione [Enter] para continuar...")
 
 
-# Ejecución
 if __name__ == "__main__":
     menu_principal()

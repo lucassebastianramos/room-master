@@ -5,7 +5,7 @@
 # Cátedra: Lic. Gustavo E. Escandell
 # 
 # Compatibilidad dual:
-#   1. Ejecución con PyTest:    pytest tests.py -v
+#   1. Ejecución con PyTest:    python -m pytest tests.py -v
 #   2. Ejecución con Python:    python tests.py
 #
 # Distribución oficial de la Fase 2 (Mínimo 10 pruebas sobre 5+ funciones):
@@ -39,8 +39,6 @@ def reportar_prueba(num, categoria, funcion_nombre, datos_str, esperado, obtenid
     print(f"  5. Resultado: [{estado}]")
     print("-" * 65)
 
-    return aprobado
-
 
 # =============================================================================
 # BLOQUE 1: CASOS VÁLIDOS (4 pruebas)
@@ -53,42 +51,42 @@ def test_01_inicializacion_matriz_valida():
     obtenido = hotel.inicializar_hotel(2, 3)
 
     assert obtenido == esperado
-    return reportar_prueba(1, "Caso Válido", "hotel.inicializar_hotel", datos, esperado, obtenido)
+    reportar_prueba(1, "Caso Válido", "hotel.inicializar_hotel", datos, esperado, obtenido)
 
 
 def test_02_obtener_tarifa_piso_existente():
     """Caso válido: Consulta la tarifa de un piso configurado en la matriz."""
-    esquema_tarifas = [[1, 10000.0], [2, 12000.0], [3, 15000.0]]
-    datos = "piso = 2, tarifas = [[1, 10000.0], [2, 12000.0], [3, 15000.0]]"
+    esquema_tarifas = {1: 10000.0, 2: 12000.0, 3: 15000.0}
+    datos = "piso = 2, tarifas = {1: 10000.0, 2: 12000.0, 3: 15000.0}"
     esperado = 12000.0
     obtenido = tarifas.obtener_tarifa_habitacion(2, esquema_tarifas)
 
     assert obtenido == esperado
-    return reportar_prueba(2, "Caso Válido", "tarifas.obtener_tarifa_habitacion", datos, esperado, obtenido)
+    reportar_prueba(2, "Caso Válido", "tarifas.obtener_tarifa_habitacion", datos, esperado, obtenido)
 
 
 def test_03_calcular_subtotal_estadia_corta():
     """Caso válido: Estadía corta de 5 noches (<= 7) a tarifa plena."""
-    esquema_tarifas = [[1, 10000.0], [2, 12000.0]]
+    esquema_tarifas = {1: 10000.0, 2: 12000.0}
     huesped = {"identidad": ("12345678", "Juan Perez"), "dias": 5, "ubicacion": [0, 0, 101]}
     datos = "huesped={'dias': 5, 'piso': 0 (Piso 1)}, tarifa=$10000.0"
     esperado = 50000.0
     obtenido = reportes.calcular_subtotal(huesped, esquema_tarifas)
 
     assert obtenido == esperado
-    return reportar_prueba(3, "Caso Válido", "reportes.calcular_subtotal", datos, esperado, obtenido)
+    reportar_prueba(3, "Caso Válido", "reportes.calcular_subtotal", datos, esperado, obtenido)
 
 
 def test_04_calcular_subtotal_estadia_larga_con_descuento():
     """Caso válido: Estadía de 10 noches (> 7) con 10% de bonificación vía lambda."""
-    esquema_tarifas = [[1, 10000.0], [2, 12000.0]]
+    esquema_tarifas = {1: 10000.0, 2: 12000.0}
     huesped = {"identidad": ("12345678", "Juan Perez"), "dias": 10, "ubicacion": [0, 0, 101]}
     datos = "huesped={'dias': 10, 'piso': 0 (Piso 1)}, tarifa=$10000.0 (10% desc. > 7 días)"
     esperado = 90000.0  # 10 * 10000.0 * 0.90
     obtenido = reportes.calcular_subtotal(huesped, esquema_tarifas)
 
     assert obtenido == esperado
-    return reportar_prueba(4, "Caso Válido", "reportes.calcular_subtotal", datos, esperado, obtenido)
+    reportar_prueba(4, "Caso Válido", "reportes.calcular_subtotal", datos, esperado, obtenido)
 
 
 # =============================================================================
@@ -108,7 +106,7 @@ def test_05_deteccion_dni_duplicado_con_conjunto():
     obtenido = (dni_ingresado_duplicado in dnis_set)
 
     assert obtenido == esperado
-    return reportar_prueba(5, "Caso Inválido", "deteccion_dni_duplicado_set", datos, esperado, obtenido)
+    reportar_prueba(5, "Caso Inválido", "deteccion_dni_duplicado_set", datos, esperado, obtenido)
 
 
 def test_06_habitacion_inexistente_fuera_de_rango():
@@ -119,7 +117,7 @@ def test_06_habitacion_inexistente_fuera_de_rango():
     obtenido = hotel.habitacion_existe(matriz_hotel, 5, 0)
 
     assert obtenido == esperado
-    return reportar_prueba(6, "Caso Inválido", "hotel.habitacion_existe", datos, esperado, obtenido)
+    reportar_prueba(6, "Caso Inválido", "hotel.habitacion_existe", datos, esperado, obtenido)
 
 
 def test_07_busqueda_huesped_habitacion_vacia():
@@ -130,7 +128,7 @@ def test_07_busqueda_huesped_habitacion_vacia():
     obtenido = huespedes.buscar_huesped_por_habitacion(lista_huespedes, 999)
 
     assert obtenido == esperado
-    return reportar_prueba(7, "Caso Inválido", "huespedes.buscar_huesped_por_habitacion", datos, esperado, obtenido)
+    reportar_prueba(7, "Caso Inválido", "huespedes.buscar_huesped_por_habitacion", datos, esperado, obtenido)
 
 
 # =============================================================================
@@ -139,14 +137,14 @@ def test_07_busqueda_huesped_habitacion_vacia():
 
 def test_08_calcular_subtotal_limite_exacto_7_noches():
     """Caso límite: Exactamente 7 noches de estadía (frontera sin descuento)."""
-    esquema_tarifas = [[1, 10000.0], [2, 12000.0]]
+    esquema_tarifas = {1: 10000.0, 2: 12000.0}
     huesped = {"identidad": ("12345678", "Juan Perez"), "dias": 7, "ubicacion": [0, 0, 101]}
     datos = "huesped={'dias': 7, 'piso': 0 (Piso 1)}, tarifa=$10000.0 (frontera sin desc)"
     esperado = 70000.0  # 7 * 10000.0
     obtenido = reportes.calcular_subtotal(huesped, esquema_tarifas)
 
     assert obtenido == esperado
-    return reportar_prueba(8, "Caso Límite", "reportes.calcular_subtotal", datos, esperado, obtenido)
+    reportar_prueba(8, "Caso Límite", "reportes.calcular_subtotal", datos, esperado, obtenido)
 
 
 def test_09_inicializacion_matriz_dimension_minima():
@@ -156,7 +154,7 @@ def test_09_inicializacion_matriz_dimension_minima():
     obtenido = hotel.inicializar_hotel(1, 1)
 
     assert obtenido == esperado
-    return reportar_prueba(9, "Caso Límite", "hotel.inicializar_hotel", datos, esperado, obtenido)
+    reportar_prueba(9, "Caso Límite", "hotel.inicializar_hotel", datos, esperado, obtenido)
 
 
 # =============================================================================
@@ -175,7 +173,7 @@ def test_10_busqueda_parcial_nombre_filter_lambda():
     obtenido = huespedes.buscar_huespedes_por_nombre(lista, termino_busqueda)
 
     assert obtenido == esperado
-    return reportar_prueba(10, "Caso Adicional", "huespedes.buscar_huespedes_por_nombre", datos, esperado, obtenido)
+    reportar_prueba(10, "Caso Adicional", "huespedes.buscar_huespedes_por_nombre", datos, esperado, obtenido)
 
 
 # =============================================================================
@@ -207,8 +205,11 @@ def ejecutar_suite():
     aprobadas = 0
 
     for prueba in pruebas:
-        if prueba():
+        try:
+            prueba()
             aprobadas += 1
+        except AssertionError:
+            pass
 
     falladas = total - aprobadas
 
