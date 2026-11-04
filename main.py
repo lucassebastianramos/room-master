@@ -3,11 +3,11 @@
 # =============================================================================
 # Materia: Algoritmos y Estructura de Datos 1 / Programación 1
 # Cátedra: Lic. Gustavo E. Escandell
-# Integrantes:
-#   - Menendez Mojana, Tiara
-#   - Ramos, Lucas Sebastián
-#   - Iglesias, Luca
-#   - Rueda, Leandro Nicolás
+# Integrantes y Legajos:
+#   - Menendez Mojana, Tiara (Legajo: 1226578)
+#   - Ramos, Lucas Sebastián (Legajo: 1235407)
+#   - Iglesias, Luca (Legajo: 1226578)
+#   - Rueda, Leandro Nicolás (Legajo: 1231246)
 # =============================================================================
 
 from hotel import (
@@ -30,8 +30,7 @@ from huespedes import (
 )
 from reportes import (
     generar_reporte_ocupacion,
-    calcular_recaudacion_total,
-    reporte_habitaciones_libres
+    calcular_recaudacion_total
 )
 from validaciones import (
     validar_generico,
@@ -46,6 +45,7 @@ from archivos import (
     cargar_datos_hotel,
     guardar_datos_hotel,
     leer_y_procesar_facturacion_txt,
+    historial_huesped,
     exportar_facturacion_a_csv,
     inicializar_archivo_txt
 )
@@ -142,6 +142,7 @@ def menu_principal():
         print("8. Exportar facturación a formato CSV (Archivo .CSV)")
         print("9. Redimensionar hotel")
         print("10. Restablecer habitación en limpieza")
+        print("11. Historial de huésped (por DNI)")
         print("0. Salir")
         print("==============================")
 
@@ -168,8 +169,7 @@ def menu_principal():
             menu_busquedas(huespedes)
 
         elif opcion == "6":
-            generar_reporte_ocupacion(hotel)
-            reporte_habitaciones_libres(hotel, huespedes)
+            generar_reporte_ocupacion(hotel, huespedes)
             calcular_recaudacion_total(huespedes, tarifas)
 
         elif opcion == "7":  # Auditoría TXT
@@ -196,6 +196,11 @@ def menu_principal():
             print("\n--- RESTABLECER HABITACIÓN A LIBRE [L] ---")
             restablecer_limpieza(hotel)
             guardar_datos_hotel(NOMBRE_ARCHIVO_JSON, pisos, habitaciones, huespedes, tarifas)
+
+        elif opcion == "11":
+            dni_hist = validar_generico("Ingrese el DNI del huésped: ", PATRON_DNI_VALIDO, ERROR_DNI)
+            historial_huesped(dni_hist)
+            input("\nPresione [Enter] para continuar...")
 
         elif opcion == "0":
             print("Guardando datos y saliendo del sistema Room Master...")

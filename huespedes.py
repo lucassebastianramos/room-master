@@ -191,6 +191,7 @@ def realizar_checkout(matriz_hotel, lista_huespedes, matriz_tarifas):
 
         if str(dni_actual) == str(dni_checkout):
             nombre = huesped["identidad"][1]
+            dias = huesped["dias"]
             piso = huesped["ubicacion"][0]
             habitacion = huesped["ubicacion"][1]
             num_comercial = huesped["ubicacion"][2]
@@ -207,7 +208,7 @@ def realizar_checkout(matriz_hotel, lista_huespedes, matriz_tarifas):
             print("===================================================")
 
             # Registro en el archivo TXT
-            registrar_factura_txt(dni_checkout, nombre, monto_total)
+            registrar_factura_txt(dni_checkout, nombre, num_comercial, piso + 1, dias, monto_total)
             print("[Info] Factura registrada en el historial de facturación (.txt)")
             return True  # <-- Retorna True solo cuando se cobra con éxito
 

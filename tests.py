@@ -56,8 +56,8 @@ def test_01_inicializacion_matriz_valida():
 
 def test_02_obtener_tarifa_piso_existente():
     """Caso válido: Consulta la tarifa de un piso configurado en la matriz."""
-    esquema_tarifas = [[1, 10000.0], [2, 12000.0], [3, 15000.0]]
-    datos = "piso = 2, tarifas = [[1, 10000.0], [2, 12000.0], [3, 15000.0]]"
+    esquema_tarifas = {1: 10000.0, 2: 12000.0, 3: 15000.0}
+    datos = "piso = 2, tarifas = {1: 10000.0, 2: 12000.0, 3: 15000.0}"
     esperado = 12000.0
     obtenido = tarifas.obtener_tarifa_habitacion(2, esquema_tarifas)
 
@@ -67,7 +67,7 @@ def test_02_obtener_tarifa_piso_existente():
 
 def test_03_calcular_subtotal_estadia_corta():
     """Caso válido: Estadía corta de 5 noches (<= 7) a tarifa plena."""
-    esquema_tarifas = [[1, 10000.0], [2, 12000.0]]
+    esquema_tarifas = {1: 10000.0, 2: 12000.0}
     huesped = {"identidad": ("12345678", "Juan Perez"), "dias": 5, "ubicacion": [0, 0, 101]}
     datos = "huesped={'dias': 5, 'piso': 0 (Piso 1)}, tarifa=$10000.0"
     esperado = 50000.0
@@ -79,7 +79,7 @@ def test_03_calcular_subtotal_estadia_corta():
 
 def test_04_calcular_subtotal_estadia_larga_con_descuento():
     """Caso válido: Estadía de 10 noches (> 7) con 10% de bonificación vía lambda."""
-    esquema_tarifas = [[1, 10000.0], [2, 12000.0]]
+    esquema_tarifas = {1: 10000.0, 2: 12000.0}
     huesped = {"identidad": ("12345678", "Juan Perez"), "dias": 10, "ubicacion": [0, 0, 101]}
     datos = "huesped={'dias': 10, 'piso': 0 (Piso 1)}, tarifa=$10000.0 (10% desc. > 7 días)"
     esperado = 90000.0  # 10 * 10000.0 * 0.90
@@ -137,7 +137,7 @@ def test_07_busqueda_huesped_habitacion_vacia():
 
 def test_08_calcular_subtotal_limite_exacto_7_noches():
     """Caso límite: Exactamente 7 noches de estadía (frontera sin descuento)."""
-    esquema_tarifas = [[1, 10000.0], [2, 12000.0]]
+    esquema_tarifas = {1: 10000.0, 2: 12000.0}
     huesped = {"identidad": ("12345678", "Juan Perez"), "dias": 7, "ubicacion": [0, 0, 101]}
     datos = "huesped={'dias': 7, 'piso': 0 (Piso 1)}, tarifa=$10000.0 (frontera sin desc)"
     esperado = 70000.0  # 7 * 10000.0
