@@ -211,6 +211,7 @@ En los arranques siguientes, el hotel se **reconstruye solo** a partir del archi
 | `8` | Exportar a CSV (.CSV) | Lee `facturacion.txt` y genera `facturacion.csv` mediante `csv.writer` para Microsoft Excel o Google Sheets. |
 | `9` | Redimensionar hotel | Crea un hotel nuevo. ⚠️ Borra a los huéspedes y pide tarifas nuevas (con opción de cancelar). |
 | `10` | Restablecer habitación | Pasa una habitación desocupada de `S` (limpieza) a `L` (libre). |
+| `11` | Historial de huésped (por DNI) | Muestra todas las estadías registradas de un huésped leyendo `facturacion.txt`, con total histórico. |
 | `0` | Salir | Guarda los datos estructurales en JSON y finaliza la ejecución. |
 
 > [!NOTE]
@@ -304,8 +305,8 @@ huesped = {
     "ubicacion": [1, 0, 201],                  # lista: cambia en el Swap [piso, hab, número comercial]
 }
 
-# TARIFAS: matriz [piso_comercial, precio_por_noche]
-tarifas = [[1, 10000.0], [2, 12000.0]]
+# TARIFAS: diccionario {piso_comercial: precio_por_noche}
+tarifas = {1: 10000.0, 2: 12000.0}
 
 # CONJUNTOS: se arman dinámicamente para resolver consultas críticas
 dnis_registrados = {"40123456", "38999111"}       # ¿el DNI ya existe? → O(1) promedio por hashing
@@ -352,8 +353,8 @@ El sistema implementa tres niveles de persistencia independientes sin requerir b
 | Archivo | Formato | Qué guarda | Cuándo | Estado |
 | :--- | :--- | :--- | :--- | :---: |
 | `hotel_data.json` | JSON | Dimensiones, tarifas y lista de huéspedes alojados | Al configurar, tras cada operación y al salir | ✅ Implementado |
-| `facturacion.txt` | Texto plano | Una línea por check-out (`dni;nombre;monto`), apertura en modo `"a"` | En cada check-out | ✅ Implementado |
-| `facturacion.csv` | CSV | Historial de facturación con encabezados (`DNI,Huesped,Monto_Cobrado`) para Excel / Sheets (`csv.writer`) | A pedido (opción 8), leyendo el `.txt` | ✅ Implementado |
+| `facturacion.txt` | Texto plano | Una línea por check-out (`dni;nombre;habitacion;piso;dias;monto`), apertura en modo `"a"` | En cada check-out | ✅ Implementado |
+| `facturacion.csv` | CSV | Historial de facturación con encabezados (`DNI,Huesped,Habitacion,Piso,Dias,Monto_Cobrado`) para Excel / Sheets (`csv.writer`) | A pedido (opción 8), leyendo el `.txt` | ✅ Implementado |
 
 ### 1. Estado estructural en JSON (`hotel_data.json`)
 ```json
@@ -381,8 +382,8 @@ El sistema implementa tres niveles de persistencia independientes sin requerir b
 * La opción 8 del menú (`exportar_facturacion_a_csv`) lee el archivo de texto y escribe un documento CSV con la librería estándar `csv` (`csv.writer`).
 * Formato estandarizado:
 ```csv
-DNI,Huesped,Monto_Cobrado
-40123456,Juan Perez,108000.00
+DNI,Huesped,Habitacion,Piso,Dias,Monto_Cobrado
+40123456,Juan Perez,101,1,5,50000.00
 ```
 * Compatible con Microsoft Excel y Google Sheets para balances contables, tablas dinámicas y gráficos gerenciales.
 

@@ -587,7 +587,7 @@ comunes  = todas &amp; ocupadas   <span class="c"># intersección</span></code><
       <tr><td><b>Escritura</b></td><td>En cada Check-out, <code>huespedes.py</code> invoca <code>registrar_factura_txt(dni, nombre, monto)</code> en modo agregado (<code>"a"</code>). Escribe de inmediato sin leer ni reescribir lo anterior, asentando el comprobante en disco.</td></tr>
       <tr><td><b>Formato</b></td><td>Campos delimitados por <code>;</code>:<br><code>40123456;Juan Perez;108000.00</code></td></tr>
       <tr><td><b>Lectura y auditoría</b></td><td>La opción 7 invoca <code>leer_y_procesar_facturacion_txt()</code>, recorriendo el archivo línea a línea con <code>split(";")</code>, mostrando cada comprobante y acumulando la recaudación histórica real.</td></tr>
-      <tr><td><b>Exportación CSV</b></td><td>La opción 8 invoca <code>exportar_facturacion_a_csv()</code>, que procesa el archivo de texto y escribe <code>facturacion.csv</code> mediante la librería estándar <code>csv</code> (<code>csv.writer</code>) con encabezados <code>["DNI", "Huesped", "Monto_Cobrado"]</code> para Microsoft Excel o Google Sheets.</td></tr>
+      <tr><td><b>Exportación CSV</b></td><td>La opción 8 invoca <code>exportar_facturacion_a_csv()</code>, que procesa el archivo de texto y escribe <code>facturacion.csv</code> mediante la librería estándar <code>csv</code> (<code>csv.writer</code>) con encabezados <code>["DNI", "Huesped", "Habitacion", "Piso", "Dias", "Monto_Cobrado"]</code> para Microsoft Excel o Google Sheets.</td></tr>
       <tr><td><b>Excepciones</b></td><td>Manejo completo con <code>try / except / else / finally</code> capturando <code>FileNotFoundError</code>, <code>PermissionError</code>, <code>(ValueError, IndexError)</code> y <code>OSError</code>.</td></tr>
     </tbody>
   </table>
@@ -753,7 +753,7 @@ test_10_busqueda_parcial_nombre_...   PASSED
       <tr><td><b>Habitaciones libres</b></td><td>Solo se veían en la grilla.</td><td>Reporte por diferencia de conjuntos.</td></tr>
       <tr><td><b>Búsquedas</b></td><td>Por DNI (menú) y filtro por piso.</td><td>Submenú: DNI, nombre parcial y habitación.</td></tr>
       <tr><td><b>Persistencia</b></td><td>Ninguna: los datos se perdían al salir.</td><td>Triple persistencia: JSON (estado), TXT (bitácora continua en modo append) y CSV (exportación tabular).</td></tr>
-      <tr><td><b>Opciones de menú</b></td><td>8 opciones básicas.</td><td>10 opciones estructuradas con auditoría histórica y exportación a planillas.</td></tr>
+      <tr><td><b>Opciones de menú</b></td><td>8 opciones básicas.</td><td>11 opciones estructuradas con auditoría histórica y exportación a planillas.</td></tr>
       <tr><td><b>Errores</b></td><td>Solo validaciones con regex.</td><td>Regex más <code>try / except / else / finally</code> en archivos.</td></tr>
       <tr><td><b>Cancelación</b></td><td>No existía.</td><td><code>-1</code> en todas las entradas.</td></tr>
       <tr><td><b>Hotel completo</b></td><td>El check-in quedaba pidiendo habitación sin fin.</td><td>Se detecta y se avisa.</td></tr>
