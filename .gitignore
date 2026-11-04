@@ -1,3 +1,9 @@
 __pycache__/
 *.py[cod]
 *$py.class
+# Datos locales y persistencia
+hotel_data.json
+
+# Reportes generados en ejecución
+facturacion.txt
+facturacion.csv
