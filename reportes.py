@@ -6,11 +6,15 @@ import functools
 from tarifas import obtener_tarifa_habitacion
 
 
-def generar_reporte_ocupacion(matriz_hotel):
+def generar_reporte_ocupacion(matriz_hotel, lista_huespedes=None):
     """
-    Genera un reporte mostrando el total de habitaciones, ocupadas y
-    el porcentaje global de ocupación del hotel.
+    Genera un reporte mostrando el total de habitaciones, ocupadas, libres
+    y el porcentaje global de ocupación del hotel.
+    Integra la información de habitaciones libres (sin repetir el total).
     """
+    if lista_huespedes is None:
+        lista_huespedes = []
+
     # Acumula el total de habitaciones sumando la longitud de cada fila
     total_habitaciones = functools.reduce(
         lambda acumulado, fila: acumulado + len(fila),
@@ -35,6 +39,19 @@ def generar_reporte_ocupacion(matriz_hotel):
         0
     )
 
+    # Conjuntos: todas las habitaciones y las ocupadas
+    todas = set()
+    for piso in range(len(matriz_hotel)):
+        for hab in range(len(matriz_hotel[piso])):
+            num = (piso + 1) * 100 + (hab + 1)
+            todas.add(num)
+
+    ocupadas_set = set()
+    for huesped in lista_huespedes:
+        ocupadas_set.add(huesped["ubicacion"][2])
+
+    libres = todas.difference(ocupadas_set)
+
     # Cálculo del porcentaje
     if total_habitaciones > 0:
         porcentaje_ocupacion = (habitaciones_ocupadas * 100) / total_habitaciones
@@ -45,7 +62,14 @@ def generar_reporte_ocupacion(matriz_hotel):
 
     print("\n=== REPORTE DE OCUPACIÓN ===")
     print("Total de habitaciones: ", total_habitaciones)
-    print("Habitaciones ocupadas: ", habitaciones_ocupadas)
+    if habitaciones_ocupadas == 0:
+        print("Habitaciones ocupadas: ninguna (hotel vacío)")
+    else:
+        print("Habitaciones ocupadas: ", habitaciones_ocupadas)
+    if len(libres) == 0:
+        print("Habitaciones libres: ninguna (hotel completo)")
+    else:
+        print("Habitaciones libres: ", len(libres), sorted(libres))
     print("Porcentaje de ocupación:", porcentaje_ocupacion, "%")
 
 
@@ -84,37 +108,3 @@ def calcular_recaudacion_total(lista_huespedes, matriz_tarifas):
     return recaudacion_total
 
 
-def reporte_habitaciones_libres(matriz_hotel, lista_huespedes):
-    """
-    Reporte de habitaciones libres usando operaciones de conjuntos.
-    - todas: set con todos los numeros de habitacion del hotel.
-    - ocupadas: set con los numeros de habitacion ocupadas.
-    - libres = todas - ocupadas   (diferencia)
-    - comunes = todas & ocupadas   (interseccion)
-    """
-    # Todas las habitaciones del hotel
-    todas = set()
-    for piso in range(len(matriz_hotel)):
-        for hab in range(len(matriz_hotel[piso])):
-            num = (piso + 1) * 100 + (hab + 1)
-            todas.add(num)
-
-    # Habitaciones ocupadas
-    ocupadas = set()
-    for huesped in lista_huespedes:
-        ocupadas.add(huesped["ubicacion"][2])
-
-    # Diferencia: libres = todas - ocupadas
-    libres = todas - ocupadas
-
-    # Interseccion: ocupadas que existen en el hotel
-    comunes = todas & ocupadas
-
-    print("\n=== REPORTE DE HABITACIONES LIBRES ===")
-    print("Total de habitaciones:", len(todas))
-    print("Habitaciones ocupadas:", comunes)
-    if len(libres) == 0:
-        print("Habitaciones libres: ninguna (hotel completo)")
-    else:
-        print("Habitaciones libres:", libres)
-    return libres

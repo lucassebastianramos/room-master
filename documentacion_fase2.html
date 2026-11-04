@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Room Master — Documento Explicativo · Segunda Parte</title>
+<style>
+  :root {
+    --navy: #0b2545;
+    --blue: #13315c;
+    --accent: #c8102e;
+    --teal: #0f766e;
+    --ink: #1f2937;
+    --muted: #6b7280;
+    --line: #d7dde6;
+    --soft: #f4f6fa;
+    --ok: #15803d;
+    --warn: #b45309;
+  }
+
+  @page {
+    size: A4;
+    margin: 18mm 17mm 20mm 17mm;
+    @bottom-left {
+      content: "Room Master · Documento explicativo · Segunda Parte";
+      font-family: 'Segoe UI', Arial, sans-serif;
+      font-size: 7.5pt;
+      color: #8a94a6;
+    }
+    @bottom-right {
+      content: "Página " counter(page) " de " counter(pages);
+      font-family: 'Segoe UI', Arial, sans-serif;
+      font-size: 7.5pt;
+      color: #8a94a6;
+    }
+  }
+  @page :first {
+    margin: 0;
+    @bottom-left { content: none; }
+    @bottom-right { content: none; }
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body {
+    font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    font-size: 10pt;
+    line-height: 1.5;
+    color: var(--ink);
+    margin: 0;
+  }
+  code, .mono {
+    font-family: 'Cascadia Mono', Consolas, 'Courier New', monospace;
+    font-size: 8.6pt;
+    background: #eef1f6;
+    padding: 0 3px;
+    border-radius: 3px;
+    color: #0b2545;
+  }
+  pre {
+    font-family: 'Cascadia Mono', Consolas, 'Courier New', monospace;
+    font-size: 8.2pt;
+    line-height: 1.45;
+    background: #0f1b2d;
+    color: #e5e9f0;
+    padding: 10px 13px;
+    border-radius: 6px;
+    margin: 8px 0 12px;
+    white-space: pre-wrap;
+    break-inside: avoid;
+  }
+  pre code { background: none; color: inherit; padding: 0; font-size: inherit; }
+  pre .c { color: #8fa1b3; }
+  pre .k { color: #f0a6ca; }
+  pre .s { color: #a3d9a5; }
+  pre .n { color: #f9c97c; }
+
+  h1, h2, h3 { color: var(--navy); break-after: avoid; }
+  h1 {
+    font-size: 17pt;
+    margin: 0 0 4px;
+    padding-bottom: 6px;
+    border-bottom: 2.5px solid var(--navy);
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  h1 .tag {
+    font-size: 8pt;
+    font-weight: 700;
+    letter-spacing: .6px;
+    color: #fff;
+    background: var(--accent);
+    padding: 3px 8px;
+    border-radius: 3px;
+    text-transform: uppercase;
+  }
+  h1 + .lead { margin-top: 8px; }
+  h2 { font-size: 12.5pt; margin: 18px 0 6px; }
+  h3 { font-size: 10.5pt; margin: 12px 0 4px; color: var(--blue); }
+  p { margin: 5px 0 8px; }
+  ul, ol { margin: 4px 0 8px; padding-left: 20px; }
+  li { margin-bottom: 3px; }
+  .lead { font-size: 10.5pt; color: #374151; }
+  .section { break-before: page; }
+  .muted { color: var(--muted); }
+  .small { font-size: 8.6pt; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 8px 0 12px;
+    font-size: 8.8pt;
+  }
+  th, td {
+    border: 1px solid var(--line);
+    padding: 5px 7px;
+    text-align: left;
+    vertical-align: top;
+  }
+  th {
+    background: var(--navy);
+    color: #fff;
+    font-weight: 600;
+    font-size: 8.4pt;
+    letter-spacing: .2px;
+  }
+  tr { break-inside: avoid; }
+  tbody tr:nth-child(even) td { background: #f7f9fc; }
+  td.c, th.c { text-align: center; }
+
+  .pill {
+    display: inline-block;
+    font-size: 7.4pt;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 10px;
+    color: #fff;
+    white-space: nowrap;
+    letter-spacing: .2px;
+  }
+  .p-new { background: var(--teal); }
+  .p-imp { background: #2563eb; }
+  .p-fix { background: #7c3aed; }
+  .p-ok { background: var(--ok); }
+  .p-wip { background: var(--warn); }
+  .p-val { background: #15803d; }
+  .p-inv { background: #b91c1c; }
+  .p-lim { background: #b45309; }
+  .p-add { background: #6d28d9; }
+
+  .box {
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--navy);
+    background: var(--soft);
+    border-radius: 0 6px 6px 0;
+    padding: 8px 12px;
+    margin: 10px 0;
+    break-inside: avoid;
+    font-size: 9.2pt;
+  }
+  .box.warn { border-left-color: var(--warn); background: #fff8eb; }
+  .box.ok { border-left-color: var(--ok); background: #f0fbf3; }
+  .box.key { border-left-color: var(--accent); background: #fdf2f4; }
+  .box .t { font-weight: 700; color: var(--navy); display: block; margin-bottom: 2px; }
+  .box.warn .t { color: var(--warn); }
+  .box.ok .t { color: var(--ok); }
+  .box.key .t { color: var(--accent); }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .card {
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 8px 10px;
+    break-inside: avoid;
+    background: #fff;
+  }
+  .card h3 { margin-top: 0; }
+  .stat {
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 8px 6px;
+    text-align: center;
+    background: var(--soft);
+  }
+  .stat b { display: block; font-size: 19pt; color: var(--navy); line-height: 1.1; }
+  .stat span { font-size: 8pt; color: var(--muted); }
+
+  figure { margin: 10px 0 14px; break-inside: avoid; text-align: center; }
+  figcaption { font-size: 8.2pt; color: var(--muted); margin-top: 4px; }
+
+  /* ---------- PORTADA ---------- */
+  .cover {
+    height: 297mm;
+    width: 210mm;
+    position: relative;
+    overflow: hidden;
+    break-after: page;
+    background: #fff;
+  }
+  .cover .band {
+    position: absolute; left: 0; top: 0; bottom: 0; width: 16mm;
+    background: linear-gradient(180deg, var(--navy) 0%, var(--blue) 70%, var(--accent) 100%);
+  }
+  .cover .inner { position: absolute; left: 32mm; right: 22mm; top: 26mm; bottom: 22mm; }
+  .cover .inst { font-size: 10pt; letter-spacing: 2.5px; color: var(--muted); text-transform: uppercase; font-weight: 600; }
+  .cover .uade { font-size: 30pt; font-weight: 900; color: var(--navy); letter-spacing: 3px; margin: 2px 0 0; }
+  .cover .subj { font-size: 11pt; color: #374151; margin-top: 2px; }
+  .cover .rule { height: 3px; width: 60mm; background: var(--accent); margin: 26mm 0 8mm; }
+  .cover .kicker { font-size: 10pt; font-weight: 700; letter-spacing: 2px; color: var(--accent); text-transform: uppercase; }
+  .cover .title { font-size: 46pt; font-weight: 800; color: var(--navy); line-height: 1; margin: 6px 0 4px; letter-spacing: -1px; }
+  .cover .stitle { font-size: 15pt; color: var(--blue); font-weight: 500; }
+  .cover .doc { margin-top: 10mm; font-size: 11.5pt; color: #374151; max-width: 135mm; }
+  .cover .meta { position: absolute; bottom: 0; left: 0; right: 0; }
+  .cover .meta table { font-size: 9.5pt; margin: 0; }
+  .cover .meta td { border: none; border-top: 1px solid var(--line); padding: 7px 0; background: none !important; }
+  .cover .meta td:first-child { width: 38mm; color: var(--muted); font-weight: 600; text-transform: uppercase; font-size: 8pt; letter-spacing: 1px; }
+
+  /* ---------- ÍNDICE ---------- */
+  .toc { list-style: none; padding: 0; margin: 10px 0; }
+  .toc li { display: flex; align-items: baseline; padding: 6px 0; border-bottom: 1px dotted #c3cad6; margin: 0; }
+  .toc .num { width: 26px; font-weight: 800; color: var(--accent); }
+  .toc .name { flex: 1; font-weight: 600; color: var(--navy); }
+  .toc .ref { font-size: 8.4pt; color: var(--muted); }
+  .toc li.sub .name { font-weight: 400; color: #374151; }
+
+  /* ---------- FLUJO ---------- */
+  .flow { display: flex; align-items: stretch; gap: 0; margin: 10px 0; break-inside: avoid; }
+  .flow .step {
+    flex: 1; border: 1px solid var(--line); border-radius: 6px; padding: 7px 8px;
+    background: #fff; font-size: 8.4pt; text-align: center;
+  }
+  .flow .step b { display: block; color: var(--navy); font-size: 8.8pt; margin-bottom: 2px; }
+  .flow .arrow { width: 22px; display: flex; align-items: center; justify-content: center; color: var(--accent); font-weight: 900; font-size: 13pt; }
+</style>
+</head>
+<body>
+
+<!-- ======================================================================= -->
+<!-- PORTADA                                                                  -->
+<!-- ======================================================================= -->
+<section class="cover">
+  <div class="band"></div>
+  <div class="inner">
+    <div class="inst">Universidad Argentina de la Empresa</div>
+    <div class="uade">UADE</div>
+    <div class="subj">Algoritmos y Estructura de Datos 1 · Programación 1</div>
+
+    <div class="rule"></div>
+    <div class="kicker">Trabajo Práctico Integrador · Segunda Parte</div>
+    <div class="title">Room Master</div>
+    <div class="stitle">Sistema de Gestión Hotelera</div>
+    <div class="doc">
+      Documento explicativo de la ampliación y mejora del sistema, según la
+      <b>Sección 15</b> de la consigna: mejoras, estructuras de datos, persistencia,
+      excepciones, pruebas unitarias y cambios respecto de la primera parte.
+    </div>
+
+    <div class="meta">
+      <table>
+        <tr><td>Docente</td><td>Lic. Gustavo E. Escandell</td></tr>
+        <tr><td>Integrantes y Legajos</td><td>
+          Menendez Mojana, Tiara <span class="muted">(referente)</span> — <b>Legajo: 1226578</b><br>
+          Ramos, Lucas Sebastián — <b>Legajo: 1235407</b><br>
+          Iglesias, Luca — <b>Legajo: 1226578</b><br>
+          Rueda, Leandro Nicolás — <b>Legajo: 1231246</b>
+        </td></tr>
+        <tr><td>Cuatrimestre</td><td>2.º cuatrimestre · 2026</td></tr>
+        <tr><td>Entrega</td><td>05/11/2026</td></tr>
+        <tr><td>Repositorio</td><td>github.com/lucassebastianramos/room-master</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ======================================================================= -->
+<!-- ÍNDICE                                                                   -->
+<!-- ======================================================================= -->
+<section>
+  <h1>Índice</h1>
+  <ul class="toc">
+    <li><span class="num">1</span><span class="name">Resumen del sistema y mapa de requisitos</span><span class="ref">Secciones 2 y 14</span></li>
+    <li><span class="num">2</span><span class="name">Descripción de las mejoras</span><span class="ref">Ítem 15.a</span></li>
+    <li><span class="num">3</span><span class="name">Estructuras de datos</span><span class="ref">Ítem 15.b · Sección 5</span></li>
+    <li><span class="num">4</span><span class="name">Persistencia</span><span class="ref">Ítem 15.c · Secciones 7 y 8</span></li>
+    <li><span class="num">5</span><span class="name">Excepciones</span><span class="ref">Ítem 15.d · Sección 6</span></li>
+    <li><span class="num">6</span><span class="name">Pruebas unitarias</span><span class="ref">Ítem 15.e · Sección 9</span></li>
+    <li><span class="num">7</span><span class="name">Cambios respecto de la Parte 1</span><span class="ref">Ítem 15.f · Sección 3</span></li>
+    <li><span class="num">8</span><span class="name">Cumplimiento de las restricciones técnicas</span><span class="ref">Sección 12</span></li>
+    <li class="sub"><span class="num">A</span><span class="name">Anexo A · Arquitectura y módulos</span><span class="ref">Sección 10</span></li>
+    <li class="sub"><span class="num">B</span><span class="name">Anexo B · Ciclo de vida de una habitación</span><span class="ref">Sección 13</span></li>
+    <li class="sub"><span class="num">C</span><span class="name">Anexo C · Instrucciones de ejecución en otro equipo</span><span class="ref">Sección 16</span></li>
+  </ul>
+
+  <div class="box">
+    <span class="t">Cómo leer este documento</span>
+    Cada capítulo responde un ítem de la Sección 15 en el mismo orden que la consigna. Los nombres
+    en <code>monoespaciado</code> son funciones o archivos reales del proyecto, para poder ubicarlos
+    en el código durante la defensa. Las referencias del tipo <i>Sección 9</i> remiten al enunciado
+    de la Segunda Parte.
+  </div>
+
+  <h2>Convenciones</h2>
+  <table>
+    <thead><tr><th style="width:22%">Marca</th><th>Significado</th></tr></thead>
+    <tbody>
+      <tr><td><span class="pill p-new">NUEVA</span></td><td>Funcionalidad que no existía en la Parte 1.</td></tr>
+      <tr><td><span class="pill p-imp">MEJORADA</span></td><td>Funcionalidad de la Parte 1 que se reescribió o amplió.</td></tr>
+      <tr><td><span class="pill p-fix">CORREGIDA</span></td><td>Error o comportamiento indebido detectado en la Parte 1 y solucionado.</td></tr>
+      <tr><td><span class="pill p-ok">IMPLEMENTADO</span></td><td>Disponible en el sistema y cubierto por la documentación.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ======================================================================= -->
+<!-- 1. RESUMEN                                                               -->
+<!-- ======================================================================= -->
+<section class="section">
+  <h1>1. Resumen del sistema <span class="tag">Secciones 2 y 14</span></h1>
+  <p class="lead">
+    <b>Room Master</b> resuelve la operación de la recepción de un hotel: conocer el estado de cada
+    habitación (libre, ocupada o en limpieza), registrar ingresos y salidas, reubicar huéspedes,
+    cobrar según el piso y la duración de la estadía, y consultar indicadores de ocupación y
+    recaudación. En esta segunda parte el sistema pasó de un único archivo con datos en memoria a
+    una aplicación modular que <b>conserva la información entre ejecuciones</b>.
+  </p>
+
+  <div class="grid4" style="margin:12px 0 14px">
+    <div class="stat"><b>7</b><span>módulos</span></div>
+    <div class="stat"><b>46</b><span>funciones del sistema</span></div>
+    <div class="stat"><b>10/10</b><span>pruebas aprobadas</span></div>
+    <div class="stat"><b>0</b><span>clases · bases de datos</span></div>
+  </div>
+
+  <h2>Mapa de requisitos obligatorios (Sección 14)</h2>
+  <table>
+    <thead>
+      <tr><th style="width:24%">Requisito</th><th>Cómo se cumple</th><th style="width:24%">Dónde</th><th class="c" style="width:13%">Estado</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Continuar el proyecto de la Parte 1</td><td>Misma problemática (hotel) y mismas operaciones base, evolucionadas.</td><td>Todo el proyecto</td><td class="c"><span class="pill p-ok">CUMPLE</span></td></tr>
+      <tr><td>Mejorar funcionalidades existentes</td><td>Huésped como diccionario, swap y tarifas divididos en subfunciones, cancelación con <code>-1</code>.</td><td><code>huespedes.py</code>, <code>tarifas.py</code></td><td class="c"><span class="pill p-ok">CUMPLE</span></td></tr>
+      <tr><td>Incorporar nuevas funcionalidades</td><td>Búsqueda por nombre y por habitación, reporte de libres, DNI único, guardado y recuperación.</td><td><code>huespedes.py</code>, <code>reportes.py</code>, <code>archivos.py</code></td><td class="c"><span class="pill p-ok">CUMPLE</span></td></tr>
+      <tr><td>Conjuntos</td><td>Unicidad de DNI y cálculo de habitaciones libres/ocupadas.</td><td><code>validar_dni</code>, <code>reporte_habitaciones_libres</code></td><td class="c"><span class="pill p-ok">CUMPLE</span></td></tr>
+      <tr><td>Tuplas</td><td>Identidad <code>(dni, nombre)</code> y retornos múltiples de coordenadas.</td><td><code>realizar_checkin</code>, <code>hotel.py</code></td><td class="c"><span class="pill p-ok">CUMPLE</span></td></tr>
+      <tr><td>Diccionarios</td><td>Registro de huésped, esquema de tarifas <code>{piso: precio}</code> y archivo JSON.</td><td><code>huespedes.py</code>, <code>tarifas.py</code>, <code>archivos.py</code></td><td class="c"><span class="pill p-ok">CUMPLE</span></td></tr>
+      <tr><td>Excepciones</td><td><code>try / except / else / finally</code> en lectura y escritura de archivos.</td><td><code>archivos.py</code></td><td class="c"><span class="pill p-ok">CUMPLE</span></td></tr>
+      <tr><td>Archivos JSON</td><td>Guardado después de cada operación y recuperación al iniciar.</td><td><code>archivos.py</code>, <code>main.py</code></td><td class="c"><span class="pill p-ok">CUMPLE</span></td></tr>
+      <tr><td>Archivos de texto</td><td>Bitácora de check-outs (escritura <code>"a"</code>, lectura y exportación CSV).</td><td><code>facturacion.txt</code></td><td class="c"><span class="pill p-ok">CUMPLE</span></td></tr>
+      <tr><td>Pruebas unitarias</td><td>10 pruebas sobre 6 funciones, con la distribución 4 / 3 / 2 / 1.</td><td><code>tests.py</code></td><td class="c"><span class="pill p-ok">CUMPLE</span></td></tr>
+      <tr><td>Validaciones</td><td>Regex, rangos, estado del sistema y reintento ante error.</td><td><code>validaciones.py</code></td><td class="c"><span class="pill p-ok">CUMPLE</span></td></tr>
+      <tr><td>Modularización</td><td>7 módulos; <code>main.py</code> solo coordina; sin variables globales.</td><td>Anexo A</td><td class="c"><span class="pill p-ok">CUMPLE</span></td></tr>
+      <tr><td>Clases · Bases de datos · Librerías no vistas</td><td>No se utilizan.</td><td>Capítulo 8</td><td class="c"><span class="pill p-ok">CUMPLE</span></td></tr>
+    </tbody>
+  </table>
+
+  <h2>Integración de los contenidos (Sección 13)</h2>
+  <p>Los conceptos no aparecen aislados. Una sola operación, el <b>check-in</b>, atraviesa casi todos:</p>
+  <div class="flow">
+    <div class="step"><b>Validación</b>regex de nombre, DNI y días<br><code>validar_generico</code></div>
+    <div class="arrow">›</div>
+    <div class="step"><b>Conjunto</b>DNI no repetido<br><code>validar_dni</code></div>
+    <div class="arrow">›</div>
+    <div class="step"><b>Tupla + dict</b>registro del huésped<br><code>realizar_checkin</code></div>
+    <div class="arrow">›</div>
+    <div class="step"><b>JSON + excepciones</b>guardado seguro<br><code>guardar_datos_hotel</code></div>
+    <div class="arrow">›</div>
+    <div class="step"><b>Recuperación</b>al reiniciar<br><code>cargar_datos_hotel</code></div>
+    <div class="arrow">›</div>
+    <div class="step"><b>Prueba</b>búsqueda del huésped<br><code>test_07</code>, <code>test_10</code></div>
+  </div>
+</section>
+
+<!-- ======================================================================= -->
+<!-- 2. MEJORAS (15.a)                                                        -->
+<!-- ======================================================================= -->
+<section class="section">
+  <h1>2. Descripción de las mejoras <span class="tag">Ítem 15.a</span></h1>
+  <p class="lead">
+    Funcionalidades modificadas o incorporadas respecto de la primera entrega. La comparación se hizo
+    contra la última versión de la Parte 1 en el repositorio (commit <code>495246d</code>, 13/09/2026),
+    que constaba de un único archivo <code>main.py</code>.
+  </p>
+
+  <h2>2.1 Funcionalidades</h2>
+  <table>
+    <thead><tr><th style="width:27%">Funcionalidad</th><th class="c" style="width:13%">Tipo</th><th>Qué cambió y por qué</th></tr></thead>
+    <tbody>
+      <tr><td><b>Guardado y recuperación</b></td><td class="c"><span class="pill p-new">NUEVA</span></td><td>Antes, al cerrar el programa se perdía todo. Ahora el estado se guarda en <code>hotel_data.json</code> después de cada operación y se recupera al iniciar.</td></tr>
+      <tr><td><b>DNI único</b></td><td class="c"><span class="pill p-new">NUEVA</span></td><td>La Parte 1 permitía registrar dos veces el mismo DNI. <code>validar_dni</code> lo impide usando un conjunto y pide otro DNI.</td></tr>
+      <tr><td><b>Búsqueda por nombre</b></td><td class="c"><span class="pill p-new">NUEVA</span></td><td>Coincidencia parcial sin distinguir mayúsculas, con <code>filter</code> y <code>lambda</code>: <code>"juan"</code> encuentra a <i>Juan Perez</i> y a <i>Juana Garcia</i>.</td></tr>
+      <tr><td><b>Búsqueda por habitación</b></td><td class="c"><span class="pill p-new">NUEVA</span></td><td>Devuelve quién ocupa un número de habitación (<code>buscar_huesped_por_habitacion</code>).</td></tr>
+      <tr><td><b>Submenú de búsquedas</b></td><td class="c"><span class="pill p-new">NUEVA</span></td><td>La opción 5 pasó de "Buscar por DNI" a un submenú con los tres criterios.</td></tr>
+      <tr><td><b>Reporte de habitaciones libres</b></td><td class="c"><span class="pill p-new">NUEVA</span></td><td>Lista ordenada de habitaciones ocupadas y libres usando diferencia e intersección de conjuntos.</td></tr>
+      <tr><td><b>Cancelación con <code>-1</code></b></td><td class="c"><span class="pill p-new">NUEVA</span></td><td>Cualquier operación puede abandonarse sin modificar el estado. Antes, un error de tipeo obligaba a completar la operación.</td></tr>
+      <tr><td><b>Confirmación s/n</b></td><td class="c"><span class="pill p-new">NUEVA</span></td><td><code>solicitar_confirmacion</code> acepta <i>s, si, sí, n, no</i> y devuelve un booleano; se reutiliza en la configuración de tarifas.</td></tr>
+      <tr><td><b>Registro del huésped</b></td><td class="c"><span class="pill p-imp">MEJORADA</span></td><td>De lista posicional <code>[nombre, dni, dias, piso, hab, num]</code> a diccionario con tupla de identidad. Ver capítulo 3.</td></tr>
+      <tr><td><b>Reubicación (Swap)</b></td><td class="c"><span class="pill p-imp">MEJORADA</span></td><td>Una función larga se dividió en <code>puede_reubicar</code>, <code>pedir_huesped_a_reubicar</code>, <code>pedir_habitacion_destino</code> y <code>mover_huesped</code>, con una tarea cada una.</td></tr>
+      <tr><td><b>Configuración de tarifas</b></td><td class="c"><span class="pill p-imp">MEJORADA</span></td><td>Se dividió en 5 subfunciones (precio base, pisos de lujo, captura, generación y resumen).</td></tr>
+      <tr><td><b>Redimensionar hotel</b></td><td class="c"><span class="pill p-imp">MEJORADA</span></td><td>Ahora muestra una advertencia de pérdida de datos y permite cancelar antes de borrar.</td></tr>
+      <tr><td><b>Check-in con hotel lleno</b></td><td class="c"><span class="pill p-fix">CORREGIDA</span></td><td>En la Parte 1, si no quedaban habitaciones libres, el pedido de habitación se repetía sin fin. Ahora <code>hay_habitaciones_libres</code> lo detecta y avisa.</td></tr>
+      <tr><td><b>Validación de rangos repetida</b></td><td class="c"><span class="pill p-fix">CORREGIDA</span></td><td>La verificación "¿existe esta habitación?" estaba copiada en varias funciones. Se centralizó en <code>habitacion_existe</code>.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>2.2 Nuevas validaciones (Sección 11)</h2>
+  <table>
+    <thead><tr><th style="width:30%">Situación</th><th>Respuesta del sistema</th><th style="width:28%">Función</th></tr></thead>
+    <tbody>
+      <tr><td>Dato obligatorio vacío</td><td>El patrón regex no acepta cadenas vacías; se informa y se vuelve a pedir.</td><td><code>validar_generico</code></td></tr>
+      <tr><td>Tipo incorrecto (letras en un número)</td><td>"Debe ingresar un número entero válido" y nuevo ingreso.</td><td><code>PATRON_NUMERO_VALIDO</code></td></tr>
+      <tr><td>Valor fuera de rango</td><td>Pisos y habitaciones de 1 a 99; piso de lujo entre 2 y el total; precio mayor a 0; días mayor a 0.</td><td><code>solicitar_dimension_valida</code></td></tr>
+      <tr><td>Opción de menú inexistente</td><td>"Opción inválida. Intente nuevamente."</td><td><code>menu_principal</code></td></tr>
+      <tr><td>DNI ya registrado</td><td>Se informa el DNI repetido y se pide otro (o <code>-1</code>).</td><td><code>validar_dni</code></td></tr>
+      <tr><td>Habitación inexistente o no libre</td><td>Se informa el motivo y se vuelve a pedir.</td><td><code>solicitar_habitacion_libre</code></td></tr>
+      <tr><td>Restablecer una habitación que no está en limpieza</td><td>"La habitación no está en limpieza."</td><td><code>restablecer_limpieza</code></td></tr>
+      <tr><td>Operar sin huéspedes o sin habitaciones libres</td><td>Se avisa antes de pedir datos innecesarios.</td><td><code>hotel_vacio</code>, <code>puede_reubicar</code></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ======================================================================= -->
+<!-- 3. ESTRUCTURAS (15.b)                                                    -->
+<!-- ======================================================================= -->
+<section class="section">
+  <h1>3. Estructuras de datos <span class="tag">Ítem 15.b</span></h1>
+  <p class="lead">
+    Cada estructura se eligió por una propiedad concreta que el dato necesita. La siguiente
+    figura muestra cómo se combinan dentro del registro de un huésped.
+  </p>
+
+  <pre><code><span class="c"># huespedes.py · realizar_checkin()</span>
+datos_huesped = {                                    <span class="c"># DICCIONARIO: registro con campos por nombre</span>
+    <span class="s">"identidad"</span>: (dni, nombre),                    <span class="c"># TUPLA: no cambia nunca</span>
+    <span class="s">"dias"</span>: dias,                                  <span class="c"># int</span>
+    <span class="s">"ubicacion"</span>: [piso, habitacion, num_comercial]  <span class="c"># LISTA: cambia en el swap</span>
+}
+lista_huespedes.append(datos_huesped)                <span class="c"># lista de diccionarios</span></code></pre>
+
+  <h2>3.1 Conjuntos (<code>set</code>)</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>Uso 1 · Evitar DNI duplicados</h3>
+      <p class="small"><b>Dónde:</b> <code>huespedes.validar_dni</code></p>
+      <p class="small">Se arma un conjunto con los DNI de los huéspedes alojados y se pregunta si el nuevo DNI pertenece.</p>
+      <pre><code>dnis_registrados = set()
+<span class="k">for</span> huesped <span class="k">in</span> lista_huespedes:
+    dnis_registrados.add(huesped[<span class="s">"identidad"</span>][<span class="n">0</span>])
+<span class="k">while</span> dni_nuevo <span class="k">in</span> dnis_registrados:
+    ...  <span class="c"># informa y pide otro DNI</span></code></pre>
+      <p class="small"><b>Por qué:</b> un conjunto no admite repetidos y la pertenencia (<code>in</code>) se resuelve por <i>hash</i>, en tiempo constante promedio, sin recorrer la lista elemento por elemento.</p>
+    </div>
+    <div class="card">
+      <h3>Uso 2 · Comparar información</h3>
+      <p class="small"><b>Dónde:</b> <code>reportes.reporte_habitaciones_libres</code></p>
+      <p class="small">Se construyen dos conjuntos de números de habitación y se operan:</p>
+      <pre><code>todas    = {<span class="n">101</span>, <span class="n">102</span>, <span class="n">103</span>, <span class="n">201</span>, <span class="n">202</span>, <span class="n">203</span>}
+ocupadas = {<span class="n">102</span>, <span class="n">201</span>}
+libres   = todas.difference(ocupadas)   <span class="c"># diferencia</span>
+comunes  = todas.intersection(ocupadas)   <span class="c"># intersección</span></code></pre>
+      <p class="small"><b>Por qué:</b> la pregunta "¿qué habitaciones no están ocupadas?" es exactamente una diferencia de conjuntos. La intersección asegura que solo se informen ocupadas que existen en el hotel actual.</p>
+    </div>
+  </div>
+
+  <h2>3.2 Tuplas (<code>tuple</code>)</h2>
+  <table>
+    <thead><tr><th style="width:24%">Qué representa</th><th style="width:28%">Dónde se usa</th><th>Por qué una tupla</th></tr></thead>
+    <tbody>
+      <tr><td><b>Identidad del huésped</b><br><code>(dni, nombre)</code></td><td><code>realizar_checkin</code>; se lee en búsquedas, check-out y reportes.</td><td>El DNI y el nombre se cargan una vez y no deben modificarse durante la estadía. La tupla es inmutable: un intento de cambiar <code>identidad[0]</code> produce un error en lugar de alterar el dato. Además, agrupa dos valores que siempre van juntos.</td></tr>
+      <tr><td><b>Coordenadas de habitación</b><br><code>(piso, habitacion)</code></td><td><code>obtener_indices_matriz</code>, <code>solicitar_habitacion_libre</code></td><td>Una función devuelve dos valores relacionados en un solo retorno, que se desempaqueta: <code>piso, hab = obtener_indices_matriz(201)</code>.</td></tr>
+      <tr><td><b>Destino del swap</b><br><code>(piso, habitacion, numero)</code></td><td><code>pedir_habitacion_destino</code>, <code>mover_huesped</code></td><td>Viaja como un único valor entre funciones; <code>(-1, -1, -1)</code> indica cancelación.</td></tr>
+    </tbody>
+  </table>
+  <div class="box">
+    <span class="t">Por qué la ubicación no es una tupla</span>
+    La ubicación del huésped sí cambia (en el swap se actualizan piso, habitación y número), por eso es
+    una lista. La decisión tupla/lista sigue una regla simple: <b>lo que no debe cambiar es tupla, lo
+    que puede cambiar es lista</b>.
+  </div>
+
+  <h2>3.3 Diccionarios (<code>dict</code>)</h2>
+  <table>
+    <thead><tr><th style="width:24%">Qué representa</th><th style="width:28%">Dónde se usa</th><th>Por qué un diccionario</th></tr></thead>
+    <tbody>
+      <tr><td><b>Registro de un huésped</b></td><td><code>realizar_checkin</code> y todas las funciones de <code>huespedes.py</code> y <code>reportes.py</code></td><td>Se accede por nombre de campo (<code>huesped["dias"]</code>) en lugar de por posición (<code>huesped[2]</code>). Agregar un campo nuevo no rompe el código existente, cosa que sí ocurría con las listas posicionales de la Parte 1.</td></tr>
+      <tr><td><b>Esquema de tarifas por piso</b><br><code>{1: 10000.0, 2: 12000.0}</code></td><td><code>tarifas.py</code>, <code>reportes.py</code>, <code>archivos.py</code></td><td>Estructura asociativa clave-valor que mapea de forma directa cada número de piso con su tarifa diaria. Reemplaza la matriz <code>[[piso, precio], ...]</code> de la Parte 1, otorgando acceso e indexación directa en tiempo constante <i>O(1)</i> (<code>matriz_tarifas[piso]</code>).</td></tr>
+      <tr><td><b>Estado completo del hotel</b><br><code>{"pisos", "habitaciones", "huespedes", "tarifas"}</code></td><td><code>guardar_datos_hotel</code>, <code>cargar_datos_hotel</code>, <code>menu_principal</code></td><td>Es la forma natural de un objeto JSON: cada clave se convierte en un campo del archivo y al leerlo se recupera por nombre (<code>datos["tarifas"]</code>).</td></tr>
+    </tbody>
+  </table>
+
+  <h2>3.4 Otras estructuras del sistema</h2>
+  <table>
+    <thead><tr><th style="width:24%">Estructura</th><th>Uso y justificación</th></tr></thead>
+    <tbody>
+      <tr><td><b>Matriz del hotel</b><br>lista de listas</td><td><code>hotel[piso][habitacion]</code> contiene <code>"L"</code>, <code>"O"</code> o <code>"S"</code>. Refleja la forma física del edificio y da acceso directo a cualquier habitación.</td></tr>
+      <tr><td><b>Diccionario de tarifas</b><br><code>{piso: precio}</code></td><td>Estructura asociativa que mapea cada piso con su tarifa por noche; se genera al inicio en <code>tarifas.py</code> y se consulta en <i>O(1)</i> en cada liquidación de check-out y en el cálculo de recaudación proyectada.</td></tr>
+      <tr><td><b>Lista de huéspedes</b><br>lista de diccionarios</td><td>Colección variable que crece en el check-in y se reduce en el check-out; se recorre con <code>for</code>, <code>filter</code> y <code>map</code>.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ======================================================================= -->
+<!-- 4. PERSISTENCIA (15.c)                                                   -->
+<!-- ======================================================================= -->
+<section class="section">
+  <h1>4. Persistencia <span class="tag">Ítem 15.c</span></h1>
+  <p class="lead">
+    La información se guarda exclusivamente en archivos (Sección 12.2). Cada formato cumple un
+    propósito distinto: <b>JSON</b> para el estado del hotel y <b>texto plano</b> para el historial de facturación.
+  </p>
+
+  <h2>4.1 Respuesta a las preguntas de la consigna</h2>
+  <table>
+    <thead><tr><th style="width:27%">Pregunta</th><th>Respuesta</th></tr></thead>
+    <tbody>
+      <tr><td><b>¿Qué información se almacena?</b></td><td>Las dimensiones del hotel, el esquema de tarifas por piso, los huéspedes alojados (identidad, días y ubicación) y el historial de check-outs realizados.</td></tr>
+      <tr><td><b>¿En qué archivo?</b></td><td><code>hotel_data.json</code> (estado del hotel), <code>facturacion.txt</code> (bitácora) y <code>facturacion.csv</code> (exportación).</td></tr>
+      <tr><td><b>¿Qué se guarda en JSON?</b></td><td>El estado actual: <code>pisos</code>, <code>habitaciones</code>, <code>huespedes</code> y el diccionario de <code>tarifas</code> (<code>{"1": 10000.0, ...}</code>). Es información estructurada que se sobrescribe completa en cada guardado.</td></tr>
+      <tr><td><b>¿Qué se guarda en texto?</b></td><td>Una línea por cada check-out con 6 campos delimitados por <code>;</code>: DNI, nombre, habitación comercial, piso, noches y total cobrado. Es información histórica en modo agregado (<code>"a"</code>) que nunca se reescribe.</td></tr>
+      <tr><td><b>¿Cómo se recupera?</b></td><td>El JSON se lee al iniciar y reconstruye el hotel (ver 4.3). La bitácora se lee para mostrar el historial y para generar el CSV (ver 4.4).</td></tr>
+    </tbody>
+  </table>
+
+  <h2>4.2 Archivo JSON · <code>hotel_data.json</code> <span class="pill p-ok">IMPLEMENTADO</span></h2>
+  <div class="grid2">
+    <div>
+      <pre><code>{
+    <span class="s">"pisos"</span>: <span class="n">2</span>,
+    <span class="s">"habitaciones"</span>: <span class="n">4</span>,
+    <span class="s">"huespedes"</span>: [
+        {
+            <span class="s">"identidad"</span>: [<span class="s">"40123456"</span>, <span class="s">"Juan Perez"</span>],
+            <span class="s">"dias"</span>: <span class="n">10</span>,
+            <span class="s">"ubicacion"</span>: [<span class="n">1</span>, <span class="n">0</span>, <span class="n">201</span>]
+        }
+    ],
+    <span class="s">"tarifas"</span>: {
+        <span class="s">"1"</span>: <span class="n">10000.0</span>,
+        <span class="s">"2"</span>: <span class="n">12000.0</span>
+    }
+}</code></pre>
+    </div>
+    <div>
+      <p class="small"><b>Cuándo se escribe:</b> al terminar la configuración inicial, después de cada check-in, check-out, swap, restablecimiento y redimensionamiento, y al salir con la opción 0.</p>
+      <p class="small"><b>Cómo:</b> <code>json.dump(datos, archivo, ensure_ascii=False, indent=4)</code> en modo <code>"w"</code> y codificación UTF-8. <code>ensure_ascii=False</code> conserva tildes y eñes legibles (<i>Muñoz</i>, no <i>Mu\u00f1oz</i>).</p>
+      <p class="small"><b>Claves numéricas en JSON:</b> El formato JSON serializa las claves de los objetos como cadenas (<code>"1"</code>, <code>"2"</code>). Al deserializar con <code>cargar_datos_hotel()</code>, el sistema convierte las claves a enteros (<code>int(piso)</code>) para permitir el acceso nativo numérico <code>matriz_tarifas[piso]</code>.</p>
+      <p class="small"><b>Conversión Python ↔ JSON:</b></p>
+      <table class="small" style="margin-top:2px">
+        <thead><tr><th>Python</th><th>JSON</th><th>Al leer</th></tr></thead>
+        <tbody>
+          <tr><td><code>dict</code></td><td>objeto</td><td><code>dict</code></td></tr>
+          <tr><td><code>list</code></td><td>arreglo</td><td><code>list</code></td></tr>
+          <tr><td><code>tuple</code></td><td>arreglo</td><td><code>list</code></td></tr>
+          <tr><td><code>str</code> / <code>int</code> / <code>float</code></td><td>texto / número</td><td>igual</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="box key">
+    <span class="t">Detalle técnico: la tupla en JSON</span>
+    JSON no tiene tipo tupla, así que <code>json.dump</code> guarda <code>identidad</code> como arreglo y
+    <code>json.load</code> lo devuelve como lista. Como el sistema siempre lee la identidad por índice
+    (<code>[0]</code> DNI, <code>[1]</code> nombre), el comportamiento es idéntico antes y después de
+    reiniciar. Si se quisiera mantener la inmutabilidad también después de cargar, basta con
+    <code>huesped["identidad"] = tuple(huesped["identidad"])</code> al recuperar los datos.
+  </div>
+
+  <h2>4.3 Recuperación al iniciar</h2>
+  <div class="flow">
+    <div class="step"><b>1 · Leer</b><code>cargar_datos_hotel()</code> abre el JSON con <code>with open(..., "r")</code></div>
+    <div class="arrow">›</div>
+    <div class="step"><b>2 · ¿Hay datos?</b>Si <code>pisos != -1</code>, se usan los datos guardados</div>
+    <div class="arrow">›</div>
+    <div class="step"><b>3 · Reconstruir</b><code>inicializar_hotel(pisos, habs)</code> crea la matriz en <code>"L"</code></div>
+    <div class="arrow">›</div>
+    <div class="step"><b>4 · Ocupar</b>Por cada huésped: <code>hotel[p][h] = "O"</code> según su ubicación</div>
+    <div class="arrow">›</div>
+    <div class="step"><b>5 · Operar</b>El menú arranca con el hotel en el mismo estado</div>
+  </div>
+  <p class="small">Si el archivo no existe (primera ejecución), <code>cargar_datos_hotel</code> devuelve una estructura con <code>pisos = -1</code> y <code>main.py</code> inicia la configuración guiada, que termina guardando el primer JSON. Así se cumple el ciclo pedido en la Sección 8: generar → guardar → cerrar → volver a ejecutar → recuperar.</p>
+
+  <h2>4.4 Archivo de texto · <code>facturacion.txt</code> <span class="pill p-ok">IMPLEMENTADO</span></h2>
+  <div class="box ok">
+    <span class="t">Implementación completa e integrada</span>
+    La bitácora transaccional se gestiona mediante el módulo <code>archivos.py</code> (funciones <code>inicializar_archivo_txt</code>, <code>registrar_factura_txt</code>, <code>leer_registros_txt</code>, <code>leer_y_procesar_facturacion_txt</code>, <code>historial_huesped</code> y <code>exportar_facturacion_a_csv</code>). Cada Check-out registra el cobro automáticamente con sus 6 campos transaccionales, la opción 7 del menú permite realizar auditorías históricas acumulando la recaudación total, la opción 11 consulta el historial por DNI y la opción 8 genera la exportación a CSV.
+  </div>
+  <table>
+    <thead><tr><th style="width:20%">Operación</th><th>Implementación técnica</th></tr></thead>
+    <tbody>
+      <tr><td><b>Inicialización</b></td><td><code>inicializar_archivo_txt()</code> asegura la existencia física de <code>facturacion.txt</code> al arrancar el sistema con modo <code>"a"</code> y codificación UTF-8.</td></tr>
+      <tr><td><b>Escritura</b></td><td>En cada Check-out, <code>huespedes.py</code> invoca <code>registrar_factura_txt(dni, nombre, habitacion, piso, dias, monto)</code> en modo agregado (<code>"a"</code>). Escribe de inmediato sin leer ni reescribir lo anterior, asentando el comprobante en disco con los 6 datos clave.</td></tr>
+      <tr><td><b>Formato (6 campos)</b></td><td>Campos delimitados por <code>;</code>:<br><code>dni;nombre;habitacion;piso;dias;monto</code><br>Ejemplo: <code>40123456;Juan Perez;201;2;10;120000.00</code></td></tr>
+      <tr><td><b>Lectura modular</b></td><td>La función auxiliar <code>leer_registros_txt()</code> centraliza la apertura, lectura secuencial, descarte de líneas vacías y <code>split(";")</code>, retornando los registros como sublistas para evitar duplicación.</td></tr>
+      <tr><td><b>Lectura y auditoría</b></td><td>La opción 7 invoca <code>leer_y_procesar_facturacion_txt()</code>, recorriendo los comprobantes tabulados con DNI, huésped, habitación, piso, días y monto, acumulando la recaudación histórica real.</td></tr>
+      <tr><td><b>Historial por DNI</b></td><td>La opción 11 invoca <code>historial_huesped(dni_buscado)</code>, filtrando sobre <code>facturacion.txt</code> para detallar todas las estadías pasadas y el monto total abonado por un cliente específico.</td></tr>
+      <tr><td><b>Exportación CSV</b></td><td>La opción 8 invoca <code>exportar_facturacion_a_csv()</code>, que procesa el archivo de texto y escribe <code>facturacion.csv</code> mediante la librería estándar <code>csv</code> (<code>csv.writer</code>) con encabezados <code>["DNI", "Huesped", "Habitacion", "Piso", "Dias", "Monto_Cobrado"]</code> para Microsoft Excel o Google Sheets.</td></tr>
+      <tr><td><b>Excepciones</b></td><td>Manejo completo con <code>try / except / else / finally</code> capturando <code>FileNotFoundError</code>, <code>PermissionError</code>, <code>(ValueError, IndexError)</code> y <code>OSError</code>.</td></tr>
+    </tbody>
+  </table>
+  <p class="small"><b>Por qué texto y no JSON para el historial:</b> el JSON se reescribe completo en cada guardado; un historial que solo crece se maneja mejor agregando líneas, sin cargar todo en memoria. Además, una bitácora en texto se puede leer directamente con cualquier editor como respaldo de auditoría.</p>
+</section>
+
+<!-- ======================================================================= -->
+<!-- 5. EXCEPCIONES (15.d)                                                    -->
+<!-- ======================================================================= -->
+<section class="section">
+  <h1>5. Excepciones <span class="tag">Ítem 15.d</span></h1>
+  <p class="lead">
+    La Sección 6 pide no usar <code>try / except</code> indiscriminadamente. El criterio del equipo fue:
+    <b>prevenir con validación los errores que dependen del usuario y capturar con excepciones los que
+    dependen del entorno</b>, es decir, del sistema de archivos.
+  </p>
+
+  <h2>5.1 Situaciones controladas</h2>
+  <table>
+    <thead><tr><th style="width:24%">Situación</th><th style="width:19%">Excepción</th><th style="width:16%">Dónde</th><th>Cómo se controla</th></tr></thead>
+    <tbody>
+      <tr><td>Primera ejecución: el archivo todavía no existe</td><td><code>FileNotFoundError</code></td><td><code>cargar_datos_hotel</code></td><td>Informa "El archivo no existe" y devuelve una estructura vacía con <code>pisos = -1</code>; el sistema inicia la configuración guiada en lugar de cerrarse.</td></tr>
+      <tr><td>El sistema operativo no permite leer o escribir el archivo</td><td><code>PermissionError</code></td><td>lectura y escritura</td><td>Informa "No tiene permisos para acceder al archivo" y el programa sigue funcionando.</td></tr>
+      <tr><td>El JSON fue editado a mano o quedó dañado</td><td><code>ValueError</code>, <code>IndexError</code></td><td><code>cargar_datos_hotel</code></td><td><code>json.JSONDecodeError</code> es subclase de <code>ValueError</code>, por lo que queda capturada. Se informa "El archivo contiene registros incorrectos".</td></tr>
+      <tr><td>Un dato no se puede convertir a JSON</td><td><code>TypeError</code>, <code>ValueError</code></td><td><code>guardar_datos_hotel</code></td><td>Se informa y la función devuelve <code>guardado = False</code>.</td></tr>
+      <tr><td>Disco lleno, ruta inválida u otro error de E/S</td><td><code>OSError</code></td><td>lectura y escritura</td><td>Se muestra el detalle del error. Se captura después de las específicas porque es su clase padre.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>5.2 Estructura completa: <code>try / except / else / finally</code></h2>
+  <pre><code><span class="c"># archivos.py · guardar_datos_hotel()</span>
+<span class="k">try</span>:
+    archivo = open(nombre_archivo, <span class="s">"w"</span>, encoding=<span class="s">"UTF-8"</span>)
+    json.dump(datos, archivo, ensure_ascii=<span class="k">False</span>, indent=<span class="n">4</span>)
+    guardado = <span class="k">True</span>
+<span class="k">except</span> PermissionError:            <span class="c"># específica primero...</span>
+    print(<span class="s">"ERROR. No tiene permisos para acceder al archivo."</span>)
+<span class="k">except</span> (ValueError, TypeError):
+    print(<span class="s">"ERROR. El archivo contiene registros incorrectos."</span>)
+<span class="k">except</span> OSError <span class="k">as</span> error:            <span class="c"># ...la general al final</span>
+    print(<span class="s">"ERROR al trabajar con el archivo:"</span>, error)
+<span class="k">else</span>:                               <span class="c"># solo si no hubo excepción</span>
+    print(<span class="s">"Escritura finalizada correctamente."</span>)
+<span class="k">finally</span>:                            <span class="c"># siempre: cierra el archivo</span>
+    <span class="k">if</span> archivo != <span class="k">None</span>:
+        archivo.close()</code></pre>
+  <div class="grid3">
+    <div class="card small"><h3>Orden de los <code>except</code></h3><code>PermissionError</code> es subclase de <code>OSError</code>. Si <code>OSError</code> fuera primero, el mensaje específico nunca se mostraría.</div>
+    <div class="card small"><h3><code>else</code></h3>Separa el camino exitoso del código que puede fallar: el mensaje de éxito no se imprime si la escritura falló.</div>
+    <div class="card small"><h3><code>finally</code></h3>Garantiza que el archivo se cierre aunque <code>json.dump</code> falle a mitad de la escritura.</div>
+  </div>
+
+  <h2>5.3 Errores prevenidos sin <code>try</code></h2>
+  <p>Las conversiones como <code>int(dato)</code> o <code>float(dato)</code> podrían lanzar <code>ValueError</code>. En lugar de envolverlas en <code>try</code>, el dato se valida antes con una expresión regular en <code>validar_generico</code>, que pide reingresar hasta que el formato sea correcto. Cuando se llega a la conversión, el error ya es imposible.</p>
+  <table>
+    <thead><tr><th style="width:30%">Riesgo</th><th>Prevención</th></tr></thead>
+    <tbody>
+      <tr><td><code>int("abc")</code> → <code>ValueError</code></td><td><code>PATRON_NUMERO_VALIDO = r"^\d+$"</code> solo deja pasar dígitos.</td></tr>
+      <tr><td><code>hotel[5][0]</code> en un hotel de 2 pisos → <code>IndexError</code></td><td><code>habitacion_existe(matriz, piso, hab)</code> verifica los límites antes de acceder.</td></tr>
+      <tr><td>División por cero en el porcentaje de ocupación</td><td><code>if total_habitaciones &gt; 0</code> antes de dividir.</td></tr>
+      <tr><td>Huésped inexistente</td><td>Las búsquedas devuelven <code>[]</code> o <code>-1</code> y se informa al usuario.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ======================================================================= -->
+<!-- 6. PRUEBAS (15.e)                                                        -->
+<!-- ======================================================================= -->
+<section class="section">
+  <h1>6. Pruebas unitarias <span class="tag">Ítem 15.e</span></h1>
+  <p class="lead">
+    <code>tests.py</code> contiene 10 pruebas sobre <b>6 funciones distintas</b> de 4 módulos, con la
+    distribución exigida por la Sección 9. Se ejecutan de forma independiente del programa principal.
+  </p>
+
+  <div class="grid4" style="margin-bottom:10px">
+    <div class="stat"><b>4</b><span>casos válidos</span></div>
+    <div class="stat"><b>3</b><span>casos inválidos</span></div>
+    <div class="stat"><b>2</b><span>casos límite</span></div>
+    <div class="stat"><b>1</b><span>caso adicional</span></div>
+  </div>
+
+  <h2>6.1 Funciones testeadas y casos considerados</h2>
+  <table>
+    <thead><tr><th class="c" style="width:5%">#</th><th class="c" style="width:11%">Tipo</th><th style="width:30%">Función</th><th>Datos</th><th style="width:16%">Esperado</th></tr></thead>
+    <tbody>
+      <tr><td class="c">01</td><td class="c"><span class="pill p-val">VÁLIDO</span></td><td><code>hotel.inicializar_hotel</code></td><td>2 pisos, 3 habitaciones</td><td>matriz 2×3 de <code>"L"</code></td></tr>
+      <tr><td class="c">02</td><td class="c"><span class="pill p-val">VÁLIDO</span></td><td><code>tarifas.obtener_tarifa_habitacion</code></td><td>piso 2; dict de tarifas {1: 10000, 2: 12000, 3: 15000}</td><td><code>12000.0</code></td></tr>
+      <tr><td class="c">03</td><td class="c"><span class="pill p-val">VÁLIDO</span></td><td><code>reportes.calcular_subtotal</code></td><td>5 noches, piso 1 a $10.000</td><td><code>50000.0</code></td></tr>
+      <tr><td class="c">04</td><td class="c"><span class="pill p-val">VÁLIDO</span></td><td><code>reportes.calcular_subtotal</code></td><td>10 noches, piso 1 a $10.000</td><td><code>90000.0</code></td></tr>
+      <tr><td class="c">05</td><td class="c"><span class="pill p-inv">INVÁLIDO</span></td><td>Detección con <code>set</code> (lógica de <code>validar_dni</code>)</td><td>DNI <code>11111111</code> ya registrado</td><td><code>True</code> (duplicado)</td></tr>
+      <tr><td class="c">06</td><td class="c"><span class="pill p-inv">INVÁLIDO</span></td><td><code>hotel.habitacion_existe</code></td><td>piso 5 en un hotel 2×2</td><td><code>False</code></td></tr>
+      <tr><td class="c">07</td><td class="c"><span class="pill p-inv">INVÁLIDO</span></td><td><code>huespedes.buscar_huesped_por_habitacion</code></td><td>habitación 999</td><td><code>[]</code></td></tr>
+      <tr><td class="c">08</td><td class="c"><span class="pill p-lim">LÍMITE</span></td><td><code>reportes.calcular_subtotal</code></td><td>exactamente 7 noches</td><td><code>70000.0</code></td></tr>
+      <tr><td class="c">09</td><td class="c"><span class="pill p-lim">LÍMITE</span></td><td><code>hotel.inicializar_hotel</code></td><td>1 piso, 1 habitación</td><td><code>[["L"]]</code></td></tr>
+      <tr><td class="c">10</td><td class="c"><span class="pill p-add">ADICIONAL</span></td><td><code>huespedes.buscar_huespedes_por_nombre</code></td><td><code>"juan"</code> entre 3 huéspedes</td><td>Juan Perez y Juana Garcia</td></tr>
+    </tbody>
+  </table>
+
+  <h2>6.2 Ejecución y salida</h2>
+  <div class="grid2">
+    <div>
+      <p class="small"><b>Opción 1 · Python puro</b> (no requiere instalar nada). Muestra los 5 datos exigidos por prueba:</p>
+      <pre><code>$ python tests.py
+Prueba [04] - CASO VÁLIDO
+  1. Función:   reportes.calcular_subtotal
+  2. Datos:     huesped={'dias': 10, ...}
+  3. Esperado:  90000.0
+  4. Obtenido:  90000.0
+  5. Resultado: [APROBADO]
+...
+RESUMEN FINAL: 10/10 PRUEBAS APROBADAS</code></pre>
+    </div>
+    <div>
+      <p class="small"><b>Opción 2 · PyTest</b> (autorizado por la cátedra). Descubre las funciones <code>test_*</code> y evalúa los <code>assert</code>:</p>
+      <pre><code>$ python -m pytest tests.py -v
+test_01_inicializacion_matriz_valida  PASSED
+test_02_obtener_tarifa_piso_existente PASSED
+...
+test_10_busqueda_parcial_nombre_...   PASSED
+========== 10 passed in 0.08s ==========</code></pre>
+    </div>
+  </div>
+  <p class="small">Cada prueba arma sus propios datos (no lee el JSON ni pide <code>input</code>), por eso el resultado no depende del estado del hotel ni del orden de ejecución.</p>
+</section>
+
+<section class="section">
+  <h2 style="margin-top:0">6.3 Guía para la defensa</h2>
+  <p class="small">La Sección 9 indica que el docente puede elegir cualquier prueba y preguntar qué comprueba, por qué se eligió, qué se espera y qué pasaría si cambiaran los datos.</p>
+  <table>
+    <thead><tr><th class="c" style="width:5%">#</th><th style="width:26%">Qué comprueba y por qué se eligió</th><th style="width:22%">Resultado esperado</th><th>Qué pasaría si se modifican los datos</th></tr></thead>
+    <tbody>
+      <tr><td class="c">01</td><td>Que la matriz tenga tantas filas como pisos y columnas como habitaciones, todas libres. Es la base de todo el sistema.</td><td><code>[["L","L","L"], ["L","L","L"]]</code></td><td>Con <code>(3, 2)</code> la matriz sería 3×2 y la prueba fallaría contra el esperado 2×3: confirma que no se invierten pisos y habitaciones.</td></tr>
+      <tr><td class="c">02</td><td>Que se devuelva el precio del piso pedido y no el de otro a partir del diccionario de tarifas <code>{piso: precio}</code>. Es el dato que alimenta toda la facturación.</td><td><code>12000.0</code></td><td>Con piso 3 devolvería <code>15000.0</code>. Con un piso inexistente (p. ej. 9) la función devuelve el precio del último piso como respaldo.</td></tr>
+      <tr><td class="c">03</td><td>El cálculo básico <code>precio × noches</code> sin descuento.</td><td><code>50000.0</code></td><td>Con 6 noches: <code>60000.0</code>. Con el huésped en el piso 2 (<code>ubicacion[0] = 1</code>) se usaría $12.000 → <code>60000.0</code>.</td></tr>
+      <tr><td class="c">04</td><td>Que la <code>lambda</code> aplique el 10 % cuando hay más de 7 noches.</td><td><code>90000.0</code> (100.000 − 10 %)</td><td>Si se quitara el descuento del código, el obtenido sería <code>100000.0</code> y la prueba lo detectaría.</td></tr>
+      <tr><td class="c">05</td><td>Que un DNI repetido se detecte por pertenencia al conjunto. Es la regla que impide registrar dos veces a la misma persona.</td><td><code>True</code></td><td>Con un DNI nuevo (<code>"22222222"</code>) el resultado sería <code>False</code>, es decir, se permitiría el registro.</td></tr>
+      <tr><td class="c">06</td><td>Que una coordenada fuera de la matriz se rechace antes de acceder, evitando un <code>IndexError</code>.</td><td><code>False</code></td><td>Con piso 1 y habitación 1 devolvería <code>True</code>. Con valores negativos también devuelve <code>False</code>.</td></tr>
+      <tr><td class="c">07</td><td>Que buscar en una habitación sin huésped devuelva una lista vacía y no un error.</td><td><code>[]</code></td><td>Con la habitación 101 devolvería una lista con el registro de <i>Ana</i>.</td></tr>
+      <tr><td class="c">08</td><td>La frontera exacta de la regla "más de 7": con 7 todavía no hay descuento. Detecta si alguien cambia <code>&gt;</code> por <code>&gt;=</code>.</td><td><code>70000.0</code></td><td>Con 8 noches: <code>72000.0</code> (80.000 − 10 %). Si el código usara <code>&gt;=</code>, con 7 daría <code>63000.0</code> y la prueba fallaría.</td></tr>
+      <tr><td class="c">09</td><td>El hotel más chico permitido (1×1): los bucles deben funcionar con una sola iteración.</td><td><code>[["L"]]</code></td><td>Con <code>(0, 0)</code> devolvería <code>[]</code>; ese caso no llega a la función porque la validación exige un mínimo de 1.</td></tr>
+      <tr><td class="c">10</td><td>Búsqueda parcial e insensible a mayúsculas, el caso real de un recepcionista que no recuerda el nombre completo.</td><td><code>[h1, h3]</code></td><td>Con <code>"JUAN"</code> el resultado es el mismo (se compara con <code>.lower()</code>). Con <code>"lopez"</code> devolvería solo <code>[h2]</code>.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ======================================================================= -->
+<!-- 7. CAMBIOS RESPECTO DE LA PARTE 1 (15.f)                                 -->
+<!-- ======================================================================= -->
+<section class="section">
+  <h1>7. Cambios respecto de la Parte 1 <span class="tag">Ítem 15.f</span></h1>
+  <p class="lead">
+    Qué corresponde a la primera versión y qué se incorporó o modificó en esta segunda etapa.
+  </p>
+
+  <h2>7.1 Comparación por aspecto</h2>
+  <table>
+    <thead><tr><th style="width:20%">Aspecto</th><th style="width:37%">Parte 1</th><th>Parte 2</th></tr></thead>
+    <tbody>
+      <tr><td><b>Organización</b></td><td>Un único archivo <code>main.py</code> con toda la lógica.</td><td>7 módulos con una responsabilidad cada uno; <code>main.py</code> solo coordina.</td></tr>
+      <tr><td><b>Registro del huésped</b></td><td>Lista posicional <code>[nombre, dni, dias, piso, hab, num]</code>.</td><td>Diccionario con tupla <code>identidad</code> y lista <code>ubicacion</code>.</td></tr>
+      <tr><td><b>Unicidad de DNI</b></td><td>No se controlaba.</td><td>Conjunto en <code>validar_dni</code>.</td></tr>
+      <tr><td><b>Habitaciones libres</b></td><td>Solo se veían en la grilla.</td><td>Reporte por diferencia de conjuntos.</td></tr>
+      <tr><td><b>Búsquedas</b></td><td>Por DNI (menú) y filtro por piso.</td><td>Submenú: DNI, nombre parcial y habitación.</td></tr>
+      <tr><td><b>Persistencia</b></td><td>Ninguna: los datos se perdían al salir.</td><td>Triple persistencia: JSON (estado), TXT (bitácora continua en modo append) y CSV (exportación tabular).</td></tr>
+      <tr><td><b>Opciones de menú</b></td><td>8 opciones básicas.</td><td>12 opciones estructuradas (0 a 11) con auditoría histórica en TXT, exportación CSV e historial por DNI.</td></tr>
+      <tr><td><b>Esquema de tarifas</b></td><td>Lista de listas <code>[[piso, precio], ...]</code> con búsqueda secuencial.</td><td>Diccionario asociativo <code>{piso: precio}</code> con acceso directo <i>O(1)</i>.</td></tr>
+      <tr><td><b>Errores</b></td><td>Solo validaciones con regex.</td><td>Regex más <code>try / except / else / finally</code> en archivos.</td></tr>
+      <tr><td><b>Cancelación</b></td><td>No existía.</td><td><code>-1</code> en todas las entradas.</td></tr>
+      <tr><td><b>Hotel completo</b></td><td>El check-in quedaba pidiendo habitación sin fin.</td><td>Se detecta y se avisa.</td></tr>
+      <tr><td><b>Redimensionar</b></td><td>Borraba todo sin advertencia.</td><td>Advertencia y opción de cancelar.</td></tr>
+      <tr><td><b>Pruebas</b></td><td>Manuales, ejecutando el programa.</td><td>10 pruebas automáticas en <code>tests.py</code>.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>7.2 Inventario de funcionalidades</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>Se conserva de la Parte 1</h3>
+      <ul class="small">
+        <li>Matriz del hotel y estados <code>L</code> / <code>O</code> / <code>S</code>.</li>
+        <li>Numeración comercial (101, 102, …) y conversión inversa.</li>
+        <li>Grilla visual por piso.</li>
+        <li>Check-in, check-out con liquidación, swap y restablecer limpieza.</li>
+        <li>Tarifas por piso con pisos de lujo.</li>
+        <li>Descuento del 10 % con <code>lambda</code> para más de 7 noches.</li>
+        <li>Reporte de ocupación y recaudación con <code>map</code> y <code>reduce</code>.</li>
+        <li>Validación con expresiones regulares.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Se incorpora o modifica en la Parte 2</h3>
+      <ul class="small">
+        <li><span class="pill p-new">NUEVA</span> Persistencia JSON y recuperación.</li>
+        <li><span class="pill p-new">NUEVA</span> Conjuntos: DNI único y habitaciones libres.</li>
+        <li><span class="pill p-new">NUEVA</span> Búsqueda por nombre y por habitación.</li>
+        <li><span class="pill p-new">NUEVA</span> Manejo de excepciones.</li>
+        <li><span class="pill p-new">NUEVA</span> Pruebas unitarias.</li>
+        <li><span class="pill p-new">NUEVA</span> Cancelación con <code>-1</code> y confirmación s/n.</li>
+        <li><span class="pill p-imp">MEJORADA</span> Huésped como diccionario con tupla.</li>
+        <li><span class="pill p-new">NUEVA</span> Bitácora transaccional continua en TXT con 6 campos y exportación a CSV.</li>
+        <li><span class="pill p-new">NUEVA</span> Historial individual de estadías y facturación por DNI (Opción 11).</li>
+        <li><span class="pill p-imp">MEJORADA</span> Tarifas modeladas como diccionario asociativo <code>{piso: precio}</code> en lugar de matriz.</li>
+        <li><span class="pill p-imp">MEJORADA</span> Swap y tarifas divididos en subfunciones modulares.</li>
+        <li><span class="pill p-fix">CORREGIDA</span> Bucle con hotel completo.</li>
+        <li><span class="pill p-imp">REEMPLAZADA</span> El filtro por piso se sustituyó por las búsquedas por nombre y habitación.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ======================================================================= -->
+<!-- 8. RESTRICCIONES                                                         -->
+<!-- ======================================================================= -->
+<section class="section">
+  <h1>8. Cumplimiento de las restricciones técnicas <span class="tag">Sección 12</span></h1>
+  <table>
+    <thead><tr><th style="width:26%">Restricción</th><th>Cómo se respeta</th><th class="c" style="width:12%">Estado</th></tr></thead>
+    <tbody>
+      <tr><td><b>12.1 · Sin clases</b></td><td>No se usa <code>class</code>, objetos propios, herencia, métodos de clase ni constructores. El sistema está hecho con funciones, parámetros y valores de retorno.</td><td class="c"><span class="pill p-ok">CUMPLE</span></td></tr>
+      <tr><td><b>12.2 · Sin bases de datos</b></td><td>No se usa ningún motor ni ORM. La persistencia es solo con archivos JSON y de texto.</td><td class="c"><span class="pill p-ok">CUMPLE</span></td></tr>
+      <tr><td><b>12.3 · Solo librerías vistas</b></td><td>Sistema: <code>re</code> (validaciones), <code>json</code> (persistencia) y <code>functools</code> (<code>reduce</code>). Exportación: <code>csv</code>. Pruebas: <code>pytest</code>, autorizado por la cátedra y opcional, porque <code>tests.py</code> también corre con Python puro.</td><td class="c"><span class="pill p-ok">CUMPLE</span></td></tr>
+      <tr><td><b>12.4 · Código explicable</b></td><td>Sin decoradores, generadores, comprensiones anidadas ni construcciones fuera del programa. Los bucles usan variables de control booleanas en lugar de <code>while True</code> con <code>break</code>.</td><td class="c"><span class="pill p-ok">CUMPLE</span></td></tr>
+    </tbody>
+  </table>
+
+  <h2>Uso de programación funcional</h2>
+  <table>
+    <thead><tr><th style="width:18%">Herramienta</th><th style="width:36%">Dónde</th><th>Para qué</th></tr></thead>
+    <tbody>
+      <tr><td><code>lambda</code></td><td><code>calcular_subtotal</code></td><td>Regla de descuento: <code>subtotal * 0.9 if dias &gt; 7 else subtotal</code>.</td></tr>
+      <tr><td><code>filter</code></td><td><code>buscar_huespedes_por_nombre</code>, <code>buscar_huesped_por_habitacion</code></td><td>Quedarse con los huéspedes que cumplen un criterio.</td></tr>
+      <tr><td><code>map</code></td><td><code>calcular_recaudacion_total</code>, <code>generar_reporte_ocupacion</code></td><td>Transformar cada huésped en su monto y cada piso en su cantidad de ocupadas.</td></tr>
+      <tr><td><code>reduce</code></td><td><code>generar_reporte_ocupacion</code> (×3), <code>calcular_recaudacion_total</code></td><td>Acumular total de habitaciones, ocupadas y recaudación.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ======================================================================= -->
+<!-- ANEXO A · ARQUITECTURA                                                   -->
+<!-- ======================================================================= -->
+<section class="section">
+  <h1>Anexo A · Arquitectura y módulos <span class="tag">Sección 10</span></h1>
+  <p class="lead">Las flechas indican "importa funciones de". No hay dependencias circulares y la información se comparte por parámetros y valores de retorno.</p>
+
+  <figure>
+    <svg viewBox="0 0 680 350" width="100%" style="max-width:640px" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Arial, sans-serif">
+      <defs>
+        <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#13315c"/>
+        </marker>
+        <marker id="arg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#9aa5b8"/>
+        </marker>
+      </defs>
+      <!-- secondary edges from main -->
+      <line x1="292" y1="61" x2="190" y2="203" stroke="#9aa5b8" stroke-width="1.3" stroke-dasharray="4 3" marker-end="url(#arg)"/>
+      <line x1="388" y1="61" x2="490" y2="203" stroke="#9aa5b8" stroke-width="1.3" stroke-dasharray="4 3" marker-end="url(#arg)"/>
+      <!-- main edges -->
+      <line x1="300" y1="61" x2="135" y2="108" stroke="#13315c" stroke-width="1.6" marker-end="url(#ar)"/>
+      <line x1="340" y1="61" x2="340" y2="108" stroke="#13315c" stroke-width="1.6" marker-end="url(#ar)"/>
+      <line x1="380" y1="61" x2="545" y2="108" stroke="#13315c" stroke-width="1.6" marker-end="url(#ar)"/>
+      <!-- huespedes -->
+      <line x1="180" y1="133" x2="263" y2="133" stroke="#13315c" stroke-width="1.6" marker-end="url(#ar)"/>
+      <line x1="125" y1="156" x2="168" y2="203" stroke="#13315c" stroke-width="1.6" marker-end="url(#ar)"/>
+      <line x1="180" y1="150" x2="418" y2="214" stroke="#13315c" stroke-width="1.6" marker-end="url(#ar)"/>
+      <polyline points="55,156 55,318 263,318" fill="none" stroke="#13315c" stroke-width="1.6" marker-end="url(#ar)"/>
+      <!-- reportes -> tarifas -->
+      <line x1="400" y1="156" x2="462" y2="203" stroke="#13315c" stroke-width="1.6" marker-end="url(#ar)"/>
+      <!-- hotel/tarifas -> validaciones -->
+      <line x1="200" y1="251" x2="290" y2="293" stroke="#13315c" stroke-width="1.6" marker-end="url(#ar)"/>
+      <line x1="480" y1="251" x2="390" y2="293" stroke="#13315c" stroke-width="1.6" marker-end="url(#ar)"/>
+
+      <!-- boxes -->
+      <g>
+        <rect x="265" y="15" width="150" height="46" rx="7" fill="#0b2545"/>
+        <text x="340" y="36" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">main.py</text>
+        <text x="340" y="52" text-anchor="middle" fill="#c9d4e5" font-size="9.5">menú y coordinación</text>
+      </g>
+      <g>
+        <rect x="30" y="110" width="150" height="46" rx="7" fill="#fff" stroke="#13315c" stroke-width="1.6"/>
+        <text x="105" y="131" text-anchor="middle" fill="#0b2545" font-size="12.5" font-weight="700">huespedes.py</text>
+        <text x="105" y="147" text-anchor="middle" fill="#6b7280" font-size="9.5">check-in · out · swap</text>
+      </g>
+      <g>
+        <rect x="265" y="110" width="150" height="46" rx="7" fill="#fff" stroke="#13315c" stroke-width="1.6"/>
+        <text x="340" y="131" text-anchor="middle" fill="#0b2545" font-size="12.5" font-weight="700">reportes.py</text>
+        <text x="340" y="147" text-anchor="middle" fill="#0f766e" font-size="9.5">usa functools</text>
+      </g>
+      <g>
+        <rect x="500" y="110" width="150" height="46" rx="7" fill="#fff" stroke="#13315c" stroke-width="1.6"/>
+        <text x="575" y="131" text-anchor="middle" fill="#0b2545" font-size="12.5" font-weight="700">archivos.py</text>
+        <text x="575" y="147" text-anchor="middle" fill="#0f766e" font-size="9.5">usa json, csv</text>
+      </g>
+      <g>
+        <rect x="110" y="205" width="150" height="46" rx="7" fill="#fff" stroke="#13315c" stroke-width="1.6"/>
+        <text x="185" y="226" text-anchor="middle" fill="#0b2545" font-size="12.5" font-weight="700">hotel.py</text>
+        <text x="185" y="242" text-anchor="middle" fill="#6b7280" font-size="9.5">matriz de habitaciones</text>
+      </g>
+      <g>
+        <rect x="420" y="205" width="150" height="46" rx="7" fill="#fff" stroke="#13315c" stroke-width="1.6"/>
+        <text x="495" y="226" text-anchor="middle" fill="#0b2545" font-size="12.5" font-weight="700">tarifas.py</text>
+        <text x="495" y="242" text-anchor="middle" fill="#6b7280" font-size="9.5">precios por piso</text>
+      </g>
+      <g>
+        <rect x="265" y="295" width="150" height="46" rx="7" fill="#f4f6fa" stroke="#c8102e" stroke-width="1.6"/>
+        <text x="340" y="316" text-anchor="middle" fill="#0b2545" font-size="12.5" font-weight="700">validaciones.py</text>
+        <text x="340" y="332" text-anchor="middle" fill="#0f766e" font-size="9.5">usa re</text>
+      </g>
+    </svg>
+    <figcaption>Figura A.1 · Dependencias entre módulos. Las líneas punteadas son importaciones directas de <code>main.py</code> a <code>hotel.py</code> y <code>tarifas.py</code>; <code>main.py</code> también importa <code>validaciones.py</code> (no dibujado para mayor claridad).</figcaption>
+  </figure>
+
+  <table>
+    <thead><tr><th style="width:17%">Módulo</th><th class="c" style="width:9%">Funciones</th><th>Responsabilidad</th><th style="width:32%">Funciones principales</th></tr></thead>
+    <tbody>
+      <tr><td><code>main.py</code></td><td class="c">2</td><td>Cargar datos, mostrar menús, delegar cada opción y guardar.</td><td><code>menu_principal</code>, <code>menu_busquedas</code></td></tr>
+      <tr><td><code>hotel.py</code></td><td class="c">9</td><td>Crear y mostrar la matriz; convertir coordenadas; verificar existencia y disponibilidad.</td><td><code>inicializar_hotel</code>, <code>renderizar_hotel</code>, <code>habitacion_existe</code></td></tr>
+      <tr><td><code>huespedes.py</code></td><td class="c">14</td><td>Todas las operaciones sobre huéspedes.</td><td><code>realizar_checkin</code>, <code>realizar_checkout</code>, <code>reubicar_huesped_swap</code></td></tr>
+      <tr><td><code>tarifas.py</code></td><td class="c">7</td><td>Configurar, mostrar y consultar precios.</td><td><code>configurar_tarifas_hotel</code>, <code>obtener_tarifa_habitacion</code></td></tr>
+      <tr><td><code>reportes.py</code></td><td class="c">3</td><td>Cálculos e indicadores con programación funcional y conjuntos.</td><td><code>calcular_subtotal</code>, <code>calcular_recaudacion_total</code>, <code>generar_reporte_ocupacion</code></td></tr>
+      <tr><td><code>validaciones.py</code></td><td class="c">3</td><td>Patrones, mensajes de error y pedido de datos con reintento.</td><td><code>validar_generico</code>, <code>solicitar_dimension_valida</code></td></tr>
+      <tr><td><code>archivos.py</code></td><td class="c">8</td><td>Persistencia JSON, bitácora TXT y exportación CSV con excepciones.</td><td><code>cargar_datos_hotel</code>, <code>guardar_datos_hotel</code>, <code>registrar_factura_txt</code>, <code>historial_huesped</code>, <code>exportar_facturacion_a_csv</code></td></tr>
+      <tr><td><code>tests.py</code></td><td class="c">12</td><td>10 pruebas, formateador de salida y ejecutor.</td><td><code>test_01</code> … <code>test_10</code>, <code>ejecutar_suite</code></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ======================================================================= -->
+<!-- ANEXO B · CICLO DE VIDA                                                  -->
+<!-- ======================================================================= -->
+<section class="section">
+  <h1>Anexo B · Ciclo de vida de una habitación <span class="tag">Sección 13</span></h1>
+  <p class="lead">Cada celda de la matriz es un pequeño autómata con tres estados. Solo las operaciones del menú pueden cambiarlo, y cada cambio se guarda en el JSON.</p>
+
+  <figure>
+    <svg viewBox="0 0 680 230" width="100%" style="max-width:640px" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Arial, sans-serif">
+      <defs>
+        <marker id="sa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#13315c"/>
+        </marker>
+      </defs>
+      <!-- states -->
+      <rect x="40" y="70" width="120" height="58" rx="29" fill="#e9f7ef" stroke="#15803d" stroke-width="2"/>
+      <text x="100" y="96" text-anchor="middle" font-size="20" font-weight="800" fill="#15803d">L</text>
+      <text x="100" y="115" text-anchor="middle" font-size="10" fill="#15803d">Libre</text>
+
+      <rect x="280" y="70" width="120" height="58" rx="29" fill="#e8eef8" stroke="#0b2545" stroke-width="2"/>
+      <text x="340" y="96" text-anchor="middle" font-size="20" font-weight="800" fill="#0b2545">O</text>
+      <text x="340" y="115" text-anchor="middle" font-size="10" fill="#0b2545">Ocupada</text>
+
+      <rect x="520" y="70" width="120" height="58" rx="29" fill="#fdecef" stroke="#c8102e" stroke-width="2"/>
+      <text x="580" y="96" text-anchor="middle" font-size="20" font-weight="800" fill="#c8102e">S</text>
+      <text x="580" y="115" text-anchor="middle" font-size="10" fill="#c8102e">Sucia / limpieza</text>
+
+      <!-- transitions -->
+      <line x1="160" y1="88" x2="278" y2="88" stroke="#13315c" stroke-width="1.6" marker-end="url(#sa)"/>
+      <text x="219" y="80" text-anchor="middle" font-size="10" fill="#1f2937">Check-in · Swap (destino)</text>
+
+      <line x1="280" y1="112" x2="162" y2="112" stroke="#13315c" stroke-width="1.6" marker-end="url(#sa)"/>
+      <text x="219" y="128" text-anchor="middle" font-size="10" fill="#1f2937">Swap (origen)</text>
+
+      <line x1="400" y1="99" x2="518" y2="99" stroke="#13315c" stroke-width="1.6" marker-end="url(#sa)"/>
+      <text x="459" y="91" text-anchor="middle" font-size="9" fill="#1f2937">Check-out (bitácora TXT)</text>
+
+      <path d="M580,128 Q340,232 100,130" fill="none" stroke="#13315c" stroke-width="1.6" marker-end="url(#sa)"/>
+      <text x="340" y="196" text-anchor="middle" font-size="10" fill="#1f2937">Restablecer habitación (opción 10)</text>
+
+      <!-- start -->
+      <circle cx="100" cy="24" r="6" fill="#0b2545"/>
+      <line x1="100" y1="30" x2="100" y2="68" stroke="#13315c" stroke-width="1.6" marker-end="url(#sa)"/>
+      <text x="110" y="50" font-size="10" fill="#6b7280">inicializar_hotel · redimensionar</text>
+    </svg>
+    <figcaption>Figura B.1 · Transiciones de estado de una habitación.</figcaption>
+  </figure>
+
+  <table>
+    <thead><tr><th style="width:22%">Transición</th><th style="width:28%">Función</th><th>Condición previa validada</th></tr></thead>
+    <tbody>
+      <tr><td>L → O (check-in)</td><td><code>realizar_checkin</code></td><td>La habitación existe y está libre; DNI válido y no repetido; días &gt; 0.</td></tr>
+      <tr><td>O → S (check-out)</td><td><code>realizar_checkout</code></td><td>Hay huéspedes y el DNI corresponde a un huésped alojado.</td></tr>
+      <tr><td>O → L / L → O (swap)</td><td><code>mover_huesped</code></td><td>Hay huéspedes, hay habitaciones libres y el destino existe y está libre.</td></tr>
+      <tr><td>S → L (restablecer)</td><td><code>restablecer_limpieza</code></td><td>La habitación existe y está en estado <code>S</code>.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="box">
+    <span class="t">Por qué existe el estado S</span>
+    En un hotel real, una habitación recién desocupada no se puede entregar hasta limpiarla. El estado
+    intermedio impide que el check-in la ofrezca como libre y obliga a una confirmación explícita.
+  </div>
+</section>
+
+<!-- ======================================================================= -->
+<!-- ANEXO C · EJECUCIÓN                                                      -->
+<!-- ======================================================================= -->
+<section class="section">
+  <h1>Anexo C · Instrucciones de ejecución <span class="tag">Sección 16</span></h1>
+  <p class="lead">Pasos para ejecutar el sistema en otro equipo.</p>
+
+  <h2>Requisitos</h2>
+  <ul>
+    <li>Python 3.8 o superior (probado en Python 3.14 sobre Windows).</li>
+    <li>No se necesitan librerías externas para el sistema. <code>pytest</code> es opcional.</li>
+  </ul>
+
+  <h2>Pasos</h2>
+  <pre><code><span class="c"># 1. Obtener el proyecto</span>
+git clone https://github.com/lucassebastianramos/room-master.git
+cd room-master
+
+<span class="c"># 2. Ejecutar el sistema</span>
+python main.py
+
+<span class="c"># 3. Ejecutar las pruebas sin instalar nada</span>
+python tests.py
+
+<span class="c"># 4. (Opcional) Ejecutar las pruebas con PyTest</span>
+python -m pip install pytest
+python -m pytest tests.py -v</code></pre>
+
+  <div class="box">
+    <span class="t">Nota para Windows</span>
+    Si el comando <code>pytest</code> no se reconoce, usar <code>python -m pytest</code>. Ocurre porque
+    <code>pip</code> instala el ejecutable en una carpeta que no está en el <code>PATH</code>.
+  </div>
+
+  <h2>Archivos que genera el sistema</h2>
+  <table>
+    <thead><tr><th style="width:26%">Archivo</th><th>Contenido</th><th class="c" style="width:18%">Se crea</th></tr></thead>
+    <tbody>
+      <tr><td><code>hotel_data.json</code></td><td>Estado del hotel: dimensiones, tarifas y huéspedes.</td><td class="c">Al terminar la configuración inicial</td></tr>
+      <tr><td><code>facturacion.txt</code></td><td>Bitácora de check-outs.</td><td class="c">En el primer check-out</td></tr>
+      <tr><td><code>facturacion.csv</code></td><td>Exportación del historial para planillas de cálculo.</td><td class="c">Al exportar</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Primer uso sugerido</h2>
+  <ol>
+    <li>Configurar un hotel de 3 pisos × 4 habitaciones, base $10.000 y lujo desde el piso 3 con 30 %.</li>
+    <li>Opción 2: registrar dos huéspedes. Intentar repetir un DNI para ver la validación con conjuntos.</li>
+    <li>Opción 6: ver ocupación, habitaciones libres y recaudación proyectada.</li>
+    <li>Opción 0: salir. Volver a ejecutar <code>python main.py</code> y verificar con la opción 1 que el hotel se recuperó.</li>
+    <li>Opción 3: hacer check-out (se calcula el total y se asienta en <code>facturacion.txt</code>); la habitación queda en <code>S</code>.</li>
+    <li>Opción 7: auditar el historial de facturación acumulado desde el archivo TXT.</li>
+    <li>Opción 8: exportar el historial a <code>facturacion.csv</code> para abrirlo en Excel.</li>
+    <li>Opción 10: restablecer la habitación en limpieza a <code>L</code>.</li>
+    <li>Opción 11: consultar el historial completo de estadías y cobros de un huésped ingresando su DNI.</li>
+  </ol>
+
+  <div style="margin-top:28px; padding-top:10px; border-top:1px solid var(--line); text-align:center" class="small muted">
+    Room Master · Trabajo Práctico Integrador · Segunda Parte<br>
+    Universidad Argentina de la Empresa · Algoritmos y Estructura de Datos 1 / Programación 1 · Lic. Gustavo E. Escandell · 2026
+  </div>
+</section>
+
+</body>
+</html>
