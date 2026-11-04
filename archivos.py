@@ -12,8 +12,8 @@ import csv
 
 def cargar_datos_hotel(nombre_archivo="hotel_data.json"):
     """
-    Carga el estado del hotel desde el archivo JSON aplicando la estructura
-    de excepciones con try - except - else - finally.
+    Carga el estado del hotel desde el archivo JSON.
+    Las tarifas se almacenan como diccionario {piso: precio}.
     """
     archivo = None
     datos = None
@@ -28,7 +28,7 @@ def cargar_datos_hotel(nombre_archivo="hotel_data.json"):
             "pisos": -1,
             "habitaciones": -1,
             "huespedes": [],
-            "tarifas": []
+            "tarifas": {}
         }
 
     except PermissionError:
@@ -89,7 +89,46 @@ def guardar_datos_hotel(nombre_archivo, pisos, habitaciones, lista_huespedes, ma
 
 
 # -----------------------------------------------------------------------------
-# 2. AUDITORÍA EN ARCHIVO DE TEXTO (.TXT)
+# 2. HELPER DE LECTURA TXT (FUNCIÓN MODULARIZADA)
+# -----------------------------------------------------------------------------
+
+def leer_registros_txt(nombre_archivo="facturacion.txt"):
+    """
+    Lee un archivo delimitado por ';' y retorna una lista de sublistas con sus datos.
+    Centraliza el manejo de apertura, lectura y captura de excepciones.
+    """
+    archivo = None
+    registros = []
+
+    try:
+        archivo = open(nombre_archivo, "r", encoding="UTF-8")
+        for linea in archivo:
+            linea_limpia = linea.strip()
+            if linea_limpia != "":
+                datos = linea_limpia.split(";")
+                registros.append(datos)
+
+    except FileNotFoundError:
+        print("ERROR. El archivo TXT no existe.")
+
+    except PermissionError:
+        print("ERROR. No tiene permisos para acceder al archivo.")
+
+    except (ValueError, IndexError):
+        print("ERROR. El archivo contiene registros incorrectos.")
+
+    except OSError as error:
+        print("ERROR al trabajar con el archivo:", error)
+
+    finally:
+        if archivo is not None:
+            archivo.close()
+
+    return registros
+
+
+# -----------------------------------------------------------------------------
+# 3. AUDITORÍA EN ARCHIVO DE TEXTO (.TXT)
 # -----------------------------------------------------------------------------
 
 def inicializar_archivo_txt(nombre_archivo="facturacion.txt"):
@@ -108,14 +147,15 @@ def inicializar_archivo_txt(nombre_archivo="facturacion.txt"):
             archivo.close()
 
 
-def registrar_factura_txt(dni, nombre, monto, nombre_archivo="facturacion.txt"):
+def registrar_factura_txt(dni, nombre, habitacion, piso, dias, monto, nombre_archivo="facturacion.txt"):
     """
     Registra en modo agregado ('a') cada Check-out cobrado en el archivo TXT.
+    Formato: dni;nombre;habitacion;piso;dias;monto
     """
     archivo = None
     try:
         archivo = open(nombre_archivo, "a", encoding="UTF-8")
-        registro = f"{dni};{nombre};{monto:.2f}\n"
+        registro = f"{dni};{nombre};{habitacion};{piso};{dias};{monto:.2f}\n"
         archivo.write(registro)
 
     except PermissionError:
@@ -131,100 +171,99 @@ def registrar_factura_txt(dni, nombre, monto, nombre_archivo="facturacion.txt"):
 
 def leer_y_procesar_facturacion_txt(nombre_archivo="facturacion.txt"):
     """
-    Lee el archivo TXT de facturas, procesa los registros y calcula el total histórico.
+    Procesa las facturas registradas usando la función modularizada de lectura.
     """
-    archivo = None
-    try:
-        archivo = open(nombre_archivo, "r", encoding="UTF-8")
+    registros = leer_registros_txt(nombre_archivo)
+    if len(registros) == 0:
+        return
 
-        print("\n=== HISTORIAL DE FACTURACIÓN (DESDE ARCHIVO TXT) ===")
-        print(f"{'DNI':<12} {'Huésped':<25} {'Monto Cobrado':>15}")
-        print("-" * 55)
+    print("\n=== HISTORIAL DE FACTURACIÓN (DESDE ARCHIVO TXT) ===")
+    print(f"{'DNI':<12} {'Huésped':<20} {'Hab':>5} {'Piso':>5} {'Días':>5} {'Monto':>14}")
+    print("-" * 65)
 
-        total_recaudado = 0.0
-        cantidad = 0
+    total_recaudado = 0.0
 
-        for linea in archivo:
-            linea_limpia = linea.strip()
-            if linea_limpia != "":
-                datos = linea_limpia.split(";")
-                dni = datos[0]
-                nombre = datos[1]
-                monto = float(datos[2])
+    for datos in registros:
+        dni = datos[0]
+        nombre = datos[1]
+        habitacion = datos[2]
+        piso = datos[3]
+        dias = datos[4]
+        monto = float(datos[5])
 
-                total_recaudado += monto
-                cantidad += 1
-                print(f"{dni:<12} {nombre:<25} ${monto:>14,.2f}")
+        print(f"{dni:<12} {nombre:<20} {habitacion:>5} {piso:>5} {dias:>5} ${monto:>13,.2f}")
+        total_recaudado += monto
 
-        print("=" * 55)
-        print(f"Total comprobantes procesados: {cantidad}")
-        print(f"Recaudación histórica total acumulada: ${total_recaudado:,.2f}")
+    print("=" * 65)
+    print(f"Total comprobantes procesados: {len(registros)}")
+    print(f"Recaudación histórica total acumulada: ${total_recaudado:,.2f}")
 
-    except FileNotFoundError:
-        print("ERROR. El archivo TXT no existe.")
 
-    except PermissionError:
-        print("ERROR. No tiene permisos para acceder al archivo.")
+def historial_huesped(dni_buscado, nombre_archivo="facturacion.txt"):
+    """
+    Busca y muestra las estadías de un DNI usando la función modularizada de lectura.
+    """
+    registros = leer_registros_txt(nombre_archivo)
+    if len(registros) == 0:
+        return
 
-    except (ValueError, IndexError):
-        print("ERROR. El archivo contiene registros incorrectos.")
+    print(f"\n=== HISTORIAL DE HUÉSPED (DNI: {dni_buscado}) ===")
+    encontrado = False
+    total = 0.0
 
-    except OSError as error:
-        print("ERROR al trabajar con el archivo:", error)
+    for datos in registros:
+        if datos[0] == dni_buscado:
+            encontrado = True
+            nombre = datos[1]
+            habitacion = datos[2]
+            piso = datos[3]
+            dias = datos[4]
+            monto = float(datos[5])
 
+            print(f"  {nombre} - Hab {habitacion} (Piso {piso}) - {dias} días - ${monto:,.2f}")
+            total += monto
+
+    if not encontrado:
+        print("No se encontraron estadías registradas para ese DNI.")
     else:
-        print("\nLectura TXT finalizada correctamente.")
-
-    finally:
-        if archivo is not None:
-            archivo.close()
+        print(f"  Total histórico: ${total:,.2f}")
 
 
 # -----------------------------------------------------------------------------
-# 3. EXPORTACIÓN A EXCEL / CSV (.CSV)
+# 4. EXPORTACIÓN A EXCEL / CSV (.CSV)
 # -----------------------------------------------------------------------------
-
 def exportar_facturacion_a_csv(nombre_archivo_txt="facturacion.txt", nombre_archivo_csv="facturacion.csv"):
     """
-    Lee el archivo TXT y genera un reporte estructurado en CSV usando la librería csv.
+    Lee los datos mediante la función modularizada y genera la planilla CSV.
+    Formatea el monto con coma decimal para compatibilidad con Excel regional.
     """
-    archivo_txt = None
+    registros = leer_registros_txt(nombre_archivo_txt)
+    if len(registros) == 0:
+        print("No hay registros para exportar a CSV.")
+        return
+
     archivo_csv = None
-
     try:
-        archivo_txt = open(nombre_archivo_txt, "r", encoding="UTF-8")
         archivo_csv = open(nombre_archivo_csv, "w", encoding="UTF-8", newline="")
-
         escritor = csv.writer(archivo_csv)
-        escritor.writerow(["DNI", "Huesped", "Monto_Cobrado"])
+        escritor.writerow(["DNI", "Huesped", "Habitacion", "Piso", "Dias", "Monto_Cobrado"])
 
-        cantidad_exportados = 0
-        for linea in archivo_txt:
-            linea_limpia = linea.strip()
-            if linea_limpia != "":
-                datos = linea_limpia.split(";")
-                escritor.writerow([datos[0], datos[1], f"{float(datos[2]):.2f}"])
-                cantidad_exportados += 1
+        for datos in registros:
+            # Se formatea a 2 decimales y se reemplaza el punto por coma para Excel
+            monto_excel = f"{float(datos[5]):.2f}".replace(".", ",")
+            escritor.writerow([datos[0], datos[1], datos[2], datos[3], datos[4], monto_excel])
 
-        print(f"\n[Éxito] Se exportaron {cantidad_exportados} registros correctamente a '{nombre_archivo_csv}'.")
-
-    except FileNotFoundError:
-        print("ERROR. El archivo TXT no existe para realizar la exportación.")
+        print(f"\n[Éxito] Se exportaron {len(registros)} registros correctamente a '{nombre_archivo_csv}'.")
 
     except PermissionError:
-        print("ERROR. No tiene permisos para acceder a los archivos.")
-
-    except (ValueError, IndexError):
-        print("ERROR. El archivo contiene registros incorrectos.")
+        print("ERROR. No tiene permisos para acceder al archivo CSV.")
 
     except OSError as error:
-        print("ERROR al trabajar con los archivos:", error)
+        print("ERROR al trabajar con el archivo CSV:", error)
 
     else:
         print("\nExportación CSV finalizada correctamente.")
 
     finally:
-        if archivo_txt is not None:
-            archivo_txt.close()
         if archivo_csv is not None:
             archivo_csv.close()

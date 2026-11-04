@@ -336,7 +336,7 @@ El estado **Sucia (`S`)** impide volver a alquilar una habitación recién liber
 | :--- | :--- | :--- |
 | Número comercial | `(piso + 1) * 100 + (habitacion + 1)` → índices `(0, 0)` = **101** | `hotel.obtener_numero_comercial` |
 | Número → índices | `piso = n // 100 - 1`, `habitacion = n % 100 - 1` | `hotel.obtener_indices_matriz` |
-| Precio de un piso de lujo | `base × (1 + recargo / 100)`, redondeado a 2 decimales | `tarifas.generar_matriz_tarifas` |
+| Precio de un piso de lujo | `base × (1 + recargo / 100)`, redondeado a 2 decimales | `tarifas.generar_dict_tarifas` |
 | Subtotal de estadía | `precio_noche × días` | `reportes.calcular_subtotal` |
 | Descuento por estadía larga | `días > 7` → `subtotal × 0.9` (bonificación 10% con `lambda`) | `reportes.calcular_subtotal` |
 | Dimensiones válidas | 1 a 99 pisos y 1 a 99 habitaciones por piso | `hotel.reiniciar_matriz` |
@@ -450,7 +450,7 @@ Guía completa para la **defensa oral presencial**:
 | **Matrices** (listas anidadas) | `hotel.inicializar_hotel` | Representar la estructura física de pisos × habitaciones con acceso directo $O(1)$ |
 | **Diccionarios** | `huespedes.realizar_checkin`, `archivos.guardar_datos_hotel` | Registro semántico de cada huésped y estructura raíz del archivo JSON |
 | **Tuplas** | `"identidad": (dni, nombre)`, retornos de coordenadas | Datos inmutables de identificación legal y retornos múltiples empaquetados |
-| **Conjuntos** | `huespedes.validar_dni`, `reportes.reporte_habitaciones_libres` | Control de unicidad de DNI en $O(1)$; cálculo algebraico de libres (`-`) y ocupadas (`&`) |
+| **Conjuntos** | `huespedes.validar_dni`, `reportes.generar_reporte_ocupacion` | Control de unicidad de DNI en $O(1)$; cálculo algebraico de libres (`-`) y ocupadas (`&`) |
 | **`lambda`** | `reportes.calcular_subtotal` | Regla concisa de descuento por estadía larga ($> 7$ noches) |
 | **`filter`** | `huespedes.buscar_huespedes_por_nombre` / `_por_habitacion` | Búsquedas funcionales sin bucles explícitos sobre la lista de huéspedes |
 | **`map`** | `reportes.calcular_recaudacion_total`, `generar_reporte_ocupacion` | Transformar huéspedes en montos y pisos en cantidades ocupadas |
